@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Immediate Crisis Support</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Simple Breathing Animation for Grounding Exercise */
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.4); opacity: 0.3; }
+        }
+        .breathing-circle {
+            animation: breathe 8s infinite ease-in-out;
+        }
+    </style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary": "#40413e",
+                        "surface-container-low": "#f2f4f7",
+                        "tertiary-fixed": "#e4e2dd",
+                        "surface-bright": "#f8f9fd",
+                        "on-primary-fixed": "#001d32",
+                        "on-error": "#ffffff",
+                        "on-secondary-container": "#0c6e68",
+                        "on-error-container": "#93000a",
+                        "on-surface-variant": "#41474e",
+                        "surface-variant": "#e1e2e6",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed": "#00201e",
+                        "error-container": "#ffdad6",
+                        "outline": "#72787f",
+                        "on-tertiary-fixed-variant": "#474744",
+                        "background": "#f8f9fd",
+                        "surface": "#f8f9fd",
+                        "on-background": "#191c1f",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-container": "#9deee5",
+                        "on-tertiary-container": "#d0ceca",
+                        "tertiary-fixed-dim": "#c8c6c2",
+                        "surface-dim": "#d8dadd",
+                        "primary-fixed-dim": "#9ccbf7",
+                        "primary-container": "#2a5c82",
+                        "inverse-on-surface": "#eff1f4",
+                        "on-primary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "inverse-surface": "#2e3134",
+                        "outline-variant": "#c1c7cf",
+                        "surface-container-high": "#e6e8ec",
+                        "secondary-fixed": "#a0f1e8",
+                        "surface-container-highest": "#e1e2e6",
+                        "on-surface": "#191c1f",
+                        "on-secondary-fixed-variant": "#00504b",
+                        "on-primary-fixed-variant": "#124a6f",
+                        "inverse-primary": "#9ccbf7",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed-dim": "#84d5cc",
+                        "primary": "#074469",
+                        "surface-container": "#eceef1",
+                        "secondary": "#006a64",
+                        "primary-fixed": "#cde5ff",
+                        "surface-tint": "#316289",
+                        "on-primary-container": "#a5d4ff",
+                        "on-tertiary-fixed": "#1b1c19",
+                        "tertiary-container": "#585855"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "12px",
+                        "lg": "48px",
+                        "gutter": "24px",
+                        "md": "24px",
+                        "xl": "80px",
+                        "container-max": "1200px",
+                        "xs": "4px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "500"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface font-body-md text-on-surface antialiased min-h-screen flex flex-col selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Standard navigation is suppressed on this task-focused, critical screen to prioritize immediate action. -->
+<!-- Hero Section -->
+<header class="relative w-full h-[40vh] min-h-[300px] flex items-center justify-center overflow-hidden">
+<!-- Background Image with specific placeholder -->
+<div class="absolute inset-0 z-0">
+<img alt="Calming abstract background" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAocK_o1NOnUPRQvJZvRO4fphMeKiktbmo57PS6kzfZLbEEhXU2vop_wA5WCvkp-btjQ75Pgcitcnw4WKWoEx6X39kYcV0pyrMrHARd_9ZaS4IWPU4Bk4Zb4Ipj7xVcHu71OsE2NghT8b84kJ7bqljgcxadPvM82b23II0ylyg9bjXZ3oZNWRBnmAFf6ZN9WIphUi0-lPsXXwMGinGmP4-Wh8SgLFX8FrpOGgJkiHKng1CfE3WmSrjGllxKYCYi9R7Tin5XoEEWvgA"/>
+<!-- Tonal gradient overlay to ensure text readability while maintaining a serene vibe -->
+<div class="absolute inset-0 bg-gradient-to-b from-surface/80 via-surface/60 to-surface z-10"></div>
+</div>
+<div class="relative z-20 text-center px-md max-w-container-max mx-auto w-full pt-lg">
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mb-sm">
+                You are not alone. Help is here right now.
+            </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">
+                Immediate Mental Health Crisis Resources. Confidential. Available 24/7.
+            </p>
+</div>
+</header>
+<!-- Main Content Canvas - Lifted slightly to overlap hero -->
+<main class="flex-grow relative z-30 -mt-xl px-md lg:px-xl pb-xl w-full max-w-container-max mx-auto">
+<!-- Urgent Actions Grid (Bento Style) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md w-full mb-lg">
+<!-- Call Crisis Line Action (High Emphasis - Red) -->
+<a class="group block w-full bg-error rounded-xl p-md shadow-sm transition-transform active:scale-95 hover:-translate-y-1 relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-error-container" href="tel:0800-HELP">
+<div class="absolute -right-8 -top-8 bg-on-error/10 w-32 h-32 rounded-full blur-xl group-hover:bg-on-error/20 transition-colors"></div>
+<div class="flex items-start gap-md relative z-10">
+<div class="w-12 h-12 rounded-full bg-on-error text-error flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1; font-size: 28px;">phone_in_talk</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md text-on-error mb-xs">Call Crisis Line</h2>
+<p class="font-body-md text-body-md text-on-error/90 mb-sm">Connect immediately with a trained counselor.</p>
+<div class="inline-flex items-center gap-xs font-label-md text-label-md text-on-error bg-on-error/20 px-sm py-xs rounded-full">
+<span>0800-HELP</span>
+<span class="material-symbols-outlined" style="font-size: 16px;">arrow_forward</span>
+</div>
+</div>
+</div>
+</a>
+<!-- Emergency Chat Action (Primary Emphasis - Blue) -->
+<button class="group block w-full bg-primary rounded-xl p-md shadow-sm transition-transform active:scale-95 hover:-translate-y-1 relative overflow-hidden text-left focus:outline-none focus:ring-4 focus:ring-primary-fixed">
+<div class="absolute -right-8 -bottom-8 bg-on-primary/10 w-32 h-32 rounded-full blur-xl group-hover:bg-on-primary/20 transition-colors"></div>
+<div class="flex items-start gap-md relative z-10">
+<div class="w-12 h-12 rounded-full bg-on-primary text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1; font-size: 28px;">chat</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md text-on-primary mb-xs">Start Emergency Chat</h2>
+<p class="font-body-md text-body-md text-on-primary/90 mb-sm">Text confidentially with a support specialist.</p>
+<div class="inline-flex items-center gap-xs font-label-md text-label-md text-on-primary bg-on-primary/20 px-sm py-xs rounded-full">
+<span>Start Session</span>
+<span class="material-symbols-outlined" style="font-size: 16px;">arrow_forward</span>
+</div>
+</div>
+</div>
+</button>
+</div>
+<!-- Safety Plan Banner (Secondary Action) -->
+<div class="w-full mb-lg">
+<button class="w-full bg-secondary-container border border-secondary-fixed-dim rounded-lg p-sm md:p-md flex flex-col md:flex-row items-center justify-between gap-md transition-colors hover:bg-secondary-fixed focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2">
+<div class="flex items-center gap-sm text-on-secondary-container">
+<span class="material-symbols-outlined" style="font-size: 24px;">health_and_safety</span>
+<div class="text-left">
+<span class="block font-label-md text-label-md">Personal Safety Plan</span>
+<span class="block font-body-md text-body-md opacity-80 text-sm">Access your pre-filled coping strategies and contacts.</span>
+</div>
+</div>
+<span class="font-label-md text-label-md text-on-secondary-container bg-surface-container-lowest px-md py-xs rounded-full shadow-sm whitespace-nowrap">View Plan</span>
+</button>
+</div>
+<!-- Supportive Resources Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter w-full">
+<!-- Grounding Exercise Card -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant p-md flex flex-col h-full shadow-[0_4px_20px_-4px_rgba(7,68,105,0.05)]"><div class="flex items-center gap-sm mb-md text-primary"><span class="material-symbols-outlined">grid_view</span><h3 class="font-headline-md text-headline-md">Stabilization Tools</h3></div><p class="font-body-md text-body-md text-on-surface-variant mb-md">Choose a tool to help regain focus and calm. These exercises are designed to shift your attention away from distress.</p><div class="grid grid-cols-1 gap-md"><!-- Tool 1: Breathing --><div class="bg-surface-bright rounded-lg border border-surface-container-high p-sm"><div class="flex items-center gap-xs mb-sm text-secondary"><span class="material-symbols-outlined" style="font-size: 20px;">air</span><span class="font-label-md text-label-md">Guided Breathing</span></div><div class="flex justify-center items-center h-32 bg-white rounded border border-outline-variant/30 relative overflow-hidden mb-xs"><div class="w-16 h-16 rounded-full bg-secondary/20 flex items-center justify-center breathing-circle"><div class="w-10 h-10 rounded-full bg-secondary/40"></div></div><span class="absolute bottom-2 font-label-sm text-label-sm text-secondary uppercase tracking-widest opacity-70">Breathe</span></div></div><!-- Tool 2: 5-4-3-2-1 --><div class="bg-surface-bright rounded-lg border border-surface-container-high p-sm"><div class="flex items-center gap-xs mb-sm text-secondary"><span class="material-symbols-outlined" style="font-size: 20px;">visibility</span><span class="font-label-md text-label-md">5-4-3-2-1 Sensory Grounding</span></div><div class="space-y-xs"><div class="flex items-center gap-sm p-xs bg-white rounded border border-outline-variant/20"><span class="w-6 h-6 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center text-label-sm">5</span><span class="text-label-md">Things you see</span></div><div class="flex items-center gap-sm p-xs bg-white rounded border border-outline-variant/20"><span class="w-6 h-6 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center text-label-sm">4</span><span class="text-label-md">Things you can touch</span></div><div class="flex items-center gap-sm p-xs bg-white rounded border border-outline-variant/20"><span class="w-6 h-6 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center text-label-sm">3</span><span class="text-label-md">Things you hear</span></div><div class="flex items-center gap-sm p-xs bg-white rounded border border-outline-variant/20"><span class="w-6 h-6 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center text-label-sm">2</span><span class="text-label-md">Things you smell</span></div><div class="flex items-center gap-sm p-xs bg-white rounded border border-outline-variant/20"><span class="w-6 h-6 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center text-label-sm">1</span><span class="text-label-md">Thing you taste</span></div></div></div><!-- Tool 3: Mental Distraction --><div class="bg-surface-bright rounded-lg border border-surface-container-high p-sm"><div class="flex items-center gap-xs mb-sm text-secondary"><span class="material-symbols-outlined" style="font-size: 20px;">psychology</span><span class="font-label-md text-label-md">Mental Distraction</span></div><div class="bg-white p-sm rounded border border-outline-variant/20"><p class="text-label-md text-on-surface-variant mb-sm">Try a quick mental challenge:</p><ul class="space-y-xs text-body-md"><li class="flex items-start gap-xs"><span class="material-symbols-outlined text-secondary" style="font-size: 18px;">check_circle</span><span>Name 5 types of fruit</span></li><li class="flex items-start gap-xs"><span class="material-symbols-outlined text-secondary" style="font-size: 18px;">check_circle</span><span>Count backwards from 100 by 7</span></li></ul></div></div></div></section>
+<!-- Professional Support Info Card -->
+<section class="lg:col-span-2 bg-surface-container-lowest rounded-xl border border-outline-variant p-md shadow-[0_4px_20px_-4px_rgba(7,68,105,0.05)]">
+<div class="flex items-center gap-sm mb-sm text-primary">
+<span class="material-symbols-outlined">favorite</span>
+<h3 class="font-headline-md text-headline-md">Messages of Hope</h3>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md">Small reminders that you are valued and resilient.</p>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md">
+<!-- Hope Card 1 -->
+<div class="relative overflow-hidden rounded-lg aspect-video md:aspect-square flex items-center justify-center p-md text-center bg-primary-container">
+<div class="absolute inset-0 opacity-40 bg-gradient-to-br from-primary to-secondary"></div>
+<p class="relative z-10 font-label-md text-on-primary">You have survived 100% of your hardest days.</p>
+</div>
+<!-- Hope Card 2 -->
+<div class="relative overflow-hidden rounded-lg aspect-video md:aspect-square flex items-center justify-center p-md text-center bg-secondary-container">
+<div class="absolute inset-0 opacity-40 bg-gradient-to-br from-secondary to-primary"></div>
+<p class="relative z-10 font-label-md text-on-secondary-container">This feeling is temporary, but your strength is permanent.</p>
+</div>
+<!-- Hope Card 3 -->
+<div class="relative overflow-hidden rounded-lg aspect-video md:aspect-square flex items-center justify-center p-md text-center bg-surface-container-high">
+<div class="absolute inset-0 opacity-40 bg-gradient-to-br from-outline to-surface-variant"></div>
+<p class="relative z-10 font-label-md text-on-surface">It's okay to not be okay. Healing is not linear.</p>
+</div>
+<!-- Hope Card 4 -->
+<div class="relative overflow-hidden rounded-lg aspect-video md:aspect-square flex items-center justify-center p-md text-center bg-primary">
+<div class="absolute inset-0 opacity-40 bg-gradient-to-br from-primary-fixed-dim to-primary"></div>
+<p class="relative z-10 font-label-md text-on-primary">You are more than your current struggle.</p>
+</div>
+</div>
+</section><section class="bg-surface-container-lowest rounded-xl border border-outline-variant p-md flex flex-col h-full shadow-[0_4px_20px_-4px_rgba(7,68,105,0.05)]">
+<div class="flex items-center gap-sm mb-md text-primary">
+<span class="material-symbols-outlined">local_hospital</span>
+<h3 class="font-headline-md text-headline-md">Professional Support</h3>
+</div>
+<div class="space-y-md flex-grow">
+<div>
+<h4 class="font-label-md text-label-md text-on-surface mb-xs">Counselor Notification</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                            If you initiate an emergency chat, your assigned university counselor will be securely notified to follow up within 24 hours. This ensures continuous care.
+                        </p>
+</div>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface mb-xs">Campus Emergency Services</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mb-sm">
+                            For immediate physical safety concerns on campus, contact Public Safety directly.
+                         </p>
+<button class="inline-flex items-center gap-xs font-label-md text-label-md text-primary hover:text-primary-container transition-colors">
+<span class="material-symbols-outlined" style="font-size: 18px;">call</span>
+                             Call Campus Security
+                         </button>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Minimal Footer (Shared Component Structure) -->
+<footer class="mt-auto w-full bg-tertiary-fixed dark:bg-tertiary py-lg px-xl flex flex-col md:flex-row justify-between items-center gap-md border-t border-outline-variant/30">
+<div class="font-body-md text-label-sm text-on-tertiary-fixed dark:text-on-tertiary opacity-80">
+            © 2024 MindCare AI University Support
+        </div>
+<nav class="flex flex-wrap justify-center gap-md font-label-sm text-label-sm text-on-tertiary-fixed dark:text-on-tertiary">
+<!-- Highlighting Crisis Support as active/bold per intent -->
+<a class="underline font-bold text-error transition-opacity hover:opacity-100 flex items-center gap-xs" href="#">
+<span class="material-symbols-outlined" style="font-size: 14px;">warning</span>
+                Crisis Support: 988
+            </a>
+<a class="opacity-80 transition-opacity hover:opacity-100" href="#">Privacy Policy</a>
+<a class="opacity-80 transition-opacity hover:opacity-100" href="#">Terms of Service</a>
+</nav>
+</footer>
+</body></html>

@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MindCare AI - Counsellor Decision Support Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-background": "#191c1f",
+                        "inverse-primary": "#9ccbf7",
+                        "tertiary-container": "#585855",
+                        "tertiary-fixed-dim": "#c8c6c2",
+                        "surface-container-highest": "#e1e2e6",
+                        "on-secondary-container": "#0c6e68",
+                        "surface-container": "#eceef1",
+                        "outline": "#72787f",
+                        "primary-container": "#2a5c82",
+                        "primary-fixed": "#cde5ff",
+                        "surface-container-low": "#f2f4f7",
+                        "tertiary-fixed": "#e4e2dd",
+                        "on-error": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-surface": "#191c1f",
+                        "on-secondary-fixed-variant": "#00504b",
+                        "surface": "#f8f9fd",
+                        "on-secondary-fixed": "#00201e",
+                        "surface-container-high": "#e6e8ec",
+                        "secondary-container": "#9deee5",
+                        "error-container": "#ffdad6",
+                        "tertiary": "#40413e",
+                        "on-primary-container": "#a5d4ff",
+                        "outline-variant": "#c1c7cf",
+                        "on-tertiary-fixed-variant": "#474744",
+                        "on-secondary": "#ffffff",
+                        "secondary": "#006a64",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed": "#001d32",
+                        "on-surface-variant": "#41474e",
+                        "on-tertiary-fixed": "#1b1c19",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed-variant": "#124a6f",
+                        "primary": "#074469",
+                        "background": "#f8f9fd",
+                        "surface-bright": "#f8f9fd",
+                        "secondary-fixed-dim": "#84d5cc",
+                        "inverse-surface": "#2e3134",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed": "#a0f1e8",
+                        "on-tertiary-container": "#d0ceca",
+                        "error": "#ba1a1a",
+                        "primary-fixed-dim": "#9ccbf7",
+                        "surface-tint": "#316289",
+                        "inverse-on-surface": "#eff1f4",
+                        "surface-dim": "#d8dadd",
+                        "surface-variant": "#e1e2e6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "base": "8px",
+                        "xl": "80px",
+                        "lg": "48px",
+                        "sm": "12px",
+                        "md": "24px",
+                        "xs": "4px",
+                        "container-max": "1200px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "500" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md text-body-md h-screen w-full flex overflow-hidden selection:bg-primary-container selection:text-on-primary-container">
+<!-- SideNavBar -->
+<nav class="hidden md:flex flex-col h-full p-sm border-r border-outline-variant bg-surface-container-low dark:bg-inverse-surface docked left-0 h-full w-64 z-40 relative">
+<div class="flex items-center gap-sm px-sm py-md mb-md">
+<div class="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden shrink-0 flex items-center justify-center border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional, warm, light-mode corporate portrait of a university mental health counselor, subtly smiling, wearing smart-casual attire. The background is a soft, out-of-focus modern office setting with natural light." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGhpEFn1lxQMf00jL48-2rTiaI_zWPb0cLHVIbx6A371GD57h-5L3NqhTrKbs6DVMGrJRsTF1eKECBFrWZximzxZLuajutLkiQg7TGRQjrLPmoCk9v9qoghgAgWzBVejlIilzL41YgRyD3iBdVMB-4cauzOt_NmEvy1r6UbA0oSAtYVI-HKmaHOIBa8GP8f8N62LkCg2W9OB-w1mjJcpCWFt5ocBELm87E9FQz7qOkO2eR9b8XW7SrVcYxLHzEqCIqKg_OmtRUd5M"/>
+</div>
+<div>
+<h2 class="font-headline-md text-[18px] leading-tight font-black text-primary">Counselor Portal</h2>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Case Management</p>
+</div>
+</div>
+<button class="mb-lg w-full flex items-center justify-center gap-xs py-sm px-md bg-primary text-on-primary rounded-lg font-label-md text-label-md shadow-sm hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[18px]">add</span>
+            New Session
+        </button>
+<ul class="flex flex-col gap-xs flex-1">
+<li>
+<a class="flex items-center gap-sm px-md py-sm bg-primary-container text-on-primary-container rounded-lg font-bold font-label-md text-label-md transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+                    Dashboard
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high hover:bg-primary-container/50 dark:hover:bg-primary/20 rounded-lg font-label-md text-label-md transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">forum</span>
+                    Chat
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high hover:bg-primary-container/50 dark:hover:bg-primary/20 rounded-lg font-label-md text-label-md transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">local_library</span>
+                    Wellness Library
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high hover:bg-primary-container/50 dark:hover:bg-primary/20 rounded-lg font-label-md text-label-md transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">monitoring</span>
+                    Analytics
+                </a>
+</li>
+</ul>
+<div class="mt-auto pt-md border-t border-outline-variant">
+<ul class="flex flex-col gap-xs">
+<li>
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high hover:bg-primary-container/50 dark:hover:bg-primary/20 rounded-lg font-label-md text-label-md transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">settings</span>
+                        Settings
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high hover:bg-primary-container/50 dark:hover:bg-primary/20 rounded-lg font-label-md text-label-md transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">help_outline</span>
+                        Help
+                    </a>
+</li>
+</ul>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col h-full overflow-hidden bg-background relative">
+<!-- TopNavBar -->
+<header class="w-full z-30 flex justify-between items-center px-md h-16 bg-surface dark:bg-inverse-surface border-b border-surface-dim shadow-sm docked full-width top-0">
+<div class="flex items-center gap-sm">
+<!-- Mobile Menu Trigger -->
+<button class="md:hidden p-xs text-on-surface-variant hover:bg-surface-container rounded-full transition-colors">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-inverse-primary tracking-tight">MindCare AI</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="hidden md:flex items-center gap-xs px-sm py-xs bg-error-container text-on-error-container rounded-full font-label-sm text-label-sm hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[16px]">emergency</span>
+                    Emergency Help
+                </button>
+<button class="hidden md:flex items-center gap-xs px-sm py-xs border border-outline text-on-surface-variant rounded-full font-label-sm text-label-sm hover:bg-surface-container dark:hover:bg-inverse-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[16px]">visibility_off</span>
+                    Anonymous Mode
+                </button>
+<div class="flex items-center gap-xs ml-sm border-l border-outline-variant pl-sm">
+<button class="p-xs text-on-surface-variant hover:bg-surface-container dark:hover:bg-inverse-surface-variant rounded-full transition-colors scale-95 active:scale-90 transition-transform">
+<span class="material-symbols-outlined">language</span>
+</button>
+<button class="p-xs text-on-surface-variant hover:bg-surface-container dark:hover:bg-inverse-surface-variant rounded-full transition-colors scale-95 active:scale-90 transition-transform">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Scrollable Canvas -->
+<main class="flex-1 overflow-y-auto w-full">
+<div class="p-md md:p-xl mx-auto flex flex-col gap-xl">
+<!-- Page Header & High-Level Analytics -->
+<section>
+<div class="mb-lg flex justify-between items-end">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-background">Decision Support Overview</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-xs">Monitoring 42 active anonymized cases.</p>
+</div>
+<div class="flex gap-sm">
+<button class="px-md py-sm bg-surface-container-highest text-on-surface rounded-lg font-label-md text-label-md hover:bg-surface-variant transition-colors flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">download</span> Export Report
+                                </button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-md">
+<!-- Stat Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col gap-sm shadow-sm">
+<div class="flex justify-between items-start">
+<span class="font-label-md text-label-md text-on-surface-variant">Active Critical Alerts</span>
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">warning</span>
+</div>
+<div class="font-headline-lg text-headline-lg text-on-background">3</div>
+<div class="font-label-sm text-label-sm text-error flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">trending_up</span> +1 since yesterday
+                            </div>
+</div>
+<!-- Stat Card 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col gap-sm shadow-sm">
+<div class="flex justify-between items-start">
+<span class="font-label-md text-label-md text-on-surface-variant">Pending Interventions</span>
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">pending_actions</span>
+</div>
+<div class="font-headline-lg text-headline-lg text-on-background">12</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-xs">
+                                Requires review today
+                            </div>
+</div>
+<!-- Stat Card 3 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col gap-sm shadow-sm">
+<div class="flex justify-between items-start">
+<span class="font-label-md text-label-md text-on-surface-variant">Referral Success</span>
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="font-headline-lg text-headline-lg text-on-background">84%</div>
+<div class="font-label-sm text-label-sm text-secondary flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">trending_up</span> +2% this week
+                            </div>
+</div>
+<!-- Stat Card 4 - New -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col gap-sm shadow-sm">
+<div class="flex justify-between items-start">
+<span class="font-label-md text-label-md text-on-surface-variant">Avg Response Time</span>
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">timer</span>
+</div>
+<div class="font-headline-lg text-headline-lg text-on-background">14m</div>
+<div class="font-label-sm text-label-sm text-secondary flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">trending_down</span> -2m this week
+                            </div>
+</div>
+</div>
+</section>
+<!-- Case Management Split View -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-lg min-h-[600px]">
+<!-- Left Column: Case List -->
+<div class="lg:col-span-3 flex flex-col gap-sm">
+<div class="flex justify-between items-center mb-xs px-xs">
+<h3 class="font-label-md text-label-md font-bold text-on-surface">Active Queue</h3>
+<button class="p-xs text-on-surface-variant hover:bg-surface-container rounded-full"><span class="material-symbols-outlined text-[18px]">filter_list</span></button>
+</div>
+<div class="flex flex-col gap-sm overflow-y-auto pr-xs pb-xl">
+<!-- Active/Selected Case Card -->
+<div class="bg-surface-container-lowest border-l-4 border-l-error border-y border-r border-outline-variant rounded-r-lg p-md cursor-pointer hover:bg-surface-container-low transition-colors shadow-[0_2px_8px_rgba(7,68,105,0.05)] relative overflow-hidden">
+<div class="absolute top-0 right-0 w-16 h-16 bg-error-container/20 rounded-bl-full -mr-4 -mt-4"></div>
+<div class="flex justify-between items-start mb-sm">
+<div>
+<span class="font-label-md text-label-md font-bold text-on-background block">Student #8942</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-normal">Engineering, Yr 2</span>
+</div>
+<span class="inline-flex items-center px-2 py-1 rounded-sm bg-error-container text-on-error-container font-label-sm text-[10px] tracking-wider uppercase">Critical Risk</span>
+</div>
+<div class="flex items-center gap-sm mb-sm text-error">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+<span class="font-label-sm text-[11px] uppercase tracking-wider">Declining</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2 text-sm mb-sm">Frequent mentions of hopelessness in latest chat logs. PHQ-9 indicates severe depression.</p>
+<div class="font-label-sm text-label-sm text-outline flex items-center justify-between">
+<span class="flex items-center gap-xs"><span class="material-symbols-outlined text-[14px]">schedule</span> 10 mins ago</span>
+<span class="flex items-center gap-xs text-primary"><span class="material-symbols-outlined text-[14px]">mark_chat_unread</span> 1 New</span>
+</div>
+</div>
+<!-- High Risk Card -->
+<div class="bg-surface-container-lowest border-l-4 border-l-secondary-container border-y border-r border-outline-variant rounded-r-lg p-md cursor-pointer hover:bg-surface-container-low transition-colors">
+<div class="flex justify-between items-start mb-sm">
+<div>
+<span class="font-label-md text-label-md font-bold text-on-background block">Student #4120</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-normal">Arts, Yr 1</span>
+</div>
+<span class="inline-flex items-center px-2 py-1 rounded-sm bg-secondary-container text-on-secondary-container font-label-sm text-[10px] tracking-wider uppercase">High Risk</span>
+</div>
+<div class="flex items-center gap-sm mb-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">trending_flat</span>
+<span class="font-label-sm text-[11px] uppercase tracking-wider">Stable</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2 text-sm mb-sm">Elevated anxiety markers reported. Missed two scheduled check-ins.</p>
+<div class="font-label-sm text-label-sm text-outline flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 2 hours ago
+                                </div>
+</div>
+<!-- Moderate Risk Card -->
+<div class="bg-surface-container-lowest border-l-4 border-l-surface-container-highest border-y border-r border-outline-variant rounded-r-lg p-md cursor-pointer hover:bg-surface-container-low transition-colors">
+<div class="flex justify-between items-start mb-sm">
+<div>
+<span class="font-label-md text-label-md font-bold text-on-background block">Student #7731</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-normal">Business, Yr 3</span>
+</div>
+<span class="inline-flex items-center px-2 py-1 rounded-sm bg-surface-container-highest text-on-surface font-label-sm text-[10px] tracking-wider uppercase">Moderate Risk</span>
+</div>
+<div class="flex items-center gap-sm mb-sm text-secondary">
+<span class="material-symbols-outlined text-[16px]">trending_down</span>
+<span class="font-label-sm text-[11px] uppercase tracking-wider">Improving</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2 text-sm mb-sm">Academic stress increasing. Requesting strategies for focus.</p>
+<div class="font-label-sm text-label-sm text-outline flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">schedule</span> Yesterday
+                                </div>
+</div>
+</div>
+</div>
+<!-- Center Column: Deep Dive & AI Interpretation -->
+<div class="lg:col-span-6 bg-surface-container-lowest border border-outline-variant rounded-xl flex flex-col overflow-hidden shadow-sm">
+<!-- Detail Header -->
+<div class="p-md border-b border-outline-variant flex justify-between items-start bg-surface-bright">
+<div>
+<div class="flex items-center gap-sm mb-xs">
+<h2 class="font-headline-md text-headline-md text-on-background font-bold">Student #8942</h2>
+<span class="inline-flex items-center px-2 py-1 rounded bg-error-container text-on-error-container font-label-sm text-[12px] tracking-wider uppercase">Critical Risk</span>
+</div>
+<p class="font-label-md text-label-md text-on-surface-variant">Engineering, Year 2 • Last active: 10 minutes ago via Chat</p>
+</div>
+<div class="flex gap-sm">
+<button class="p-sm rounded-full border border-outline-variant text-on-surface-variant hover:bg-surface-container transition-colors" title="History"><span class="material-symbols-outlined">history</span></button>
+<button class="p-sm rounded-full border border-outline-variant text-on-surface-variant hover:bg-surface-container transition-colors" title="More Options"><span class="material-symbols-outlined">more_vert</span></button>
+</div>
+</div>
+<!-- Detail Scrollable Content -->
+<div class="p-md md:p-lg flex-1 overflow-y-auto flex flex-col gap-lg">
+<!-- AI Risk Interpretation (Deep Dive) -->
+<div class="bg-primary-fixed/30 border border-primary-fixed-dim rounded-xl p-md relative">
+<div class="flex items-center justify-between mb-md">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded bg-primary text-on-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">psychiatry</span>
+</div>
+<h3 class="font-label-md text-label-md font-bold text-on-primary-fixed-variant">AI Risk Interpretation</h3>
+</div>
+<span class="font-label-sm text-[10px] text-on-surface-variant uppercase tracking-wider">Confidence Score: 92%</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface mb-md bg-surface-container-lowest p-sm rounded border border-outline-variant/50">
+                                    Student #8942 has been escalated to <strong class="text-error">Critical Risk</strong> based on a confluence of clinical markers, sentiment analysis, and erratic interaction patterns detected over the last 72 hours.
+                                </p>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<!-- Marker 1 -->
+<div class="bg-surface-container-lowest p-sm rounded border border-error-container/50 flex items-start gap-sm">
+<span class="material-symbols-outlined text-error text-[20px] shrink-0 mt-1">monitor_heart</span>
+<div>
+<h4 class="font-label-md font-bold text-on-surface mb-xs">PHQ-9 Score Trend</h4>
+<p class="font-body-md text-sm text-on-surface-variant">Proxy score currently <strong>18 (Severe)</strong>. Rapid increase from 12 a week ago. High score on Q9 (thoughts of self-harm).</p>
+</div>
+</div>
+<!-- Marker 2 -->
+<div class="bg-surface-container-lowest p-sm rounded border border-outline-variant/50 flex items-start gap-sm">
+<span class="material-symbols-outlined text-primary text-[20px] shrink-0 mt-1">sentiment_dissatisfied</span>
+<div>
+<h4 class="font-label-md font-bold text-on-surface mb-xs">Sentiment Analysis</h4>
+<p class="font-body-md text-sm text-on-surface-variant">NLP detected high frequency of keywords: <em>isolation, giving up, pointless</em>. Tone mapped to severe despondency.</p>
+</div>
+</div>
+<!-- Marker 3 -->
+<div class="bg-surface-container-lowest p-sm rounded border border-outline-variant/50 flex items-start gap-sm">
+<span class="material-symbols-outlined text-tertiary text-[20px] shrink-0 mt-1">school</span>
+<div>
+<h4 class="font-label-md font-bold text-on-surface mb-xs">Academic Stressors</h4>
+<p class="font-body-md text-sm text-on-surface-variant">LMS integration indicates 3 missed assignments this week in core engineering modules.</p>
+</div>
+</div>
+<!-- Marker 4 -->
+<div class="bg-surface-container-lowest p-sm rounded border border-outline-variant/50 flex items-start gap-sm">
+<span class="material-symbols-outlined text-secondary text-[20px] shrink-0 mt-1">schedule</span>
+<div>
+<h4 class="font-label-md font-bold text-on-surface mb-xs">Erratic Interactions</h4>
+<p class="font-body-md text-sm text-on-surface-variant">Primary engagement with the chatbot occurring between 2:00 AM and 4:30 AM over the past 3 days.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Chat Highlights -->
+<div>
+<h3 class="font-label-md text-label-md font-bold text-on-surface mb-sm flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">forum</span> Flagged Chat Snippets
+                                </h3>
+<div class="bg-surface-container-low border border-outline-variant rounded-lg p-sm flex flex-col gap-sm">
+<div class="bg-surface-container-lowest p-sm rounded border border-outline-variant/50">
+<p class="font-body-md text-sm italic text-on-surface-variant">"I just don't see the point in trying for these midterms anymore. Everything feels too heavy to carry."</p>
+<p class="font-label-sm text-[10px] text-outline mt-xs text-right">Yesterday, 03:15 AM</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Action Center & Referrals -->
+<div class="lg:col-span-3 flex flex-col gap-lg">
+<!-- Immediate Actions -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md shadow-sm">
+<h3 class="font-label-md text-label-md font-bold text-on-surface mb-md pb-xs border-b border-outline-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">bolt</span> Action Center
+                            </h3>
+<div class="flex flex-col gap-sm">
+<button class="w-full flex items-center justify-start gap-sm px-md py-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md shadow-sm hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[18px]">calendar_month</span>
+                                Schedule Session
+                            </button>
+<button class="w-full flex items-center justify-start gap-sm px-md py-sm border border-outline-variant bg-surface hover:bg-surface-container rounded-lg font-label-md text-label-md text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[18px]">mail</span>
+                                Send Secure Message
+                            </button>
+<button class="w-full flex items-center justify-start gap-sm px-md py-sm border border-outline-variant bg-surface hover:bg-surface-container rounded-lg font-label-md text-label-md text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[18px]">medical_services</span>
+                                Initiate Referral
+                            </button>
+<div class="my-xs border-t border-outline-variant"></div>
+<button class="w-full flex items-center justify-start gap-sm px-md py-sm bg-error-container text-on-error-container rounded-lg font-label-md text-label-md hover:bg-error/20 transition-colors">
+<span class="material-symbols-outlined text-[18px]">contact_emergency</span>
+                                Escalate to Psychologist
+                            </button>
+</div>
+</div>
+<!-- Referral Tracking -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md shadow-sm flex-1">
+<h3 class="font-label-md text-label-md font-bold text-on-surface mb-md pb-xs border-b border-outline-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">share</span> Referral Tracking
+                            </h3>
+<div class="flex flex-col gap-sm">
+<div class="p-sm border border-outline-variant rounded bg-surface-container-low">
+<div class="flex justify-between items-center mb-xs">
+<span class="font-label-md font-bold text-on-surface text-sm">Student Welfare Dept</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-secondary-container text-on-secondary-container font-label-sm text-[9px] uppercase">Completed</span>
+</div>
+<p class="font-body-md text-xs text-on-surface-variant">Financial aid review completed on Oct 12.</p>
+</div>
+<div class="p-sm border border-outline-variant rounded bg-surface">
+<div class="flex justify-between items-center mb-xs">
+<span class="font-label-md font-bold text-on-surface text-sm">External Psychiatric</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded border border-outline text-on-surface-variant font-label-sm text-[9px] uppercase">Pending</span>
+</div>
+<p class="font-body-md text-xs text-on-surface-variant">Referral sent to City Clinic. Waiting for intake confirmation.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Footer -->
+<footer class="w-full py-md px-xl flex flex-col md:flex-row justify-between items-center mx-auto mt-xl border-t border-outline-variant bg-surface-container-lowest dark:bg-inverse-surface flat no shadows">
+<div class="font-headline-md text-headline-md text-primary mb-sm md:mb-0">MindCare AI</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant mb-sm md:mb-0">
+                    © 2024 University Mental Health Support
+                </div>
+<div class="flex items-center gap-md font-label-sm text-label-sm">
+<a class="text-secondary dark:text-secondary-fixed underline opacity-80 hover:opacity-100 transition-opacity hover:text-primary dark:hover:text-inverse-primary" href="#">Crisis Line: 0800-HELP</a>
+<a class="text-on-surface-variant dark:text-surface-variant opacity-80 hover:opacity-100 transition-opacity hover:text-primary dark:hover:text-inverse-primary" href="#">Terms of Service</a>
+<a class="text-on-surface-variant dark:text-surface-variant opacity-80 hover:opacity-100 transition-opacity hover:text-primary dark:hover:text-inverse-primary" href="#">Privacy Policy</a>
+</div>
+</footer>
+</main>
+</div>
+</body></html>
