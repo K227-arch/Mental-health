@@ -37,19 +37,25 @@ export default function SignUpPage() {
 
     setLoading(true);
 
-    const { data, error } = await insforge.auth.signUp({
-      email,
-      password,
-      name,
-    });
+    try {
+      const res = await fetch("/api/auth/sign-up", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, name, redirect: getRedirect() }),
+      });
+      const data = await res.json();
 
-    if (error) {
-      setError(error.message);
+      if (!res.ok) {
+        setError(data.error || "Sign up failed");
+        setLoading(false);
+        return;
+      }
+
+      router.push(data.redirect || "/dashboard");
+    } catch {
+      setError("Network error. Please try again.");
       setLoading(false);
-      return;
     }
-
-    router.push(getRedirect());
   };
 
   return (

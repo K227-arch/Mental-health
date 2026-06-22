@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import clsx from "clsx";
-import { insforge } from "@/lib/insforge";
 
 interface NavbarProps {
   variant?: "student" | "counsellor";
@@ -40,7 +39,9 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
 
   const handleSignOut = async () => {
     setSigningOut(true);
-    await insforge.auth.signOut();
+    await fetch("/api/auth/sign-out", { method: "POST" });
+    setUser(null);
+    setDropdownOpen(false);
     router.push("/auth/sign-in");
   };
 

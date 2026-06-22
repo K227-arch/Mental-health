@@ -30,18 +30,25 @@ export default function SignInPage() {
     setError(null);
     setLoading(true);
 
-    const { data, error } = await insforge.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const res = await fetch("/api/auth/sign-in", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, redirect: getRedirect() }),
+      });
+      const data = await res.json();
 
-    if (error) {
-      setError(error.message);
+      if (!res.ok) {
+        setError(data.error || "Sign in failed");
+        setLoading(false);
+        return;
+      }
+
+      router.push(data.redirect || "/dashboard");
+    } catch {
+      setError("Network error. Please try again.");
       setLoading(false);
-      return;
     }
-
-    router.push(getRedirect());
   };
 
   const handleOAuth = async (provider: string) => {
