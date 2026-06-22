@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -28,6 +28,16 @@ const moodHistory = [
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<"30" | "90">("30");
+  const [user, setUser] = useState<{ name?: string } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me").then((r) => {
+      if (!r.ok) return;
+      return r.json().then((d) => {
+        if (d?.user) setUser(d.user);
+      });
+    });
+  }, []);
   const [currentMood, setCurrentMood] = useState<number | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
@@ -101,7 +111,7 @@ export default function DashboardPage() {
                   <span className="material-symbols-outlined">menu</span>
                 </button>
                 <div>
-                  <h1 className="text-3xl font-bold text-on-surface mb-1">Student Wellness & Analytics</h1>
+                  <h1 className="text-3xl font-bold text-on-surface mb-1">Welcome back, {user?.name || "Student"}</h1>
                   <p className="text-on-surface-variant text-sm">Digital Twin Visualization & Longitudinal Insights</p>
                 </div>
               </div>

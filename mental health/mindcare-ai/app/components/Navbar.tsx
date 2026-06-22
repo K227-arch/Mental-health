@@ -20,14 +20,11 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    insforge.auth.getCurrentUser().then(({ data }) => {
-      if (data?.user) {
-        setUser({
-          name: data.user.profile?.name,
-          email: data.user.email,
-          avatar_url: data.user.profile?.avatar_url,
-        });
-      }
+    fetch("/api/auth/me").then((r) => {
+      if (!r.ok) return;
+      return r.json().then((d) => {
+        if (d?.user) setUser(d.user);
+      });
     });
   }, []);
 
