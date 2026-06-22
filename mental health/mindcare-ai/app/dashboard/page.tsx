@@ -142,50 +142,6 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* Upcoming Sessions */}
-            <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-on-surface flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary text-[20px]">event</span>
-                  Upcoming Sessions
-                </h3>
-                <span className="text-xs text-primary font-medium">2 upcoming</span>
-              </div>
-              <div className="space-y-3">
-                {[
-                  { title: "Weekly Check-in", counsellor: "Dr. Sarah Kim", date: "Jun 24, 2026", time: "10:00 AM", type: "Virtual" },
-                  { title: "Follow-up Assessment", counsellor: "Dr. Sarah Kim", date: "Jun 28, 2026", time: "2:30 PM", type: "In-Person" },
-                ].map((s, i) => (
-                  <div key={i} className="flex items-center gap-4 bg-surface rounded-xl p-4 border border-outline-variant">
-                    <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center shrink-0">
-                      <span className="material-symbols-outlined text-primary text-[22px] icon-fill">calendar_month</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-on-surface">{s.title}</p>
-                      <p className="text-xs text-on-surface-variant">{s.counsellor}</p>
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="inline-flex items-center gap-1 text-xs text-secondary font-medium">
-                          <span className="material-symbols-outlined text-[14px]">calendar_today</span>
-                          {s.date}
-                        </span>
-                        <span className="inline-flex items-center gap-1 text-xs text-on-surface-variant">
-                          <span className="material-symbols-outlined text-[14px]">schedule</span>
-                          {s.time}
-                        </span>
-                        <span className="inline-flex items-center gap-1 text-xs text-on-surface-variant">
-                          <span className="material-symbols-outlined text-[14px]">location_on</span>
-                          {s.type}
-                        </span>
-                      </div>
-                    </div>
-                    <span className="shrink-0 px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container text-xs font-semibold">
-                      Confirmed
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             {/* Bento grid */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
               {/* Digital Twin */}
@@ -263,8 +219,52 @@ export default function DashboardPage() {
                 </Link>
               </div>
 
+              {/* Upcoming Sessions */}
+              <div className="md:col-span-6 bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-semibold text-on-surface flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary text-[20px]">event</span>
+                    Upcoming Sessions
+                  </h3>
+                  <span className="text-xs text-primary font-medium">2 upcoming</span>
+                </div>
+                <div className="space-y-3">
+                  {[
+                    { title: "Weekly Check-in", counsellor: "Dr. Sarah Kim", date: "Jun 24, 2026", time: "10:00 AM", type: "Virtual" },
+                    { title: "Follow-up Assessment", counsellor: "Dr. Sarah Kim", date: "Jun 28, 2026", time: "2:30 PM", type: "In-Person" },
+                  ].map((s, i) => (
+                    <div key={i} className="flex items-center gap-4 bg-surface rounded-xl p-4 border border-outline-variant">
+                      <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-primary text-[22px] icon-fill">calendar_month</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-on-surface">{s.title}</p>
+                        <p className="text-xs text-on-surface-variant">{s.counsellor}</p>
+                        <div className="flex items-center gap-3 mt-1">
+                          <span className="inline-flex items-center gap-1 text-xs text-secondary font-medium">
+                            <span className="material-symbols-outlined text-[14px]">calendar_today</span>
+                            {s.date}
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-xs text-on-surface-variant">
+                            <span className="material-symbols-outlined text-[14px]">schedule</span>
+                            {s.time}
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-xs text-on-surface-variant">
+                            <span className="material-symbols-outlined text-[14px]">location_on</span>
+                            {s.type}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="shrink-0 px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container text-xs font-semibold">
+                        Confirmed
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Longitudinal Chart */}
-              <div className="md:col-span-12 bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
+              <div className="md:col-span-6 bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
                 <div className="flex justify-between items-end mb-4">
                   <div>
                     <h3 className="text-sm font-semibold text-on-surface">Longitudinal Analysis</h3>
