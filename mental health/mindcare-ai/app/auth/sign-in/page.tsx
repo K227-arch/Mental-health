@@ -20,6 +20,11 @@ export default function SignInPage() {
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
 
+  const getRedirect = () => {
+    if (typeof window === "undefined") return "/dashboard";
+    return new URLSearchParams(window.location.search).get("redirect") || "/dashboard";
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -36,12 +41,14 @@ export default function SignInPage() {
       return;
     }
 
-    router.push("/dashboard");
+    router.push(getRedirect());
   };
 
   const handleOAuth = async (provider: string) => {
     setError(null);
     setOauthLoading(provider);
+    const redirect = getRedirect();
+    document.cookie = `insforge_redirect=${redirect}; path=/; max-age=600; SameSite=Lax`;
     const { data, error } = await insforge.auth.signInWithOAuth(provider as any, {
       redirectTo: `${window.location.origin}/api/auth/callback`,
       skipBrowserRedirect: true,

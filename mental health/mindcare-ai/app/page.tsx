@@ -9,7 +9,7 @@ const features = [
     title: "AI Wellness Screening",
     description:
       "Conversational PHQ-9 screening with multimodal NLP analysis. Get accurate mental health assessments in a supportive, non-clinical way.",
-    href: "/screening",
+    href: "/auth/sign-in",
     color: "bg-primary-container text-on-primary-container",
   },
   {
@@ -17,7 +17,7 @@ const features = [
     title: "Student Dashboard",
     description:
       "Track your mood journey, view wellness milestones, and monitor your progress with a personalized digital twin visualization.",
-    href: "/dashboard",
+    href: "/auth/sign-in",
     color: "bg-secondary-container text-on-secondary-container",
   },
   {
@@ -25,7 +25,7 @@ const features = [
     title: "Crisis Support",
     description:
       "Immediate crisis resources, grounding exercises, and 24/7 access to emergency help. You are never alone.",
-    href: "/crisis",
+    href: "/auth/sign-in",
     color: "bg-error-container text-on-error-container",
   },
   {
@@ -33,7 +33,7 @@ const features = [
     title: "Wellness Hub",
     description:
       "Breathing exercises, hope gallery, CBT tools, and personalized resources for mental resilience.",
-    href: "/wellness",
+    href: "/auth/sign-in",
     color: "bg-tertiary-fixed text-on-tertiary-fixed",
   },
 ];
@@ -73,7 +73,7 @@ export default function LandingPage() {
             Emergency
           </Link>
           <Link
-            href="/screening"
+            href="/auth/sign-in"
             className="px-4 py-2 bg-primary text-on-primary text-sm font-semibold rounded-lg shadow-sm hover:opacity-90 transition-opacity"
           >
             Get Started
@@ -100,7 +100,7 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
-              href="/screening"
+              href="/auth/sign-in"
               className="px-8 py-4 bg-primary text-on-primary font-semibold rounded-xl shadow-md hover:opacity-90 transition-all hover:-translate-y-0.5 flex items-center gap-2 justify-center"
             >
               <span className="material-symbols-outlined text-[20px]">psychology</span>
@@ -149,7 +149,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {features.map((f) => (
               <Link
-                key={f.href}
+                key={f.title}
                 href={f.href}
                 className="group bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 hover:shadow-md hover:-translate-y-1 transition-all duration-200 flex flex-col gap-4"
               >

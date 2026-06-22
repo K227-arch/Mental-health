@@ -108,13 +108,6 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
             Emergency Help
           </Link>
 
-          {variant === "student" && (
-            <button className="hidden md:flex items-center gap-1 px-3 py-1.5 text-on-surface-variant text-sm font-medium hover:bg-surface-container rounded-full transition-colors">
-              <span className="material-symbols-outlined text-[18px]">visibility_off</span>
-              Anonymous Mode
-            </button>
-          )}
-
           <div className="h-5 w-px bg-outline-variant mx-1" />
 
           <button

@@ -70,42 +70,8 @@ export default function CounsellorAnalytics() {
 
       {/* Bento Grid */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-min">
-        {/* Cognitive State Twin */}
-        <div className="md:col-span-8 bg-surface-container-lowest border border-outline-variant rounded-xl p-6 flex flex-col shadow-sm relative overflow-hidden min-h-[360px]">
-          <div className="flex justify-between items-start mb-4 z-10 relative">
-            <div>
-              <h3 className="text-xl font-semibold text-on-surface">Cognitive State Twin</h3>
-              <p className="text-xs text-on-surface-variant uppercase tracking-wide mt-1">Real-time Mood & Depression Index</p>
-            </div>
-            <button className="p-1 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors">
-              <span className="material-symbols-outlined text-[20px]">more_vert</span>
-            </button>
-          </div>
-          <div className="flex-1 flex items-center justify-center relative w-full mt-2">
-            <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
-              <div className="w-[300px] h-[300px] rounded-full border border-primary animate-ping" style={{ animationDuration: "4s" }} />
-              <div className="w-[200px] h-[200px] rounded-full border border-secondary absolute animate-ping" style={{ animationDuration: "3s", animationDelay: "1s" }} />
-            </div>
-            <div className="relative z-10 flex flex-col items-center">
-              <div className="w-32 h-32 rounded-full bg-gradient-to-tr from-surface-tint to-primary-container shadow-md flex items-center justify-center mb-6 border-4 border-surface">
-                <span className="material-symbols-outlined text-on-primary text-[48px] icon-fill">psychology</span>
-              </div>
-              <div className="flex gap-6 text-center">
-                <div className="bg-surface border border-outline-variant rounded-lg p-3 min-w-[130px]">
-                  <p className="text-xs text-on-surface-variant mb-1">Current Mood</p>
-                  <p className="text-xl font-semibold text-primary">Stable</p>
-                </div>
-                <div className="bg-surface border border-outline-variant rounded-lg p-3 min-w-[130px]">
-                  <p className="text-xs text-on-surface-variant mb-1">Depression Index</p>
-                  <p className="text-xl font-semibold text-secondary">Low</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Right Column */}
-        <div className="md:col-span-4 flex flex-col gap-6">
+        <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Proactive Insights */}
           <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 flex flex-col shadow-sm flex-1">
             <h3 className="text-sm font-semibold text-on-surface flex items-center gap-2 mb-4">

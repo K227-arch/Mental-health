@@ -12,8 +12,9 @@ export async function GET(request: NextRequest) {
   }
 
   const verifier = request.cookies.get("insforge_code_verifier")?.value;
+  const redirectTo = request.cookies.get("insforge_redirect")?.value || "/dashboard";
 
-  const response = NextResponse.redirect(new URL("/dashboard", request.url));
+  const response = NextResponse.redirect(new URL(redirectTo, request.url));
 
   const auth = createAuthActions({
     requestCookies: request.cookies,
@@ -29,5 +30,6 @@ export async function GET(request: NextRequest) {
   }
 
   response.cookies.delete("insforge_code_verifier");
+  response.cookies.delete("insforge_redirect");
   return response;
 }

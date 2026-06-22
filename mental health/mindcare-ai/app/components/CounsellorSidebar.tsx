@@ -27,12 +27,6 @@ export default function CounsellorSidebar() {
         </div>
       </div>
 
-      {/* New Session */}
-      <button className="mb-12 w-full flex items-center justify-center gap-1 py-3 px-6 bg-primary text-on-primary rounded-lg text-sm font-medium shadow-sm hover:opacity-90 transition-opacity">
-        <span className="material-symbols-outlined text-[18px]">add</span>
-        New Session
-      </button>
-
       {/* Nav */}
       <nav className="flex-1 flex flex-col gap-1">
         {navItems.map((item) => {

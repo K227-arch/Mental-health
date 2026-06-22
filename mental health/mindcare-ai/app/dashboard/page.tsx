@@ -84,12 +84,7 @@ export default function DashboardPage() {
               </Link>
             ))}
           </nav>
-          <div className="mt-auto pt-4 border-t border-outline-variant">
-            <button className="w-full flex items-center justify-center gap-1 py-3 bg-secondary text-on-secondary rounded-lg text-sm font-semibold shadow-sm hover:opacity-90 transition-opacity">
-              <span className="material-symbols-outlined text-[18px]">add</span>
-              New Check-in
-            </button>
-          </div>
+
         </aside>
 
         {/* Main */}
