@@ -103,13 +103,6 @@ export default function DashboardPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
               <div className="flex items-center gap-3">
-                <button
-                  className="md:hidden p-1.5 text-on-surface-variant hover:bg-surface-container rounded-lg transition-colors"
-                  onClick={() => setMobileSidebarOpen(true)}
-                  aria-label="Open sidebar"
-                >
-                  <span className="material-symbols-outlined">menu</span>
-                </button>
                 <div>
                   <h1 className="text-3xl font-bold text-on-surface mb-1">Welcome back, {user?.name || "Student"}</h1>
                   <p className="text-on-surface-variant text-sm">Digital Twin Visualization & Longitudinal Insights</p>

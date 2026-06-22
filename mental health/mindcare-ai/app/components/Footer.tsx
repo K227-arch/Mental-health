@@ -8,16 +8,6 @@ export default function Footer() {
         <span className="text-xs text-on-tertiary-fixed opacity-80">© 2024 University Mental Health Support</span>
       </div>
       <nav className="flex flex-wrap justify-center gap-6 text-xs text-on-tertiary-fixed">
-        <Link
-          href="/crisis"
-          className="underline font-bold text-error flex items-center gap-1 hover:opacity-80 transition-opacity"
-        >
-          <span className="material-symbols-outlined text-[14px]">warning</span>
-          Crisis Support: 988
-        </Link>
-        <Link href="/crisis" className="opacity-80 hover:opacity-100 transition-opacity">
-          0800-HELP
-        </Link>
         <Link href="/privacy" className="opacity-80 hover:opacity-100 transition-opacity">
           Privacy Policy
         </Link>
