@@ -12,7 +12,7 @@
  * - PHQ-9 automatic scoring assistance
  */
 
-const HF_API_BASE = "https://api-inference.huggingface.co/models";
+const HF_API_BASE = "https://router.huggingface.co/hf-inference/models";
 // Keys come from .env.local — never hardcoded
 const READ_KEY = process.env.HF_READ_API_KEY || "";
 
@@ -74,13 +74,21 @@ export interface SentimentResult {
 }
 
 export async function analyseSentiment(text: string): Promise<SentimentResult> {
-  const result = await hfInference<HFResponse[][]>(MODELS.sentiment, text);
+  const result = await hfInference<HFResponse[][] | { value: HFResponse[] }>(MODELS.sentiment, text);
 
-  if (!result || !result[0]) {
+  // Handle both response formats: [[{label,score}]] and {value:[{label,score}]}
+  let items: HFResponse[] = [];
+  if (Array.isArray(result)) {
+    items = (result as HFResponse[][])[0] ?? [];
+  } else if (result && "value" in result) {
+    items = (result as { value: HFResponse[] }).value ?? [];
+  }
+
+  if (items.length === 0) {
     return { label: "NEUTRAL", score: 0.5, emoji: "😐", description: "Neutral tone" };
   }
 
-  const top = result[0].reduce((best, cur) =>
+  const top = items.reduce((best, cur) =>
     (cur.score ?? 0) > (best.score ?? 0) ? cur : best
   );
 
@@ -123,19 +131,22 @@ const EMOTION_CLINICAL: Record<string, string> = {
 };
 
 export async function detectEmotion(text: string): Promise<EmotionResult> {
-  const result = await hfInference<HFResponse[][]>(MODELS.emotion, text);
+  const result = await hfInference<HFResponse[][] | { value: HFResponse[] }>(MODELS.emotion, text);
 
-  if (!result || !result[0]) {
-    return {
-      dominant: "neutral",
-      scores: {},
-      emoji: "😐",
-      clinicalNote: "Unable to analyse emotion",
-    };
+  // Handle both response formats
+  let items: HFResponse[] = [];
+  if (Array.isArray(result)) {
+    items = (result as HFResponse[][])[0] ?? [];
+  } else if (result && "value" in result) {
+    items = (result as { value: HFResponse[] }).value ?? [];
+  }
+
+  if (items.length === 0) {
+    return { dominant: "neutral", scores: {}, emoji: "😐", clinicalNote: "Unable to analyse emotion" };
   }
 
   const scores: Record<string, number> = {};
-  result[0].forEach(r => {
+  items.forEach(r => {
     if (r.label) scores[r.label.toLowerCase()] = r.score ?? 0;
   });
 
@@ -165,17 +176,20 @@ export async function classifyMentalHealthRisk(text: string): Promise<CrisisClas
     "general wellness",
   ];
 
-  const result = await hfInference<{ labels: string[]; scores: number[] }>(
-    MODELS.zeroShot,
-    { text, candidate_labels: labels }
-  );
+  const result = await hfInference<
+    { labels: string[]; scores: number[] } |
+    { value: { labels: string[]; scores: number[] } }
+  >(MODELS.zeroShot, { text, candidate_labels: labels });
 
-  if (!result) {
+  // Handle both formats
+  const parsed = result && "value" in result ? (result as any).value : result;
+
+  if (!parsed) {
     return { isCrisis: false, confidence: 0, labels: {} };
   }
 
   const labelMap: Record<string, number> = {};
-  result.labels?.forEach((l, i) => { labelMap[l] = result.scores?.[i] ?? 0; });
+  parsed.labels?.forEach((l: string, i: number) => { labelMap[l] = parsed.scores?.[i] ?? 0; });
 
   const crisisScore =
     (labelMap["suicidal ideation"] ?? 0) * 0.5 +
@@ -191,11 +205,17 @@ export async function classifyMentalHealthRisk(text: string): Promise<CrisisClas
 
 // ─── Text translation ─────────────────────────────────────────────────────────
 export async function translateToSwahili(text: string): Promise<string> {
-  const result = await hfInference<Array<{ translation_text: string }>>(
-    MODELS.translation_sw,
-    text
-  );
-  return result?.[0]?.translation_text ?? text;
+  const result = await hfInference<
+    Array<{ translation_text: string }> |
+    { value: Array<{ translation_text: string }> }
+  >(MODELS.translation_sw, text);
+
+  // Handle both formats
+  const items = result && "value" in result
+    ? (result as any).value
+    : result;
+
+  return (Array.isArray(items) ? items[0]?.translation_text : null) ?? text;
 }
 
 // ─── Combined screening analysis ─────────────────────────────────────────────
@@ -235,11 +255,11 @@ export async function analyseScreeningResponse(text: string): Promise<ScreeningA
 export async function summariseSessionNotes(notes: string): Promise<string> {
   if (notes.length < 100) return notes;
 
-  const result = await hfInference<Array<{ summary_text: string }>>(
-    MODELS.summarization,
-    notes,
-    { wait_for_model: true }
-  );
+  const result = await hfInference<
+    Array<{ summary_text: string }> |
+    { value: Array<{ summary_text: string }> }
+  >(MODELS.summarization, notes, { wait_for_model: true });
 
-  return result?.[0]?.summary_text ?? notes;
+  const items = result && "value" in result ? (result as any).value : result;
+  return (Array.isArray(items) ? items[0]?.summary_text : null) ?? notes;
 }
