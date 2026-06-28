@@ -74,31 +74,74 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-surface px-4 relative overflow-hidden">
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="bg-blob-1" />
-        <div className="bg-blob-2" />
-      </div>
-
-      <div className="relative z-10 w-full max-w-md">
-        <div className="text-center mb-8">
-          <Link href="/" className="font-black text-3xl text-primary">
-            MindCare AI
-          </Link>
-          <p className="text-on-surface-variant text-sm mt-2">
-            Welcome back. We&apos;re glad you&apos;re here.
-          </p>
+    <div className="min-h-screen flex bg-surface relative overflow-hidden">
+      {/* Left Panel — Branding */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-primary via-primary-container to-secondary items-center justify-center p-12">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 left-20 w-72 h-72 bg-white/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-secondary/30 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-white/10 rounded-full blur-2xl" />
         </div>
 
-        <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-8 shadow-sm">
-          <h1 className="text-xl font-bold text-on-surface mb-6">Sign In</h1>
+        <div className="relative z-10 max-w-md text-center">
+          <div className="w-20 h-20 bg-white/15 backdrop-blur-sm rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-lg border border-white/20">
+            <span className="material-symbols-outlined icon-fill text-white text-[40px]">psychiatry</span>
+          </div>
+          <h1 className="text-4xl font-black text-white mb-4 leading-tight">
+            Your mind matters.
+          </h1>
+          <p className="text-white/80 text-lg leading-relaxed mb-8">
+            AI-powered mental health support designed for university students. Safe, confidential, and always available.
+          </p>
 
-          {/* OAuth Buttons */}
-          <div className="flex flex-col gap-3 mb-6">
+          <div className="space-y-4 text-left">
+            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+              <span className="material-symbols-outlined text-secondary-container text-[22px]">psychology</span>
+              <span className="text-white/90 text-sm">PHQ-9 screening with NLP analysis</span>
+            </div>
+            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+              <span className="material-symbols-outlined text-secondary-container text-[22px]">mood</span>
+              <span className="text-white/90 text-sm">Daily mood tracking and insights</span>
+            </div>
+            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+              <span className="material-symbols-outlined text-secondary-container text-[22px]">shield</span>
+              <span className="text-white/90 text-sm">End-to-end encrypted and private</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Panel — Form */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 relative">
+        <div className="fixed inset-0 pointer-events-none overflow-hidden lg:hidden">
+          <div className="bg-blob-1" />
+          <div className="bg-blob-2" />
+        </div>
+
+        <div className="relative z-10 w-full max-w-sm">
+          {/* Mobile logo */}
+          <div className="text-center mb-8">
+            <Link href="/" className="inline-flex items-center gap-2">
+              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
+                <span className="material-symbols-outlined icon-fill text-on-primary text-[22px]">psychiatry</span>
+              </div>
+              <span className="font-black text-2xl text-primary">MindCare AI</span>
+            </Link>
+            <p className="text-on-surface-variant text-sm mt-3">
+              Welcome back. We&apos;re glad you&apos;re here.
+            </p>
+          </div>
+
+          {/* Form Card */}
+          <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-7 shadow-lg shadow-primary/5">
+            <h1 className="text-lg font-bold text-on-surface mb-1">Sign In</h1>
+            <p className="text-xs text-on-surface-variant mb-6">Access your wellness dashboard</p>
+
+            {/* OAuth */}
             <button
               onClick={() => handleOAuth("google")}
               disabled={oauthLoading !== null}
-              className="w-full flex items-center justify-center gap-3 py-2.5 border border-outline-variant rounded-xl text-sm font-medium text-on-surface hover:bg-surface-container transition-colors disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-3 py-3 border border-outline-variant/60 rounded-2xl text-sm font-medium text-on-surface hover:bg-surface-container-low hover:border-outline transition-all disabled:opacity-50 shadow-sm"
             >
               {oauthLoading === "google" ? (
                 <span className="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>
@@ -112,89 +155,99 @@ export default function SignInPage() {
               )}
               {oauthLoading === "google" ? "Connecting..." : "Continue with Google"}
             </button>
-          </div>
 
-          <div className="flex items-center gap-3 mb-6">
-            <span className="text-xs text-on-surface-variant font-medium">or sign in with email</span>
-            <div className="flex-1 h-px bg-outline-variant" />
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-on-surface mb-1.5">
-                Email
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">
-                  <span className="material-symbols-outlined text-[20px]">mail</span>
-                </span>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@university.ac.ug"
-                  required
-                  className="w-full pl-10 pr-4 py-2.5 bg-surface border border-outline-variant text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors placeholder:text-on-surface-variant/50"
-                />
-              </div>
+            <div className="flex items-center gap-3 my-6">
+              <div className="flex-1 h-px bg-outline-variant/50" />
+              <span className="text-xs text-on-surface-variant/70 font-medium">or</span>
+              <div className="flex-1 h-px bg-outline-variant/50" />
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-on-surface mb-1.5">
-                Password
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">
-                  <span className="material-symbols-outlined text-[20px]">lock</span>
-                </span>
-                <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Your password"
-                  required
-                  className="w-full pl-10 pr-10 py-2.5 bg-surface border border-outline-variant text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors placeholder:text-on-surface-variant/50"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors"
-                >
-                  <span className="material-symbols-outlined text-[20px]">
-                    {showPassword ? "visibility_off" : "visibility"}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
+                  Email
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
+                    <span className="material-symbols-outlined text-[18px]">mail</span>
                   </span>
-                </button>
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@university.ac.ug"
+                    required
+                    className="w-full pl-10 pr-4 py-3 bg-surface-container-low border border-outline-variant/40 text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all placeholder:text-on-surface-variant/40"
+                  />
+                </div>
               </div>
-            </div>
 
-            {error && (
-              <div className="flex items-center gap-2 p-3 bg-error-container text-on-error-container text-sm rounded-xl">
-                <span className="material-symbols-outlined text-[18px] shrink-0">error</span>
-                <span>{error}</span>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label htmlFor="password" className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
+                    Password
+                  </label>
+                  <button type="button" className="text-xs text-primary font-medium hover:underline">
+                    Forgot?
+                  </button>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
+                    <span className="material-symbols-outlined text-[18px]">lock</span>
+                  </span>
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Your password"
+                    required
+                    className="w-full pl-10 pr-10 py-3 bg-surface-container-low border border-outline-variant/40 text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all placeholder:text-on-surface-variant/40"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 hover:text-on-surface transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      {showPassword ? "visibility_off" : "visibility"}
+                    </span>
+                  </button>
+                </div>
               </div>
-            )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-primary text-on-primary font-semibold rounded-xl shadow-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <span className="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>
-              ) : (
-                <span className="material-symbols-outlined text-[20px]">login</span>
+              {error && (
+                <div className="flex items-start gap-2 p-3 bg-error-container/80 text-on-error-container text-sm rounded-xl animate-fade-in">
+                  <span className="material-symbols-outlined text-[18px] shrink-0 mt-0.5">error</span>
+                  <span>{error}</span>
+                </div>
               )}
-              {loading ? "Signing in..." : "Sign In"}
-            </button>
-          </form>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-primary text-on-primary font-semibold rounded-xl shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <span className="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>
+                ) : (
+                  <span className="material-symbols-outlined text-[20px]">login</span>
+                )}
+                {loading ? "Signing in..." : "Sign In"}
+              </button>
+            </form>
+          </div>
 
           <p className="text-center text-sm text-on-surface-variant mt-6">
             Don&apos;t have an account?{" "}
             <Link href="/auth/sign-up" className="text-primary font-semibold hover:underline">
               Create one
             </Link>
+          </p>
+
+          <p className="text-center text-xs text-on-surface-variant/50 mt-4">
+            Protected by encryption · HIPAA-aligned
           </p>
         </div>
       </div>

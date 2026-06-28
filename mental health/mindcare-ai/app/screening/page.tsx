@@ -11,6 +11,18 @@ interface Message {
   time: string;
 }
 
+interface NlpAnalysis {
+  nlpSeverity: string;
+  confidence: number;
+  sentimentBreakdown: {
+    negative: number;
+    neutral: number;
+    positive: number;
+  };
+  riskIndicators: string[];
+  recommendation: string;
+}
+
 const greetings = [
   "Hello. I'm here to support you.",
   "This is a safe, confidential space.",
@@ -33,6 +45,9 @@ export default function ScreeningPage() {
   const [input, setInput] = useState("");
   const [done, setDone] = useState(false);
   const [totalScore, setTotalScore] = useState(0);
+  const [nlpAnalysis, setNlpAnalysis] = useState<NlpAnalysis | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [freeTextInputs, setFreeTextInputs] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,6 +64,50 @@ export default function ScreeningPage() {
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       },
     ]);
+  };
+
+  const runNlpAnalysis = async (finalAnswers: number[], score: number) => {
+    setAnalyzing(true);
+    try {
+      const answersPayload = finalAnswers.map((answerIndex, i) => ({
+        question: phq9Questions[i].text,
+        answer: phq9Questions[i].options[answerIndex],
+        score: answerIndex,
+      }));
+
+      const response = await fetch("/api/screening/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          answers: answersPayload,
+          phq9Score: score,
+          freeText: freeTextInputs.join(". "),
+        }),
+      });
+
+      if (response.ok) {
+        const analysis: NlpAnalysis = await response.json();
+        setNlpAnalysis(analysis);
+        addMessage(
+          "ai",
+          `🧠 **AI Analysis Complete**\n\nOur NLP model has analyzed your responses:\n\n` +
+            `**Classification:** ${analysis.nlpSeverity} (${(analysis.confidence * 100).toFixed(1)}% confidence)\n\n` +
+            `**Sentiment:** ${(analysis.sentimentBreakdown.negative * 100).toFixed(0)}% distress · ${(analysis.sentimentBreakdown.neutral * 100).toFixed(0)}% neutral · ${(analysis.sentimentBreakdown.positive * 100).toFixed(0)}% positive\n\n` +
+            (analysis.riskIndicators.length > 0
+              ? `**Risk Indicators:**\n${analysis.riskIndicators.map((r) => `• ${r}`).join("\n")}\n\n`
+              : "") +
+            `**Recommendation:** ${analysis.recommendation}`
+        );
+      }
+    } catch (error) {
+      console.error("NLP analysis failed:", error);
+      addMessage(
+        "ai",
+        "Note: AI-enhanced analysis is temporarily unavailable, but your PHQ-9 score above remains clinically valid."
+      );
+    } finally {
+      setAnalyzing(false);
+    }
   };
 
   const handleOptionSelect = (optionIndex: number) => {
@@ -80,8 +139,10 @@ export default function ScreeningPage() {
               : score >= 10
               ? "Your wellbeing matters. I recommend scheduling a session with a counselor to discuss what you're experiencing."
               : "You're doing okay, but keep checking in. Small steps make a big difference."
-          }\n\nRemember: You are not alone. 💙`
+          }\n\nRunning AI-powered NLP analysis on your responses... 🔍`
         );
+        // Trigger NLP analysis
+        runNlpAnalysis(newAnswers, score);
       }
     }, 500);
   };
@@ -89,6 +150,7 @@ export default function ScreeningPage() {
   const handleTextSubmit = () => {
     if (!input.trim()) return;
     addMessage("user", input);
+    setFreeTextInputs((prev) => [...prev, input]);
     setInput("");
     setTimeout(() => {
       if (currentQuestion < phq9Questions.length && !done) {
@@ -203,6 +265,63 @@ export default function ScreeningPage() {
                   <div className={`text-sm font-bold ${severity.color}`}>{severity.label}</div>
                   <div className="text-xs text-on-surface-variant mt-1">PHQ-9 Score</div>
                 </div>
+
+                {/* NLP Analysis Results */}
+                {analyzing && (
+                  <div className="mt-4 px-6 py-4 rounded-2xl border border-outline-variant/30 bg-surface-container-low text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="material-symbols-outlined text-primary animate-spin text-[20px]">progress_activity</span>
+                      <span className="text-sm text-on-surface-variant">Running NLP analysis...</span>
+                    </div>
+                  </div>
+                )}
+
+                {nlpAnalysis && (
+                  <div className="mt-4 px-5 py-4 rounded-2xl border border-outline-variant/30 bg-surface-container-lowest text-left space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-primary text-[20px]">neurology</span>
+                      <span className="text-sm font-bold text-on-surface">AI-Powered Analysis</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-surface-container-low rounded-xl p-3">
+                        <div className="text-xs text-on-surface-variant">NLP Classification</div>
+                        <div className="text-sm font-semibold text-on-surface mt-0.5">{nlpAnalysis.nlpSeverity}</div>
+                        <div className="text-xs text-on-surface-variant">{(nlpAnalysis.confidence * 100).toFixed(1)}% confidence</div>
+                      </div>
+                      <div className="bg-surface-container-low rounded-xl p-3">
+                        <div className="text-xs text-on-surface-variant">Sentiment</div>
+                        <div className="flex gap-1 mt-1">
+                          <div className="flex-1 bg-error/20 rounded h-2" style={{ flex: nlpAnalysis.sentimentBreakdown.negative }} />
+                          <div className="flex-1 bg-outline/20 rounded h-2" style={{ flex: nlpAnalysis.sentimentBreakdown.neutral }} />
+                          <div className="flex-1 bg-secondary/20 rounded h-2" style={{ flex: nlpAnalysis.sentimentBreakdown.positive }} />
+                        </div>
+                        <div className="flex justify-between text-[10px] text-on-surface-variant mt-1">
+                          <span>Distress</span>
+                          <span>Positive</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {nlpAnalysis.riskIndicators.length > 0 && (
+                      <div className="bg-error-container/50 rounded-xl p-3">
+                        <div className="text-xs font-semibold text-error mb-1">Risk Indicators</div>
+                        {nlpAnalysis.riskIndicators.map((indicator, i) => (
+                          <div key={i} className="text-xs text-on-error-container flex items-start gap-1">
+                            <span className="text-error mt-0.5">•</span>
+                            {indicator}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="bg-primary-container/30 rounded-xl p-3">
+                      <div className="text-xs font-semibold text-primary mb-1">AI Recommendation</div>
+                      <div className="text-xs text-on-surface leading-relaxed">{nlpAnalysis.recommendation}</div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex flex-col sm:flex-row gap-3 mt-4 justify-center">
                   <Link
                     href="/dashboard"
