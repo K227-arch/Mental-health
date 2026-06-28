@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, FormEvent, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { insforge } from "@/lib/insforge";
 
 export default function SignInPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const role = searchParams.get("role") === "counsellor" ? "counsellor" : "student";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -21,8 +24,8 @@ export default function SignInPage() {
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
 
   const getRedirect = () => {
-    if (typeof window === "undefined") return "/dashboard";
-    return new URLSearchParams(window.location.search).get("redirect") || "/dashboard";
+    if (typeof window === "undefined") return role === "counsellor" ? "/counsellor" : "/dashboard";
+    return new URLSearchParams(window.location.search).get("redirect") || (role === "counsellor" ? "/counsellor" : "/dashboard");
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -76,7 +79,11 @@ export default function SignInPage() {
   return (
     <div className="min-h-screen flex bg-surface relative overflow-hidden">
       {/* Left Panel — Branding */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-primary via-primary-container to-secondary items-center justify-center p-12">
+      <div className={`hidden lg:flex lg:w-1/2 relative items-center justify-center p-12 ${
+        role === "counsellor"
+          ? "bg-gradient-to-br from-secondary via-secondary-container to-primary"
+          : "bg-gradient-to-br from-primary via-primary-container to-secondary"
+      }`}>
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-20 w-72 h-72 bg-white/20 rounded-full blur-3xl" />
           <div className="absolute bottom-20 right-20 w-96 h-96 bg-secondary/30 rounded-full blur-3xl" />
@@ -84,29 +91,55 @@ export default function SignInPage() {
         </div>
 
         <div className="relative z-10 max-w-md text-center">
-          <div className="w-20 h-20 bg-white/15 backdrop-blur-sm rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-lg border border-white/20">
-            <span className="material-symbols-outlined icon-fill text-white text-[40px]">psychiatry</span>
+          <div className="w-20 h-20 bg-white/15 backdrop-blur-sm rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg border border-white/20">
+            <span className="material-symbols-outlined icon-fill text-white text-[40px]">
+              {role === "counsellor" ? "medical_information" : "psychiatry"}
+            </span>
           </div>
+          <p className="text-white/70 text-xs font-medium uppercase tracking-widest mb-6">
+            {role === "counsellor" ? "Counsellor Portal" : "Student Portal"}
+          </p>
           <h1 className="text-4xl font-black text-white mb-4 leading-tight">
-            Your mind matters.
+            {role === "counsellor" ? "Support students, save lives." : "Your mind matters."}
           </h1>
           <p className="text-white/80 text-lg leading-relaxed mb-8">
-            AI-powered mental health support designed for university students. Safe, confidential, and always available.
+            {role === "counsellor"
+              ? "Access your dashboard to monitor student wellbeing, review screenings, and provide timely interventions."
+              : "AI-powered mental health support designed for university students. Safe, confidential, and always available."}
           </p>
 
           <div className="space-y-4 text-left">
-            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
-              <span className="material-symbols-outlined text-secondary-container text-[22px]">psychology</span>
-              <span className="text-white/90 text-sm">PHQ-9 screening with NLP analysis</span>
-            </div>
-            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
-              <span className="material-symbols-outlined text-secondary-container text-[22px]">mood</span>
-              <span className="text-white/90 text-sm">Daily mood tracking and insights</span>
-            </div>
-            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
-              <span className="material-symbols-outlined text-secondary-container text-[22px]">shield</span>
-              <span className="text-white/90 text-sm">End-to-end encrypted and private</span>
-            </div>
+            {role === "counsellor" ? (
+              <>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                  <span className="material-symbols-outlined text-secondary-container text-[22px]">monitoring</span>
+                  <span className="text-white/90 text-sm">Real-time student risk analytics</span>
+                </div>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                  <span className="material-symbols-outlined text-secondary-container text-[22px]">forum</span>
+                  <span className="text-white/90 text-sm">Secure messaging with students</span>
+                </div>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                  <span className="material-symbols-outlined text-secondary-container text-[22px]">assignment</span>
+                  <span className="text-white/90 text-sm">PHQ-9 results and referral management</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                  <span className="material-symbols-outlined text-secondary-container text-[22px]">psychology</span>
+                  <span className="text-white/90 text-sm">PHQ-9 screening with NLP analysis</span>
+                </div>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                  <span className="material-symbols-outlined text-secondary-container text-[22px]">mood</span>
+                  <span className="text-white/90 text-sm">Daily mood tracking and insights</span>
+                </div>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                  <span className="material-symbols-outlined text-secondary-container text-[22px]">shield</span>
+                  <span className="text-white/90 text-sm">End-to-end encrypted and private</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -127,15 +160,17 @@ export default function SignInPage() {
               </div>
               <span className="font-black text-2xl text-primary">MindCare AI</span>
             </Link>
-            <p className="text-on-surface-variant text-sm mt-3">
-              Welcome back. We&apos;re glad you&apos;re here.
+            <p className="text-on-surface-variant text-xs font-medium uppercase tracking-wider mt-2">
+              {role === "counsellor" ? "Counsellor Portal" : "Student Portal"}
             </p>
           </div>
 
           {/* Form Card */}
           <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-7 shadow-lg shadow-primary/5">
             <h1 className="text-lg font-bold text-on-surface mb-1">Sign In</h1>
-            <p className="text-xs text-on-surface-variant mb-6">Access your wellness dashboard</p>
+            <p className="text-xs text-on-surface-variant mb-6">
+              {role === "counsellor" ? "Access your counsellor dashboard" : "Access your wellness dashboard"}
+            </p>
 
             {/* OAuth */}
             <button
@@ -241,10 +276,19 @@ export default function SignInPage() {
 
           <p className="text-center text-sm text-on-surface-variant mt-6">
             Don&apos;t have an account?{" "}
-            <Link href="/auth/sign-up" className="text-primary font-semibold hover:underline">
+            <Link href={`/auth/sign-up${role === "counsellor" ? "?role=counsellor" : ""}`} className="text-primary font-semibold hover:underline">
               Create one
             </Link>
           </p>
+
+          <div className="text-center mt-3">
+            <Link
+              href={`/auth/sign-in${role === "counsellor" ? "" : "?role=counsellor"}`}
+              className="text-xs text-on-surface-variant/70 hover:text-primary transition-colors"
+            >
+              {role === "counsellor" ? "← Switch to Student Portal" : "Are you a counsellor? →"}
+            </Link>
+          </div>
 
           <p className="text-center text-xs text-on-surface-variant/50 mt-4">
             Protected by encryption · HIPAA-aligned

@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { insforge } from "@/lib/insforge";
 
 export default function SignUpPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const role = searchParams.get("role") === "counsellor" ? "counsellor" : "student";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,8 +20,8 @@ export default function SignUpPage() {
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
 
   const getRedirect = () => {
-    if (typeof window === "undefined") return "/dashboard";
-    return new URLSearchParams(window.location.search).get("redirect") || "/dashboard";
+    if (typeof window === "undefined") return role === "counsellor" ? "/counsellor" : "/dashboard";
+    return new URLSearchParams(window.location.search).get("redirect") || (role === "counsellor" ? "/counsellor" : "/dashboard");
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -93,7 +95,11 @@ export default function SignUpPage() {
   return (
     <div className="min-h-screen flex bg-surface relative overflow-hidden">
       {/* Left Panel — Branding */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-secondary via-primary-container to-primary items-center justify-center p-12">
+      <div className={`hidden lg:flex lg:w-1/2 relative items-center justify-center p-12 ${
+        role === "counsellor"
+          ? "bg-gradient-to-br from-secondary via-primary-container to-primary"
+          : "bg-gradient-to-br from-secondary via-primary-container to-primary"
+      }`}>
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 right-20 w-72 h-72 bg-white/20 rounded-full blur-3xl" />
           <div className="absolute bottom-20 left-20 w-96 h-96 bg-primary/30 rounded-full blur-3xl" />
@@ -101,42 +107,54 @@ export default function SignUpPage() {
         </div>
 
         <div className="relative z-10 max-w-md text-center">
-          <div className="w-20 h-20 bg-white/15 backdrop-blur-sm rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-lg border border-white/20">
-            <span className="material-symbols-outlined icon-fill text-white text-[40px]">favorite</span>
+          <div className="w-20 h-20 bg-white/15 backdrop-blur-sm rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg border border-white/20">
+            <span className="material-symbols-outlined icon-fill text-white text-[40px]">
+              {role === "counsellor" ? "medical_information" : "favorite"}
+            </span>
           </div>
+          <p className="text-white/70 text-xs font-medium uppercase tracking-widest mb-6">
+            {role === "counsellor" ? "Counsellor Portal" : "Student Portal"}
+          </p>
           <h1 className="text-4xl font-black text-white mb-4 leading-tight">
-            Start your wellness journey.
+            {role === "counsellor" ? "Join the care team." : "Start your wellness journey."}
           </h1>
           <p className="text-white/80 text-lg leading-relaxed mb-8">
-            Join thousands of students taking control of their mental health with AI-powered support.
+            {role === "counsellor"
+              ? "Register to access your counsellor dashboard and start supporting students with AI-assisted insights."
+              : "Join thousands of students taking control of their mental health with AI-powered support."}
           </p>
 
-          <div className="grid grid-cols-3 gap-4 mt-8">
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10 text-center">
-              <div className="text-2xl font-black text-white">5K+</div>
-              <div className="text-xs text-white/70 mt-1">Students</div>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10 text-center">
-              <div className="text-2xl font-black text-white">24/7</div>
-              <div className="text-xs text-white/70 mt-1">Available</div>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10 text-center">
-              <div className="text-2xl font-black text-white">100%</div>
-              <div className="text-xs text-white/70 mt-1">Private</div>
-            </div>
-          </div>
-
-          <div className="mt-8 bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/10 text-left">
-            <div className="flex items-start gap-3">
-              <span className="material-symbols-outlined text-secondary-container text-[20px] mt-0.5">format_quote</span>
-              <div>
-                <p className="text-white/90 text-sm italic leading-relaxed">
-                  &quot;MindCare helped me realize I wasn&apos;t alone. The daily check-ins became my anchor during exam season.&quot;
-                </p>
-                <p className="text-white/60 text-xs mt-2">— 3rd Year Student, MUBS</p>
+          {role === "counsellor" ? (
+            <div className="space-y-4 text-left">
+              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                <span className="material-symbols-outlined text-secondary-container text-[22px]">groups</span>
+                <span className="text-white/90 text-sm">Monitor student caseload in one place</span>
+              </div>
+              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                <span className="material-symbols-outlined text-secondary-container text-[22px]">notifications_active</span>
+                <span className="text-white/90 text-sm">Instant alerts for high-risk students</span>
+              </div>
+              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                <span className="material-symbols-outlined text-secondary-container text-[22px]">analytics</span>
+                <span className="text-white/90 text-sm">AI-powered screening insights and trends</span>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-4 mt-8">
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10 text-center">
+                <div className="text-2xl font-black text-white">5K+</div>
+                <div className="text-xs text-white/70 mt-1">Students</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10 text-center">
+                <div className="text-2xl font-black text-white">24/7</div>
+                <div className="text-xs text-white/70 mt-1">Available</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10 text-center">
+                <div className="text-2xl font-black text-white">100%</div>
+                <div className="text-xs text-white/70 mt-1">Private</div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -156,15 +174,17 @@ export default function SignUpPage() {
               </div>
               <span className="font-black text-2xl text-primary">MindCare AI</span>
             </Link>
-            <p className="text-on-surface-variant text-sm mt-3">
-              Create your free account
+            <p className="text-on-surface-variant text-xs font-medium uppercase tracking-wider mt-2">
+              {role === "counsellor" ? "Counsellor Portal" : "Student Portal"}
             </p>
           </div>
 
           {/* Form Card */}
           <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-7 shadow-lg shadow-primary/5">
-            <h1 className="text-lg font-bold text-on-surface mb-1">Sign Up</h1>
-            <p className="text-xs text-on-surface-variant mb-5">Takes less than a minute</p>
+            <h1 className="text-lg font-bold text-on-surface mb-1">Create Account</h1>
+            <p className="text-xs text-on-surface-variant mb-5">
+              {role === "counsellor" ? "Set up your counsellor account" : "Takes less than a minute"}
+            </p>
 
             {/* OAuth */}
             <button
@@ -333,10 +353,19 @@ export default function SignUpPage() {
 
           <p className="text-center text-sm text-on-surface-variant mt-5">
             Already have an account?{" "}
-            <Link href="/auth/sign-in" className="text-primary font-semibold hover:underline">
+            <Link href={`/auth/sign-in${role === "counsellor" ? "?role=counsellor" : ""}`} className="text-primary font-semibold hover:underline">
               Sign in
             </Link>
           </p>
+
+          <div className="text-center mt-3">
+            <Link
+              href={`/auth/sign-up${role === "counsellor" ? "" : "?role=counsellor"}`}
+              className="text-xs text-on-surface-variant/70 hover:text-primary transition-colors"
+            >
+              {role === "counsellor" ? "← Switch to Student Sign Up" : "Are you a counsellor? →"}
+            </Link>
+          </div>
 
           <p className="text-center text-xs text-on-surface-variant/50 mt-3">
             By creating an account, you agree to our{" "}
