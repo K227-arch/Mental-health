@@ -10,6 +10,7 @@ export default function ForgotPasswordPage() {
   const [code, setCode] = useState("");
   const [resetToken, setResetToken] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -92,9 +93,27 @@ export default function ForgotPasswordPage() {
               <p className="text-sm text-on-surface-variant">Enter your new password.</p>
               <div>
                 <label className="block text-sm font-medium text-on-surface mb-1.5">New Password</label>
-                <input type="password" required minLength={6} value={newPassword} onChange={e => setNewPassword(e.target.value)}
-                  placeholder="At least 6 characters"
-                  className="w-full bg-surface-container-low border border-outline-variant rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary" />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    minLength={6}
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    placeholder="At least 6 characters"
+                    className="w-full bg-surface-container-low border border-outline-variant rounded-xl px-4 py-3 pr-11 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">
+                      {showPassword ? "visibility_off" : "visibility"}
+                    </span>
+                  </button>
+                </div>
               </div>
               {error && <p className="text-sm text-error bg-error-container px-3 py-2 rounded-lg">{error}</p>}
               <button type="submit" disabled={loading}
