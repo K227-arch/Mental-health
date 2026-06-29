@@ -57,14 +57,14 @@ export default function CounsellorSidebar() {
       {/* Bottom */}
       <div className="mt-auto pt-4 border-t border-outline-variant flex flex-col gap-1">
         <Link
-          href="#"
+          href="/counsellor"
           className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-on-surface-variant hover:bg-surface-container-high transition-colors"
         >
           <span className="material-symbols-outlined">settings</span>
           Settings
         </Link>
         <Link
-          href="#"
+          href="/crisis"
           className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-on-surface-variant hover:bg-surface-container-high transition-colors"
         >
           <span className="material-symbols-outlined">help_outline</span>

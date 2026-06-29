@@ -32,7 +32,7 @@ function FloatingOrb({ position, color, speed = 1, distort = 0.4, size = 1 }: {
           roughness={0.2}
           metalness={0.1}
           transparent
-          opacity={0.85}
+          opacity={0.75}
         />
       </Sphere>
     </Float>
@@ -54,8 +54,8 @@ function NeuralRing({ position, color }: {
 
   return (
     <Float speed={2} rotationIntensity={1} floatIntensity={1}>
-      <Torus ref={meshRef} args={[1.2, 0.05, 16, 100]} position={position}>
-        <meshStandardMaterial color={color} transparent opacity={0.6} metalness={0.8} roughness={0.2} />
+      <Torus ref={meshRef} args={[1.2, 0.04, 16, 100]} position={position}>
+        <meshStandardMaterial color={color} transparent opacity={0.4} metalness={0.8} roughness={0.2} />
       </Torus>
     </Float>
   );
@@ -89,7 +89,7 @@ function Particles({ count = 80 }: { count?: number }) {
           args={[positions, 3]}
         />
       </bufferGeometry>
-      <pointsMaterial size={0.03} color="#9ccbf7" transparent opacity={0.6} sizeAttenuation />
+      <pointsMaterial size={0.03} color="#074469" transparent opacity={0.4} sizeAttenuation />
     </points>
   );
 }
@@ -102,10 +102,10 @@ export default function MindScene() {
         dpr={[1, 1.5]}
         style={{ background: "transparent" }}
       >
-        <ambientLight intensity={0.4} />
+        <ambientLight intensity={0.5} />
         <directionalLight position={[5, 5, 5]} intensity={0.8} color="#ffffff" />
-        <pointLight position={[-3, -3, 2]} intensity={0.5} color="#9deee5" />
-        <pointLight position={[3, 2, -2]} intensity={0.4} color="#cde5ff" />
+        <pointLight position={[-3, -3, 2]} intensity={0.4} color="#9deee5" />
+        <pointLight position={[3, 2, -2]} intensity={0.3} color="#cde5ff" />
 
         {/* Main brain-like orb */}
         <FloatingOrb position={[0, 0, 0]} color="#074469" size={1.3} distort={0.5} speed={0.8} />
@@ -115,7 +115,7 @@ export default function MindScene() {
         <FloatingOrb position={[-2, -0.8, -0.5]} color="#9ccbf7" size={0.35} distort={0.25} speed={1.5} />
         <FloatingOrb position={[1.5, -1.5, 0.5]} color="#9deee5" size={0.3} distort={0.2} speed={1.8} />
 
-        {/* Neural connection rings */}
+        {/* Neural connection ring */}
         <NeuralRing position={[0, 0, 0]} color="#9ccbf7" />
 
         {/* Ambient particles */}

@@ -91,7 +91,7 @@ export default function CrisisPage() {
 
           {/* Chat */}
           <Link
-            href="/screening"
+            href="/counsellor/chat"
             className="group block w-full bg-primary rounded-xl p-6 shadow-sm transition-transform active:scale-95 hover:-translate-y-1 relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-primary-fixed"
           >
             <div className="absolute -right-8 -bottom-8 bg-on-primary/10 w-32 h-32 rounded-full blur-xl group-hover:bg-on-primary/20 transition-colors" />

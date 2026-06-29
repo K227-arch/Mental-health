@@ -16,32 +16,104 @@ import {
   Legend,
 } from "recharts";
 
-const moodHistory = [
-  { date: "Mon", mood: 3, label: "😐" },
-  { date: "Tue", mood: 4, label: "🙂" },
-  { date: "Wed", mood: 2, label: "😔" },
-  { date: "Thu", mood: 3, label: "😐" },
-  { date: "Fri", mood: 4, label: "🙂" },
-  { date: "Sat", mood: 5, label: "😊" },
-  { date: "Sun", mood: 4, label: "🙂" },
-];
+const moods = ["😢", "😔", "😐", "🙂", "😊"];
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<"30" | "90">("30");
-  const [user, setUser] = useState<{ name?: string } | null>(null);
+  const [user, setUser] = useState<{ id?: string; name?: string } | null>(null);
+  const [currentMood, setCurrentMood] = useState<number | null>(null);
+  const [moodSaving, setMoodSaving] = useState(false);
+  const [moodSaved, setMoodSaved] = useState(false);
+  const [moodHistory, setMoodHistory] = useState<{ date: string; mood: number; label: string }[]>([]);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me").then((r) => {
       if (!r.ok) return;
       return r.json().then((d) => {
-        if (d?.user) setUser(d.user);
+        if (d?.user) {
+          setUser(d.user);
+          // Fetch mood history
+          fetchMoodHistory(d.user.id);
+        }
       });
     });
   }, []);
-  const [currentMood, setCurrentMood] = useState<number | null>(null);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  const moods = ["😢", "😔", "😐", "🙂", "😊"];
+  const fetchMoodHistory = async (userId: string) => {
+    try {
+      const res = await fetch(`/api/mood?userId=${userId}&limit=7`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.data && data.data.length > 0) {
+          const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+          const history = data.data.reverse().map((entry: { mood_score: number; created_at: string }) => {
+            const d = new Date(entry.created_at);
+            const moodIndex = Math.min(Math.max(Math.round(entry.mood_score / 2), 0), 4);
+            return {
+              date: days[d.getDay()],
+              mood: entry.mood_score,
+              label: moods[moodIndex],
+            };
+          });
+          setMoodHistory(history);
+        } else {
+          // Fallback if no data
+          setMoodHistory([
+            { date: "Mon", mood: 3, label: "😐" },
+            { date: "Tue", mood: 4, label: "🙂" },
+            { date: "Wed", mood: 2, label: "😔" },
+            { date: "Thu", mood: 3, label: "😐" },
+            { date: "Fri", mood: 4, label: "🙂" },
+            { date: "Sat", mood: 5, label: "😊" },
+            { date: "Sun", mood: 4, label: "🙂" },
+          ]);
+        }
+      }
+    } catch {
+      setMoodHistory([
+        { date: "Mon", mood: 3, label: "😐" },
+        { date: "Tue", mood: 4, label: "🙂" },
+        { date: "Wed", mood: 2, label: "😔" },
+        { date: "Thu", mood: 3, label: "😐" },
+        { date: "Fri", mood: 4, label: "🙂" },
+        { date: "Sat", mood: 5, label: "😊" },
+        { date: "Sun", mood: 4, label: "🙂" },
+      ]);
+    }
+  };
+
+  const handleMoodSelect = async (index: number) => {
+    setCurrentMood(index);
+    if (!user?.id) return;
+
+    setMoodSaving(true);
+    setMoodSaved(false);
+    try {
+      const moodScore = (index + 1) * 2; // 2,4,6,8,10
+      const stressLevel = 10 - moodScore; // inverse
+      const res = await fetch("/api/mood", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          moodScore,
+          stressLevel,
+          notes: `Quick check-in: ${moods[index]}`,
+        }),
+      });
+      if (res.ok) {
+        setMoodSaved(true);
+        // Refresh history
+        fetchMoodHistory(user.id);
+        setTimeout(() => setMoodSaved(false), 3000);
+      }
+    } catch {
+      console.error("Failed to save mood");
+    } finally {
+      setMoodSaving(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -124,7 +196,8 @@ export default function DashboardPage() {
                 {moods.map((m, i) => (
                   <button
                     key={i}
-                    onClick={() => setCurrentMood(i)}
+                    onClick={() => handleMoodSelect(i)}
+                    disabled={moodSaving}
                     className={`text-2xl md:text-3xl p-2 rounded-xl transition-all hover:scale-110 ${
                       currentMood === i
                         ? "bg-primary-container ring-2 ring-primary scale-110"
@@ -137,7 +210,7 @@ export default function DashboardPage() {
               </div>
               {currentMood !== null && (
                 <p className="text-xs text-secondary font-medium mt-2 animate-fade-in">
-                  Mood recorded ✓ — Your counselor has been updated.
+                  {moodSaving ? "Saving..." : moodSaved ? "Mood recorded ✓ — Saved to your wellness log." : "Mood selected"}
                 </p>
               )}
             </div>
@@ -203,7 +276,7 @@ export default function DashboardPage() {
 
                 {/* Secure Messaging */}
                 <Link
-                  href="/crisis"
+                  href="/counsellor/chat"
                   className="bg-primary-container text-on-primary-container rounded-xl p-5 flex flex-col shadow-sm cursor-pointer hover:bg-primary-fixed transition-colors group"
                 >
                   <div className="flex justify-between items-start mb-3">

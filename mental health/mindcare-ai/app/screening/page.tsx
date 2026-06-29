@@ -66,6 +66,29 @@ export default function ScreeningPage() {
     ]);
   };
 
+  const saveScreeningResult = async (finalAnswers: number[], score: number, severity: string) => {
+    try {
+      const meRes = await fetch("/api/auth/me");
+      if (!meRes.ok) return;
+      const meData = await meRes.json();
+      const userId = meData?.user?.id;
+      if (!userId) return;
+
+      await fetch("/api/screening/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          score,
+          severity,
+          responses: finalAnswers,
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to save screening result:", error);
+    }
+  };
+
   const runNlpAnalysis = async (finalAnswers: number[], score: number) => {
     setAnalyzing(true);
     try {
@@ -141,6 +164,8 @@ export default function ScreeningPage() {
               : "You're doing okay, but keep checking in. Small steps make a big difference."
           }\n\nRunning AI-powered NLP analysis on your responses... 🔍`
         );
+        // Save results to database
+        saveScreeningResult(newAnswers, score, severity.label);
         // Trigger NLP analysis
         runNlpAnalysis(newAnswers, score);
       }

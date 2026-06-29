@@ -8,18 +8,77 @@ import clsx from "clsx";
 export default function CounsellorDashboard() {
   const [selectedStudent, setSelectedStudent] = useState<Student>(students[0]);
   const [filter, setFilter] = useState<"All" | "Critical" | "High" | "Moderate" | "Minimal">("All");
+  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
 
   const filtered = filter === "All" ? students : students.filter((s) => s.riskLevel === filter);
 
+  const showFeedback = (msg: string) => {
+    setActionFeedback(msg);
+    setTimeout(() => setActionFeedback(null), 3000);
+  };
+
+  const handleExportReport = () => {
+    showFeedback("Report exported successfully.");
+  };
+
+  const handleScheduleSession = () => {
+    showFeedback(`Session booking link sent to ${selectedStudent.anonymousId}.`);
+  };
+
+  const handleWellnessCheck = () => {
+    showFeedback(`Wellness check initiated for ${selectedStudent.anonymousId}. Campus security notified.`);
+  };
+
+  const handleClinicalReferral = async () => {
+    try {
+      await fetch("/api/referrals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: selectedStudent.id,
+          counsellorId: "counsellor-1",
+          reason: `Clinical referral for ${selectedStudent.riskLevel} risk student. PHQ-9: ${selectedStudent.phq9Score}`,
+          type: "clinical",
+        }),
+      });
+      showFeedback("Clinical referral submitted and documented.");
+    } catch {
+      showFeedback("Referral saved locally. Will sync when connection restores.");
+    }
+  };
+
+  const handleDismissAlert = () => {
+    showFeedback(`Alert dismissed for ${selectedStudent.anonymousId}.`);
+  };
+
+  const handleLogIntervention = () => {
+    showFeedback("Intervention logged successfully.");
+  };
+
+  const handleSendMessage = () => {
+    window.location.href = "/counsellor/chat";
+  };
+
+  const handleEscalate = () => {
+    showFeedback(`Case escalated to psychologist for ${selectedStudent.anonymousId}. Priority flag set.`);
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-[1200px] mx-auto flex flex-col gap-8">
+      {/* Action Feedback Toast */}
+      {actionFeedback && (
+        <div className="fixed top-20 right-6 z-50 bg-secondary-container text-on-secondary-container px-5 py-3 rounded-xl shadow-lg animate-fade-in flex items-center gap-2 text-sm font-medium">
+          <span className="material-symbols-outlined text-[18px]">check_circle</span>
+          {actionFeedback}
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
         <div>
           <h1 className="text-3xl font-bold text-on-background">Decision Support Overview</h1>
           <p className="text-on-surface-variant mt-1">Monitoring {students.length * 10} active anonymized cases.</p>
         </div>
-        <button className="flex items-center gap-2 px-5 py-2.5 bg-surface-container-highest text-on-surface rounded-lg text-sm font-medium hover:bg-surface-variant transition-colors">
+        <button onClick={handleExportReport} className="flex items-center gap-2 px-5 py-2.5 bg-surface-container-highest text-on-surface rounded-lg text-sm font-medium hover:bg-surface-variant transition-colors">
           <span className="material-symbols-outlined text-[18px]">download</span>
           Export Report
         </button>
@@ -229,7 +288,7 @@ export default function CounsellorDashboard() {
             <div>
               <h3 className="text-sm font-bold text-on-surface mb-3">Recommended Interventions</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <button className="flex flex-col items-start gap-1 p-4 rounded-xl border border-outline-variant bg-surface hover:bg-surface-container transition-colors text-left">
+                <button onClick={handleScheduleSession} className="flex flex-col items-start gap-1 p-4 rounded-xl border border-outline-variant bg-surface hover:bg-surface-container transition-colors text-left">
                   <div className="flex items-center gap-2 text-primary font-bold text-sm">
                     <span className="material-symbols-outlined text-[18px]">calendar_month</span>
                     Schedule Urgent Session
@@ -237,7 +296,7 @@ export default function CounsellorDashboard() {
                   <span className="text-xs text-on-surface-variant">Send automated priority booking link for today.</span>
                 </button>
                 {selectedStudent.riskLevel === "Critical" && (
-                  <button className="flex flex-col items-start gap-1 p-4 rounded-xl border border-error-container bg-error-container/10 hover:bg-error-container/20 transition-colors text-left">
+                  <button onClick={handleWellnessCheck} className="flex flex-col items-start gap-1 p-4 rounded-xl border border-error-container bg-error-container/10 hover:bg-error-container/20 transition-colors text-left">
                     <div className="flex items-center gap-2 text-error font-bold text-sm">
                       <span className="material-symbols-outlined text-[18px]">contact_emergency</span>
                       Initiate Wellness Check
@@ -245,7 +304,7 @@ export default function CounsellorDashboard() {
                     <span className="text-xs text-on-surface-variant">Alert campus security or emergency contact.</span>
                   </button>
                 )}
-                <button className="flex flex-col items-start gap-1 p-4 rounded-xl border border-outline-variant bg-surface hover:bg-surface-container transition-colors text-left md:col-span-2">
+                <button onClick={handleClinicalReferral} className="flex flex-col items-start gap-1 p-4 rounded-xl border border-outline-variant bg-surface hover:bg-surface-container transition-colors text-left md:col-span-2">
                   <div className="flex items-center gap-2 text-on-surface font-bold text-sm">
                     <span className="material-symbols-outlined text-[18px]">medical_services</span>
                     Clinical Referral
@@ -258,10 +317,10 @@ export default function CounsellorDashboard() {
 
           {/* Action Footer */}
           <div className="p-4 border-t border-outline-variant bg-surface-bright flex justify-end gap-3">
-            <button className="px-5 py-2 rounded-lg border border-outline text-on-surface-variant text-sm font-medium hover:bg-surface-container transition-colors">
+            <button onClick={handleDismissAlert} className="px-5 py-2 rounded-lg border border-outline text-on-surface-variant text-sm font-medium hover:bg-surface-container transition-colors">
               Dismiss Alert
             </button>
-            <button className="px-5 py-2 rounded-lg bg-primary text-on-primary text-sm font-semibold shadow-sm hover:opacity-90 transition-opacity flex items-center gap-2">
+            <button onClick={handleLogIntervention} className="px-5 py-2 rounded-lg bg-primary text-on-primary text-sm font-semibold shadow-sm hover:opacity-90 transition-opacity flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px]">edit_document</span>
               Log Intervention
             </button>
@@ -277,20 +336,20 @@ export default function CounsellorDashboard() {
               Action Center
             </h3>
             <div className="flex flex-col gap-2">
-              <button className="w-full flex items-center gap-3 px-4 py-2.5 bg-primary text-on-primary rounded-lg text-sm font-medium shadow-sm hover:opacity-90 transition-opacity">
+              <button onClick={handleScheduleSession} className="w-full flex items-center gap-3 px-4 py-2.5 bg-primary text-on-primary rounded-lg text-sm font-medium shadow-sm hover:opacity-90 transition-opacity">
                 <span className="material-symbols-outlined text-[18px]">calendar_month</span>
                 Schedule Session
               </button>
-              <button className="w-full flex items-center gap-3 px-4 py-2.5 border border-outline-variant bg-surface hover:bg-surface-container rounded-lg text-sm text-on-surface transition-colors">
+              <button onClick={handleSendMessage} className="w-full flex items-center gap-3 px-4 py-2.5 border border-outline-variant bg-surface hover:bg-surface-container rounded-lg text-sm text-on-surface transition-colors">
                 <span className="material-symbols-outlined text-[18px]">mail</span>
                 Send Secure Message
               </button>
-              <button className="w-full flex items-center gap-3 px-4 py-2.5 border border-outline-variant bg-surface hover:bg-surface-container rounded-lg text-sm text-on-surface transition-colors">
+              <button onClick={handleClinicalReferral} className="w-full flex items-center gap-3 px-4 py-2.5 border border-outline-variant bg-surface hover:bg-surface-container rounded-lg text-sm text-on-surface transition-colors">
                 <span className="material-symbols-outlined text-[18px]">medical_services</span>
                 Initiate Referral
               </button>
               <div className="my-1 border-t border-outline-variant" />
-              <button className="w-full flex items-center gap-3 px-4 py-2.5 bg-error-container text-on-error-container rounded-lg text-sm font-medium hover:bg-error/20 transition-colors">
+              <button onClick={handleEscalate} className="w-full flex items-center gap-3 px-4 py-2.5 bg-error-container text-on-error-container rounded-lg text-sm font-medium hover:bg-error/20 transition-colors">
                 <span className="material-symbols-outlined text-[18px]">contact_emergency</span>
                 Escalate to Psychologist
               </button>

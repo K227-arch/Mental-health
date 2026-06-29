@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "MindCare AI — Student Wellness System",
@@ -28,7 +29,7 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-surface text-on-surface antialiased min-h-screen">
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

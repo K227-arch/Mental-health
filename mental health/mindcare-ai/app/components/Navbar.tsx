@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import clsx from "clsx";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 interface NavbarProps {
   variant?: "student" | "counsellor";
@@ -108,12 +109,7 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
 
           <div className="h-5 w-px bg-outline-variant mx-1" />
 
-          <button
-            className="w-9 h-9 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container transition-colors"
-            aria-label="Language"
-          >
-            <span className="material-symbols-outlined">language</span>
-          </button>
+          <LanguageSwitcher variant="light" />
 
           <div className="relative" ref={dropdownRef}>
             <button
@@ -151,7 +147,7 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
                     Profile
                   </Link>
                   <Link
-                    href="/auth/sign-in"
+                    href="/dashboard"
                     onClick={() => setDropdownOpen(false)}
                     className="flex items-center gap-2 px-3 py-2 text-sm text-on-surface hover:bg-surface-container rounded-lg transition-colors"
                   >
