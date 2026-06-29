@@ -1,4 +1,4 @@
-import Navbar from "../components/Navbar";
+﻿import Navbar from "../components/Navbar";
 import CounsellorSidebar from "../components/CounsellorSidebar";
 
 export default function CounsellorLayout({ children }: { children: React.ReactNode }) {

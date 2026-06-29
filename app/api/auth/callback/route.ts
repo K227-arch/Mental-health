@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { createAuthActions } from "@insforge/sdk/ssr";
 
 export async function GET(request: NextRequest) {

@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import Footer from "../components/Footer";
 
 const sections = [
@@ -10,7 +10,7 @@ const sections = [
   {
     title: "Services",
     content:
-      "MindCare AI provides AI-powered mental health screening, mood tracking, wellness resources, and crisis support tools for university students. Our services are designed to support — not replace — professional mental health care. The AI screening tool provides preliminary assessments only and should not be used as a diagnostic tool. In case of emergency, please contact emergency services or crisis hotlines directly.",
+      "MindCare AI provides AI-powered mental health screening, mood tracking, wellness resources, and crisis support tools for university students. Our services are designed to support ΓÇö not replace ΓÇö professional mental health care. The AI screening tool provides preliminary assessments only and should not be used as a diagnostic tool. In case of emergency, please contact emergency services or crisis hotlines directly.",
   },
   {
     title: "User Responsibilities",

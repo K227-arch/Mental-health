@@ -1,259 +1,216 @@
-"use client";
+﻿"use client";
 
-import { useState, useEffect, useRef, useCallback, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { insforge, detectKeywords } from "@/lib/insforge";
-import type { Message, CounsellorSession } from "@/lib/insforge";
+import { useState } from "react";
+import { students, riskColors } from "../../lib/data";
+import type { Student } from "../../lib/data";
+import clsx from "clsx";
 
-function ChatContent() {
-  const params = useSearchParams();
-  const sessionId = params.get("session");
-  const studentId = params.get("student");
-
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [session, setSession] = useState<CounsellorSession | null>(null);
-  const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [connected, setConnected] = useState(false);
-  const [flaggedMsg, setFlaggedMsg] = useState<string | null>(null);
-  const endRef = useRef<HTMLDivElement>(null);
-  const channelName = `chat:${sessionId}`;
-
-  const scrollToBottom = () => endRef.current?.scrollIntoView({ behavior: "smooth" });
-
-  const loadMessages = useCallback(async () => {
-    if (!sessionId) return;
-    const { data } = await insforge.database.from("messages")
-      .select()
-      .eq("session_id", sessionId)
-      .order("created_at", { ascending: true });
-    if (data) setMessages(data as Message[]);
-    setLoading(false);
-  }, [sessionId]);
-
-  // Load session info
-  useEffect(() => {
-    if (!sessionId) return;
-    insforge.database.from("counsellor_sessions").select().eq("id", sessionId).maybeSingle()
-      .then(({ data }) => { if (data) setSession(data as CounsellorSession); });
-  }, [sessionId]);
-
-  useEffect(() => { loadMessages(); }, [loadMessages]);
-  useEffect(() => { scrollToBottom(); }, [messages]);
-
-  // Real-time subscription
-  useEffect(() => {
-    if (!sessionId) return;
-    let cleanup = false;
-
-    (async () => {
-      insforge.realtime.on("connect", () => {
-        if (!cleanup) setConnected(true);
-      });
-      insforge.realtime.on("disconnect", () => {
-        if (!cleanup) setConnected(false);
-      });
-
-      await insforge.realtime.connect();
-      const sub = await insforge.realtime.subscribe(channelName);
-
-      if (sub.ok && !cleanup) {
-        setConnected(true);
-        insforge.realtime.on<Message>("new_message", (msg) => {
-          if (!cleanup) {
-            setMessages(prev => {
-              if (prev.find(m => m.id === msg.id)) return prev;
-              return [...prev, msg];
-            });
-          }
-        });
-      }
-    })();
-
-    return () => {
-      cleanup = true;
-      insforge.realtime.unsubscribe(channelName);
-    };
-  }, [sessionId, channelName]);
-
-  const sendMessage = async () => {
-    if (!input.trim() || !sessionId || sending) return;
-    setSending(true);
-
-    const content = input.trim();
-    setInput("");
-
-    // Check for flagged keywords
-    const keywords = detectKeywords(content);
-    const isFlagged = keywords.length > 0;
-    if (isFlagged) setFlaggedMsg(`⚠️ Flagged keywords detected: ${keywords.join(", ")}`);
-
-    const { data } = await insforge.database.from("messages").insert([{
-      session_id: sessionId,
-      sender_id: "counsellor",
-      sender_role: "counsellor",
-      content,
-      is_flagged: isFlagged,
-    }]).select();
-
-    if (data?.[0]) {
-      const msg = data[0] as Message;
-      setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]);
-
-      // Publish via realtime so student sees it instantly
-      try {
-        await insforge.realtime.publish(channelName, "new_message", msg);
-      } catch (_) { /* Realtime not subscribed yet — DB polling still works */ }
-
-      // Send notification to student
-      if (studentId) {
-        await insforge.database.from("notifications").insert([{
-          user_id: studentId,
-          title: "New message from your counsellor",
-          body: content.substring(0, 80) + (content.length > 80 ? "…" : ""),
-          type: "info",
-          link: "/dashboard",
-        }]);
-      }
-    }
-
-    setSending(false);
-  };
-
-  const quickReplies = [
-    "I hear you. How are you feeling right now?",
-    "Thank you for sharing that with me.",
-    "Would you like to schedule a session to discuss this further?",
-    "You're doing really well to reach out.",
-    "I'm here for you. Take your time.",
-  ];
-
-  return (
-    <div className="h-full flex flex-col">
-      {/* Chat Header */}
-      <div className="p-4 border-b border-outline-variant bg-surface-bright flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/counsellor" className="p-1.5 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors">
-            <span className="material-symbols-outlined">arrow_back</span>
-          </Link>
-          <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center">
-            <span className="material-symbols-outlined icon-fill">person</span>
-          </div>
-          <div>
-            <h2 className="text-sm font-bold text-on-surface">
-              {session?.student_name || studentId || "Student"}
-            </h2>
-            <div className="flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${connected ? "bg-secondary" : "bg-outline-variant"}`} />
-              <span className="text-xs text-on-surface-variant">{connected ? "Real-time connected" : "Connecting…"}</span>
-              {session?.risk_level && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded uppercase font-semibold ${session.risk_level === "Critical" ? "bg-error-container text-on-error-container" : "bg-secondary-container text-on-secondary-container"}`}>
-                  {session.risk_level} Risk
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={() => { insforge.database.from("counsellor_sessions").update({ status: "closed" }).eq("id", sessionId!); }}
-            className="text-xs px-3 py-1.5 border border-outline-variant rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors">
-            Close Session
-          </button>
-        </div>
-      </div>
-
-      {/* Flagged keywords banner */}
-      {flaggedMsg && (
-        <div className="bg-error-container text-on-error-container px-4 py-2 text-xs font-medium flex items-center justify-between">
-          <span className="flex items-center gap-2"><span className="material-symbols-outlined text-[16px]">warning</span>{flaggedMsg}</span>
-          <button onClick={() => setFlaggedMsg(null)} className="material-symbols-outlined text-[16px]">close</button>
-        </div>
-      )}
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-3 bg-surface">
-        {loading ? (
-          <div className="flex items-center justify-center h-32">
-            <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="text-center py-12 text-on-surface-variant">
-            <span className="material-symbols-outlined text-[50px] block mb-3 opacity-20">chat</span>
-            <p className="text-sm">No messages yet. Start the conversation.</p>
-          </div>
-        ) : (
-          messages.map(msg => (
-            <div key={msg.id} className={`flex items-end gap-3 max-w-[80%] ${msg.sender_role === "counsellor" ? "self-end flex-row-reverse" : "self-start"}`}>
-              {msg.sender_role !== "counsellor" && (
-                <div className="w-8 h-8 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center shrink-0 text-xs font-bold">
-                  S
-                </div>
-              )}
-              <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${
-                msg.sender_role === "counsellor"
-                  ? "bg-primary text-on-primary rounded-br-sm"
-                  : msg.sender_role === "system"
-                  ? "bg-surface-container text-on-surface-variant italic text-xs rounded-bl-sm"
-                  : "bg-surface-container-lowest text-on-surface border border-outline-variant/20 shadow-sm rounded-bl-sm"
-              } ${msg.is_flagged ? "border-2 border-error/50" : ""}`}>
-                {msg.content}
-                {msg.is_flagged && (
-                  <span className="block text-[10px] mt-1 text-error/80 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[12px]">flag</span>Flagged content
-                  </span>
-                )}
-                <div className={`text-[10px] mt-1 opacity-60 ${msg.sender_role === "counsellor" ? "text-right" : ""}`}>
-                  {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-        <div ref={endRef} />
-      </div>
-
-      {/* Quick Replies */}
-      <div className="px-4 py-2 bg-surface-container-lowest border-t border-outline-variant/30">
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-          {quickReplies.map(r => (
-            <button key={r} onClick={() => setInput(r)}
-              className="text-xs whitespace-nowrap px-3 py-1.5 bg-surface-container border border-outline-variant/50 rounded-full hover:bg-primary-container hover:text-on-primary-container transition-colors shrink-0">
-              {r.substring(0, 35)}{r.length > 35 ? "…" : ""}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Input */}
-      <div className="p-4 bg-surface-container-lowest border-t border-outline-variant flex gap-3 items-end">
-        <div className="flex-1 relative">
-          <textarea
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-            placeholder="Type a secure message…"
-            rows={1}
-            className="w-full bg-surface-container-low border border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary rounded-xl py-3 px-4 text-on-surface text-sm resize-none min-h-[48px] max-h-[120px]"
-          />
-        </div>
-        <button onClick={sendMessage} disabled={!input.trim() || sending}
-          className="w-11 h-11 rounded-full bg-primary text-on-primary hover:bg-surface-tint flex items-center justify-center shadow-md transition-colors disabled:opacity-40 shrink-0">
-          {sending
-            ? <span className="w-4 h-4 rounded-full border-2 border-on-primary border-t-transparent animate-spin" />
-            : <span className="material-symbols-outlined text-[20px]" style={{ marginLeft: "2px" }}>send</span>
-          }
-        </button>
-      </div>
-    </div>
-  );
+interface ChatMsg {
+  id: string;
+  role: "counsellor" | "student";
+  content: string;
+  timestamp: string;
 }
 
-export default function CounsellorChatPage() {
+const mockChats: Record<string, ChatMsg[]> = {
+  "1": [
+    { id: "c1", role: "student", content: "I just don't see the point in trying for these midterms anymore. Everything feels too heavy to carry.", timestamp: "03:15 AM" },
+    { id: "c2", role: "counsellor", content: "I hear you, and I'm glad you reached out. Can you tell me more about what's been feeling heavy?", timestamp: "03:16 AM" },
+    { id: "c3", role: "student", content: "It's like every assignment is piling up and I can't breathe. I've been skipping classes.", timestamp: "03:18 AM" },
+    { id: "c4", role: "counsellor", content: "That sounds incredibly tough. You're not alone. Would you be open to scheduling a brief session today?", timestamp: "03:20 AM" },
+  ],
+  "2": [
+    { id: "d1", role: "student", content: "I've been struggling to get out of bed. Everything feels pointless lately.", timestamp: "11:40 PM" },
+    { id: "d2", role: "counsellor", content: "Thank you for sharing that. Lack of motivation can be a sign of depression. How has your sleep been?", timestamp: "11:42 PM" },
+    { id: "d3", role: "student", content: "I'm sleeping but I wake up exhausted. Like I haven't rested at all.", timestamp: "11:45 PM" },
+  ],
+  "3": [
+    { id: "e1", role: "student", content: "Exams are coming up and I'm feeling overwhelmed by all the pressure.", timestamp: "09:20 AM" },
+    { id: "e2", role: "counsellor", content: "Exam stress is very common. Have you tried breaking your study sessions into smaller chunks?", timestamp: "09:22 AM" },
+    { id: "e3", role: "student", content: "I haven't. I just try to do everything at once and nothing sticks.", timestamp: "09:25 AM" },
+    { id: "e4", role: "counsellor", content: "Let's work on a study schedule together. I'll share some techniques that might help.", timestamp: "09:27 AM" },
+  ],
+  "4": [
+    { id: "f1", role: "student", content: "Hi! Just checking in for the weekly update. Everything has been going well.", timestamp: "02:00 PM" },
+    { id: "f2", role: "counsellor", content: "Great to hear! Any particular wins this week you'd like to share?", timestamp: "02:02 PM" },
+  ],
+};
+
+export default function CounsellorChat() {
+  const [selectedStudent, setSelectedStudent] = useState<Student>(students[0]);
+  const [messages, setMessages] = useState<ChatMsg[]>(mockChats[students[0].id] || []);
+  const [input, setInput] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  function selectStudent(student: Student) {
+    setSelectedStudent(student);
+    setMessages(mockChats[student.id] || []);
+  }
+
+  function sendMessage() {
+    if (!input.trim()) return;
+    const newMsg: ChatMsg = {
+      id: `m${Date.now()}`,
+      role: "counsellor",
+      content: input.trim(),
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    };
+    setMessages((prev) => [...prev, newMsg]);
+    setInput("");
+  }
+
+  const colors = riskColors[selectedStudent.riskLevel];
+
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" /></div>}>
-      <ChatContent />
-    </Suspense>
+    <div className="p-4 md:p-8 max-w-[1200px] mx-auto h-full flex flex-col gap-6">
+      <div>
+        <h1 className="text-3xl font-bold text-on-background">Counselling Chat</h1>
+        <p className="text-on-surface-variant mt-1">Real-time messaging with anonymized students.</p>
+      </div>
+
+      <div className="flex flex-1 min-h-0 gap-4 relative">
+        {/* Sidebar toggle (mobile) */}
+        <button
+          className="md:hidden fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary text-on-primary shadow-lg flex items-center justify-center"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          aria-label="Toggle student list"
+        >
+          <span className="material-symbols-outlined icon-fill">{sidebarOpen ? "close" : "forum"}</span>
+        </button>
+
+        {/* Mobile backdrop */}
+        {sidebarOpen && (
+          <div className="fixed inset-0 z-30 bg-black/30 md:hidden" onClick={() => setSidebarOpen(false)} />
+        )}
+
+        {/* Student List */}
+        <div className={`w-72 shrink-0 flex flex-col gap-3 ${
+          sidebarOpen ? "fixed left-0 top-16 z-40 bg-surface h-[calc(100vh-64px)] p-4 shadow-2xl animate-slide-in" : "hidden"
+        } md:flex`}>
+          <h3 className="text-sm font-bold text-on-surface flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px]">forum</span>
+            Active Conversations
+          </h3>
+          <div className="flex flex-col gap-2 overflow-y-auto flex-1 pr-1">
+            {students.map((student) => {
+              const c = riskColors[student.riskLevel];
+              return (
+                <button
+                  key={student.id}
+                  onClick={() => selectStudent(student)}
+                  className={clsx(
+                    "w-full text-left bg-surface-container-lowest border-l-4 border-y border-r border-outline-variant rounded-r-xl p-4 cursor-pointer transition-colors relative overflow-hidden",
+                    c.border,
+                    selectedStudent.id === student.id ? "bg-surface-container-low shadow-md" : "hover:bg-surface-container-low"
+                  )}
+                >
+                  {student.riskLevel === "Critical" && (
+                    <div className="absolute top-0 right-0 w-14 h-14 bg-error-container/20 rounded-bl-full -mr-3 -mt-3" />
+                  )}
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <span className="text-sm font-bold text-on-background block">{student.anonymousId}</span>
+                      <span className="text-xs text-on-surface-variant">{student.faculty}, Yr {student.year}</span>
+                    </div>
+                    <span className={clsx("text-[10px] px-2 py-0.5 rounded uppercase tracking-wider font-semibold", c.badge)}>
+                      {student.riskLevel}
+                    </span>
+                  </div>
+                  <div className={clsx("flex items-center gap-1 mb-2 text-xs", c.text)}>
+                    <span className="material-symbols-outlined text-[14px]">
+                      {student.trend === "Declining" ? "trending_up" : student.trend === "Improving" ? "trending_down" : "trending_flat"}
+                    </span>
+                    <span className="uppercase tracking-wider">{student.trend}</span>
+                  </div>
+                  <p className="text-xs text-on-surface-variant line-clamp-2 mb-2">{student.summary}</p>
+                  <div className="text-xs text-outline flex items-center justify-between">
+                    <span className="flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[12px]">schedule</span>
+                      {student.lastActive}
+                    </span>
+                    {student.hasNewMessage && (
+                      <span className="flex items-center gap-1 text-primary font-medium">
+                        <span className="material-symbols-outlined text-[12px]">mark_chat_unread</span>
+                        1 New
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Chat Panel */}
+        <div className="flex-1 bg-surface-container-lowest border border-outline-variant rounded-xl flex flex-col overflow-hidden shadow-sm">
+          <div className="p-4 border-b border-outline-variant flex items-center gap-3 bg-surface-bright">
+            <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-primary shrink-0">
+              <span className="material-symbols-outlined icon-fill">person</span>
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-on-background">{selectedStudent.anonymousId}</h2>
+                <span className={clsx("text-[10px] px-2 py-0.5 rounded uppercase tracking-wider font-semibold", colors.badge)}>
+                  {selectedStudent.riskLevel}
+                </span>
+              </div>
+              <p className="text-xs text-on-surface-variant">{selectedStudent.faculty}, Yr {selectedStudent.year} &middot; PHQ-9: {selectedStudent.phq9Score}</p>
+            </div>
+            <button className="p-2 rounded-full border border-outline-variant text-on-surface-variant hover:bg-surface-container transition-colors" title="History">
+              <span className="material-symbols-outlined text-[18px]">history</span>
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
+            {messages.length === 0 && (
+              <div className="flex-1 flex items-center justify-center text-on-surface-variant text-sm">
+                <span className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[20px]">chat</span>
+                  No messages yet. Start the conversation.
+                </span>
+              </div>
+            )}
+            {messages.map((msg) => {
+              const isMe = msg.role === "counsellor";
+              return (
+                <div key={msg.id} className={clsx("flex", isMe ? "justify-end" : "justify-start")}>
+                  <div
+                    className={clsx(
+                      "max-w-[75%] rounded-2xl px-4 py-2.5 text-sm",
+                      isMe
+                        ? "bg-secondary text-on-secondary rounded-br-[4px]"
+                        : "bg-surface-container-high text-on-surface rounded-bl-[4px]"
+                    )}
+                  >
+                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                    <p className={clsx("text-[10px] mt-1", isMe ? "text-on-secondary/60" : "text-outline")}>
+                      {msg.timestamp}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="p-4 border-t border-outline-variant bg-surface-bright">
+            <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex items-center gap-3">
+              <button type="button" className="p-2 rounded-full text-on-surface-variant hover:bg-surface-container transition-colors" title="Attach">
+                <span className="material-symbols-outlined text-[20px]">attach_file</span>
+              </button>
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Type your message..."
+                className="flex-1 bg-surface border border-outline-variant rounded-xl px-4 py-2.5 text-sm text-on-background outline-none focus:ring-2 focus:ring-primary placeholder:text-on-surface-variant/60"
+              />
+              <button type="submit" disabled={!input.trim()} className="p-2.5 rounded-full bg-primary text-on-primary disabled:opacity-40 hover:opacity-90 transition-opacity">
+                <span className="material-symbols-outlined text-[20px]">send</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

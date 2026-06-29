@@ -1,15 +1,18 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import "./globals.css";
-import PushProvider from "./components/PushProvider";
 
 export const metadata: Metadata = {
-  title: "MindCare AI — Student Wellness System",
+  title: "MindCare AI ΓÇö Student Wellness System",
   description:
     "AI-powered mental health support and wellness management for university students.",
   keywords: "mental health, student wellness, AI screening, PHQ-9, university support",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" className="light" suppressHydrationWarning>
       <head>
@@ -25,8 +28,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="bg-surface text-on-surface antialiased min-h-screen">
-        {/* Push notification service worker registration + realtime crisis alerts */}
-        <PushProvider />
         {children}
       </body>
     </html>

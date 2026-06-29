@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 
 export default function NotFound() {
   return (
@@ -19,7 +19,7 @@ export default function NotFound() {
         <p className="text-on-surface-variant text-sm mb-6">
           The page you&apos;re looking for doesn&apos;t exist or has been moved.
           <br />
-          Take a deep breath — we&apos;ll get you back on track.
+          Take a deep breath ΓÇö we&apos;ll get you back on track.
         </p>
         <Link
           href="/"

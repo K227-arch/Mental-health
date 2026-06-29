@@ -1,264 +1,275 @@
-"use client";
+﻿"use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { insforge, getSeverity } from "@/lib/insforge";
-import type { ScreeningResult, CounsellorSession } from "@/lib/insforge";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend } from "recharts";
+import {
+  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer,
+} from "recharts";
+import { moodChartData, wellnessMilestones } from "@/app/lib/data";
 
-const COLORS = ["#ba1a1a", "#006a64", "#074469", "#40413e"];
+const responseTimeData = [
+  { day: "Mon", avg: 14, target: 10 },
+  { day: "Tue", avg: 11, target: 10 },
+  { day: "Wed", avg: 9, target: 10 },
+  { day: "Thu", avg: 16, target: 10 },
+  { day: "Fri", avg: 8, target: 10 },
+  { day: "Sat", avg: 12, target: 10 },
+  { day: "Sun", avg: 10, target: 10 },
+];
 
-export default function AnalyticsPage() {
-  const [sessions, setSessions] = useState<CounsellorSession[]>([]);
-  const [screenings, setScreenings] = useState<ScreeningResult[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState("30");
+const interventionData = [
+  { month: "Jan", attempted: 18, success: 14 },
+  { month: "Feb", attempted: 22, success: 18 },
+  { month: "Mar", attempted: 15, success: 13 },
+  { month: "Apr", attempted: 20, success: 17 },
+  { month: "May", attempted: 25, success: 21 },
+  { month: "Jun", attempted: 19, success: 16 },
+];
 
-  useEffect(() => {
-    const from = new Date();
-    from.setDate(from.getDate() - parseInt(timeRange));
+const riskDistribution = [
+  { name: "Critical", value: 3, color: "#ba1a1a" },
+  { name: "High", value: 8, color: "#006a64" },
+  { name: "Moderate", value: 15, color: "#074469" },
+  { name: "Minimal", value: 16, color: "#c1c7cf" },
+];
 
-    Promise.all([
-      insforge.database.from("counsellor_sessions").select().order("created_at", { ascending: false }),
-      insforge.database.from("screening_results").select().order("created_at", { ascending: false }),
-    ]).then(([sessRes, screenRes]) => {
-      if (sessRes.data) setSessions(sessRes.data as CounsellorSession[]);
-      if (screenRes.data) setScreenings(screenRes.data as ScreeningResult[]);
-      setLoading(false);
-    });
-  }, [timeRange]);
+const engagementData = [
+  { week: "W1", sessions: 42, messages: 180 },
+  { week: "W2", sessions: 48, messages: 210 },
+  { week: "W3", sessions: 55, messages: 245 },
+  { week: "W4", sessions: 51, messages: 230 },
+  { week: "W5", sessions: 60, messages: 280 },
+  { week: "W6", sessions: 58, messages: 265 },
+];
 
-  // Compute stats
-  const riskCounts = { Critical: 0, High: 0, Moderate: 0, Minimal: 0 };
-  sessions.forEach(s => {
-    const r = (s.risk_level || "Minimal") as keyof typeof riskCounts;
-    if (r in riskCounts) riskCounts[r]++;
-  });
+const tooltipStyle = {
+  contentStyle: {
+    background: "#ffffff",
+    border: "1px solid #c1c7cf",
+    borderRadius: "8px",
+    fontSize: "12px",
+  },
+};
 
-  const pieData = Object.entries(riskCounts).map(([name, value]) => ({ name, value }));
-
-  const avgScore = screenings.length > 0
-    ? (screenings.reduce((a, s) => a + s.score, 0) / screenings.length).toFixed(1)
-    : "—";
-
-  // Group screenings by day
-  const dayMap: Record<string, number[]> = {};
-  screenings.slice(0, 30).forEach(s => {
-    const day = new Date(s.created_at).toLocaleDateString("en", { month: "short", day: "numeric" });
-    if (!dayMap[day]) dayMap[day] = [];
-    dayMap[day].push(s.score);
-  });
-  const trendData = Object.entries(dayMap).slice(-14).map(([day, scores]) => ({
-    day,
-    avg: (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1),
-    count: scores.length,
-  }));
-
-  // Severity distribution
-  const sevDist: Record<string, number> = {};
-  screenings.forEach(s => {
-    sevDist[s.severity] = (sevDist[s.severity] || 0) + 1;
-  });
-  const sevData = Object.entries(sevDist).map(([name, value]) => ({ name, value }));
-
-  const interventionRate = sessions.length > 0
-    ? ((sessions.filter(s => s.intervention_logged).length / sessions.length) * 100).toFixed(0)
-    : "0";
-
+export default function CounsellorAnalytics() {
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+    <div className="p-4 md:p-8 max-w-[1200px] mx-auto flex flex-col gap-6">
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
         <div>
-          <h1 className="text-3xl font-bold text-on-background">Analytics & Insights</h1>
-          <p className="text-on-surface-variant mt-1">Real-time population wellness data</p>
+          <h1 className="text-3xl font-bold text-on-background">Student Wellness & Analytics</h1>
+          <p className="text-on-surface-variant mt-1">Digital Twin Visualization & Longitudinal Insights</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-secondary-container text-on-secondary-container text-xs font-semibold">
-            <span className="w-2 h-2 rounded-full bg-secondary mr-2 animate-pulse" />
-            Live Data
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary-container text-on-secondary-container text-xs font-medium">
+            <span className="w-2 h-2 rounded-full bg-secondary" />
+            Live Sync Active
           </span>
-          <select value={timeRange} onChange={e => setTimeRange(e.target.value)}
-            className="bg-surface border border-outline-variant text-on-surface text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary">
-            <option value="7">Last 7 Days</option>
-            <option value="30">Last 30 Days</option>
-            <option value="90">Last 90 Days</option>
-          </select>
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      {/* Bento Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-min">
+        {/* Right Column */}
+        <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Proactive Insights */}
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 flex flex-col shadow-sm flex-1">
+            <h3 className="text-sm font-semibold text-on-surface flex items-center gap-2 mb-4">
+              <span className="material-symbols-outlined text-secondary text-[20px]">lightbulb</span>
+              Proactive Insights
+            </h3>
+            <div className="flex-1 flex flex-col justify-center">
+              <p className="text-sm text-on-surface-variant mb-4">
+                AI analysis indicates a slightly elevated stress pattern over the last 48 hours. However, overall resilience remains strong across the student population.
+              </p>
+              <div className="mt-auto bg-surface rounded-lg p-3 border border-outline-variant flex items-center justify-between">
+                <span className="text-xs font-medium text-on-surface">Relapse Risk Assessment</span>
+                <span className="px-2.5 py-1 rounded-full bg-secondary-container text-on-secondary-container text-xs font-bold">Low Risk</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Secure Messaging */}
+          <div className="bg-primary-container text-on-primary-container rounded-xl p-5 flex flex-col shadow-sm cursor-pointer hover:bg-primary-fixed transition-colors group">
+            <div className="flex justify-between items-start mb-3">
+              <div className="w-10 h-10 rounded-full bg-surface/20 flex items-center justify-center">
+                <span className="material-symbols-outlined text-on-primary-container icon-fill">person</span>
+              </div>
+              <span className="material-symbols-outlined text-on-primary-container opacity-50 group-hover:opacity-100 transition-opacity">arrow_forward</span>
+            </div>
+            <h3 className="text-sm font-semibold mt-auto">Secure Messaging</h3>
+            <p className="text-xs opacity-80 mt-1">Connect with your assigned counselor directly.</p>
+          </div>
         </div>
-      ) : (
-        <div className="space-y-6">
-          {/* KPI Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: "Total Active Sessions", value: sessions.filter(s => s.status === "active").length, icon: "group", color: "text-primary" },
-              { label: "Avg PHQ-9 Score", value: avgScore, icon: "monitor_heart", color: "text-secondary" },
-              { label: "Critical Risk Cases", value: riskCounts.Critical, icon: "warning", color: "text-error" },
-              { label: "Intervention Rate", value: `${interventionRate}%`, icon: "task_alt", color: "text-secondary" },
-            ].map(kpi => (
-              <div key={kpi.label} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="text-xs text-on-surface-variant">{kpi.label}</span>
-                  <span className={`material-symbols-outlined icon-fill text-[20px] ${kpi.color}`}>{kpi.icon}</span>
+
+        {/* Stats Cards */}
+        <div className="md:col-span-12 grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: "Active Critical Alerts", value: "3", icon: "warning", color: "#ba1a1a", trend: "+1 since yesterday", trendIcon: "trending_up", trendColor: "text-error" },
+            { label: "Pending Interventions", value: "12", icon: "pending_actions", color: "#006a64", trend: "Requires review today", trendIcon: "schedule", trendColor: "text-on-surface-variant" },
+            { label: "Referral Success", value: "84%", icon: "check_circle", color: "#074469", trend: "+2% this week", trendIcon: "trending_up", trendColor: "text-secondary" },
+            { label: "Avg Response Time", value: "14m", icon: "timer", color: "#2a5c82", trend: "-2m this week", trendIcon: "trending_down", trendColor: "text-secondary" },
+          ].map((stat) => (
+            <div key={stat.label} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 flex flex-col gap-2 shadow-sm">
+              <div className="flex justify-between items-start">
+                <span className="text-xs text-on-surface-variant font-medium">{stat.label}</span>
+                <span className="material-symbols-outlined icon-fill text-[22px]" style={{ color: stat.color }}>{stat.icon}</span>
+              </div>
+              <div className="text-3xl font-black text-on-background">{stat.value}</div>
+              <div className={`text-xs flex items-center gap-1 ${stat.trendColor}`}>
+                <span className="material-symbols-outlined text-[14px]">{stat.trendIcon}</span>
+                {stat.trend}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Charts Row */}
+        <div className="md:col-span-6 bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
+          <h3 className="text-sm font-bold text-on-surface mb-1 flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px]">timer</span>
+            Response Time Trend
+          </h3>
+          <p className="text-xs text-on-surface-variant mb-6">Average counsellor response time (target: 10 min)</p>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={responseTimeData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="#888" />
+                <YAxis tick={{ fontSize: 12 }} stroke="#888" />
+                <Tooltip {...tooltipStyle} />
+                <Line type="monotone" dataKey="avg" stroke="#006a64" strokeWidth={2} dot={{ r: 4 }} name="Avg (min)" />
+                <Line type="monotone" dataKey="target" stroke="#ba1a1a" strokeWidth={1.5} strokeDasharray="5 5" dot={false} name="Target (min)" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="md:col-span-6 bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
+          <h3 className="text-sm font-bold text-on-surface mb-1 flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px]">check_circle</span>
+            Intervention Success Rate
+          </h3>
+          <p className="text-xs text-on-surface-variant mb-6">Successful interventions vs total attempted</p>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={interventionData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#888" />
+                <YAxis tick={{ fontSize: 12 }} stroke="#888" />
+                <Tooltip {...tooltipStyle} />
+                <Bar dataKey="attempted" fill="#c7c7c7" radius={[4, 4, 0, 0]} name="Attempted" />
+                <Bar dataKey="success" fill="#006a64" radius={[4, 4, 0, 0]} name="Successful" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="md:col-span-5 bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
+          <h3 className="text-sm font-bold text-on-surface mb-1 flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px]">pie_chart</span>
+            Student Risk Distribution
+          </h3>
+          <p className="text-xs text-on-surface-variant mb-4">Breakdown of current caseload by risk level</p>
+          <div className="h-64 flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={riskDistribution} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={3} dataKey="value" label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}>
+                  {riskDistribution.map((entry, idx) => (
+                    <Cell key={idx} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip {...tooltipStyle} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="md:col-span-7 bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
+          <h3 className="text-sm font-bold text-on-surface mb-1 flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px]">trending_up</span>
+            Student Engagement
+          </h3>
+          <p className="text-xs text-on-surface-variant mb-6">Weekly session and message activity</p>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={engagementData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                <XAxis dataKey="week" tick={{ fontSize: 12 }} stroke="#888" />
+                <YAxis tick={{ fontSize: 12 }} stroke="#888" />
+                <Tooltip {...tooltipStyle} />
+                <Area type="monotone" dataKey="sessions" stroke="#074469" fill="#074469" fillOpacity={0.1} strokeWidth={2} name="Sessions" />
+                <Area type="monotone" dataKey="messages" stroke="#006a64" fill="#006a64" fillOpacity={0.1} strokeWidth={2} name="Messages" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Longitudinal Analysis - Full width */}
+        <div className="md:col-span-12 bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
+          <div className="flex justify-between items-end mb-6">
+            <div>
+              <h3 className="text-sm font-semibold text-on-surface">Longitudinal Analysis</h3>
+              <p className="text-xs text-on-surface-variant">Stress Levels & Intervention Outcomes (30 Days)</p>
+            </div>
+            <select className="bg-surface border border-outline-variant text-on-surface text-xs rounded-md px-2 py-1.5 focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+              <option>Last 30 Days</option>
+              <option>Last 90 Days</option>
+            </select>
+          </div>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={moodChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="#888" />
+                <YAxis tick={{ fontSize: 12 }} stroke="#888" />
+                <Tooltip {...tooltipStyle} />
+                <Area type="monotone" dataKey="stress" stroke="#074469" fill="#074469" fillOpacity={0.1} strokeWidth={2} name="Stress Levels" />
+                <Area type="monotone" dataKey="intervention" stroke="#006a64" fill="#006a64" fillOpacity={0.1} strokeWidth={2} name="Intervention Impact" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Wellness Milestones */}
+        <div className="md:col-span-12 bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
+          <h3 className="text-sm font-semibold text-on-surface mb-4">Wellness Milestones</h3>
+          <div className="flex flex-wrap gap-4">
+            {wellnessMilestones.map((milestone) => (
+              <div key={milestone.id} className={`flex items-center gap-3 bg-surface p-3 rounded-lg border ${milestone.earned ? 'border-outline-variant' : 'border-dashed border-outline-variant'} min-w-[200px] ${!milestone.earned ? 'opacity-60' : ''}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${milestone.color.replace('text-', '').split(' ')[0]}`}>
+                  <span className="material-symbols-outlined text-[20px] icon-fill">{milestone.icon}</span>
                 </div>
-                <div className={`text-3xl font-black ${kpi.color}`}>{kpi.value}</div>
+                <div>
+                  <p className="text-xs font-medium text-on-surface">{milestone.title}</p>
+                  <p className="text-[10px] text-on-surface-variant">{milestone.description}</p>
+                </div>
               </div>
             ))}
           </div>
-
-          {/* Trend chart */}
-          <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
-            <h3 className="text-sm font-semibold text-on-surface mb-1">PHQ-9 Score Trend</h3>
-            <p className="text-xs text-on-surface-variant mb-4">Average daily PHQ-9 scores across all students</p>
-            {trendData.length > 0 ? (
-              <div className="h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={trendData} margin={{ top: 5, right: 10, bottom: 5, left: -20 }}>
-                    <defs>
-                      <linearGradient id="avgGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#074469" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#074469" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#c1c7cf" strokeOpacity={0.4} />
-                    <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#41474e" }} />
-                    <YAxis domain={[0, 27]} tick={{ fontSize: 11, fill: "#41474e" }} />
-                    <Tooltip contentStyle={{ background: "#ffffff", border: "1px solid #c1c7cf", borderRadius: "8px", fontSize: "12px" }} />
-                    <Area type="monotone" dataKey="avg" name="Avg PHQ-9" stroke="#074469" strokeWidth={2} fill="url(#avgGrad)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="h-56 flex items-center justify-center text-on-surface-variant text-sm">No data yet</div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Risk distribution pie */}
-            <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
-              <h3 className="text-sm font-semibold text-on-surface mb-1">Risk Level Distribution</h3>
-              <p className="text-xs text-on-surface-variant mb-4">Current session risk levels</p>
-              {sessions.length > 0 ? (
-                <div className="h-48">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="value" label={({ name, value }) => `${name}: ${value}`} labelLine={false}>
-                        {pieData.map((_, i) => (
-                          <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="h-48 flex items-center justify-center text-on-surface-variant text-sm">No sessions yet</div>
-              )}
-            </div>
-
-            {/* Severity distribution bar */}
-            <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
-              <h3 className="text-sm font-semibold text-on-surface mb-1">Severity Distribution</h3>
-              <p className="text-xs text-on-surface-variant mb-4">PHQ-9 severity across all screenings</p>
-              {sevData.length > 0 ? (
-                <div className="h-48">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={sevData} margin={{ top: 5, right: 10, bottom: 5, left: -20 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#c1c7cf" strokeOpacity={0.4} />
-                      <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#41474e" }} />
-                      <YAxis tick={{ fontSize: 11, fill: "#41474e" }} />
-                      <Tooltip contentStyle={{ background: "#ffffff", border: "1px solid #c1c7cf", borderRadius: "8px", fontSize: "12px" }} />
-                      <Bar dataKey="value" name="Count" fill="#074469" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="h-48 flex items-center justify-center text-on-surface-variant text-sm">No screenings yet</div>
-              )}
-            </div>
-          </div>
-
-          {/* Recent high-risk screenings — clickable rows linking to student page */}
-          {screenings.filter(s => s.score >= 10).length > 0 && (
-            <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-on-surface">High-Risk Screenings</h3>
-                <button
-                  onClick={() => {
-                    const report = {
-                      exported_at: new Date().toISOString(),
-                      time_range: `${timeRange} days`,
-                      summary: {
-                        total_sessions: sessions.length,
-                        avg_phq9: avgScore,
-                        critical: riskCounts.Critical,
-                        high: riskCounts.High,
-                        intervention_rate: `${interventionRate}%`,
-                      },
-                      high_risk_screenings: screenings.filter(s => s.score >= 10).map(s => ({
-                        user_id: s.user_id,
-                        score: s.score,
-                        severity: s.severity,
-                        risk: s.risk_level,
-                        date: s.created_at,
-                        flagged: s.flagged_keywords,
-                      })),
-                    };
-                    const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = `analytics-report-${new Date().toISOString().split("T")[0]}.json`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                  }}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-surface-container-highest text-on-surface rounded-lg text-xs font-medium hover:bg-surface-variant transition-colors"
-                >
-                  <span className="material-symbols-outlined text-[16px]">download</span>
-                  Export Report
-                </button>
-              </div>
-              <div className="space-y-2">
-                {screenings.filter(s => s.score >= 10).slice(0, 8).map(s => {
-                  const sev = getSeverity(s.score);
-                  return (
-                    <Link
-                      key={s.id}
-                      href={`/counsellor/student/${s.user_id}`}
-                      className="flex items-center justify-between py-2.5 px-3 border border-outline-variant rounded-xl hover:bg-surface-container hover:border-primary/30 transition-colors group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className={`text-lg font-black ${sev.color}`}>{s.score}</span>
-                        <div>
-                          <p className={`text-sm font-semibold ${sev.color}`}>{sev.label}</p>
-                          <p className="text-xs text-on-surface-variant font-mono">{s.user_id.slice(0, 12)}…</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="text-right">
-                          <p className="text-xs text-on-surface-variant">{new Date(s.created_at).toLocaleDateString()}</p>
-                          {s.flagged_keywords && s.flagged_keywords.length > 0 && (
-                            <span className="text-[10px] text-error font-medium flex items-center gap-1 justify-end mt-0.5">
-                              <span className="material-symbols-outlined text-[12px]">flag</span>
-                              {s.flagged_keywords.slice(0, 2).join(", ")}
-                            </span>
-                          )}
-                        </div>
-                        <span className="material-symbols-outlined text-[16px] text-on-surface-variant/40 group-hover:text-primary transition-colors">arrow_forward</span>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
-      )}
+
+        {/* Summary Row */}
+        <div className="md:col-span-12 grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: "Total Chat Sessions", value: "248", icon: "forum" },
+            { label: "Crisis Interventions", value: "36", icon: "emergency" },
+            { label: "Avg Session Duration", value: "18m", icon: "schedule" },
+            { label: "Student Satisfaction", value: "94%", icon: "thumb_up" },
+          ].map((item) => (
+            <div key={item.label} className="bg-surface-container-low border border-outline-variant rounded-lg p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-surface-container-higher flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-primary text-[20px]">{item.icon}</span>
+              </div>
+              <div>
+                <p className="text-xs text-on-surface-variant">{item.label}</p>
+                <p className="text-lg font-bold text-on-surface">{item.value}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
