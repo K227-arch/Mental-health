@@ -407,14 +407,16 @@ export default function ScreeningPage() {
               </div>
               <div className="flex gap-1 mb-0.5">
                 <button
-                  className="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant hover:bg-primary-container hover:text-on-primary-container flex items-center justify-center transition-colors"
-                  title="Record Audio"
+                  disabled
+                  className="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant/40 flex items-center justify-center cursor-not-allowed"
+                  title="Voice input — coming soon"
                 >
                   <span className="material-symbols-outlined text-[20px]">mic</span>
                 </button>
                 <button
-                  className="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant hover:bg-primary-container hover:text-on-primary-container flex items-center justify-center transition-colors"
-                  title="Upload Video"
+                  disabled
+                  className="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant/40 flex items-center justify-center cursor-not-allowed"
+                  title="Video input — coming soon"
                 >
                   <span className="material-symbols-outlined text-[20px]">videocam</span>
                 </button>

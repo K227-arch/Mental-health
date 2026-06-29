@@ -179,10 +179,15 @@ export default function CounsellorLibrary() {
                   <span className="material-symbols-outlined text-[12px]">schedule</span>
                   {resource.readTime}
                 </span>
-                <button className="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
+                <a
+                  href={`https://www.google.com/search?q=${encodeURIComponent(resource.title + " mental health")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
+                >
                   Open Resource
                   <span className="material-symbols-outlined text-[14px]">open_in_new</span>
-                </button>
+                </a>
               </div>
             </div>
           ))}

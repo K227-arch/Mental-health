@@ -113,18 +113,50 @@ export default function CrisisPage() {
 
         {/* Safety Plan Banner */}
         <div className="w-full mb-8">
-          <button className="w-full bg-secondary-container border border-secondary-fixed-dim rounded-xl p-4 md:p-5 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors hover:bg-secondary-fixed focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2">
-            <div className="flex items-center gap-3 text-on-secondary-container">
-              <span className="material-symbols-outlined text-[24px]">health_and_safety</span>
-              <div className="text-left">
-                <span className="block text-sm font-semibold">Personal Safety Plan</span>
-                <span className="block text-sm opacity-80">Access your pre-filled coping strategies and contacts.</span>
+          <details className="group w-full bg-secondary-container border border-secondary-fixed-dim rounded-xl overflow-hidden">
+            <summary className="p-4 md:p-5 flex flex-col md:flex-row items-center justify-between gap-4 cursor-pointer transition-colors hover:bg-secondary-fixed focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2 list-none">
+              <div className="flex items-center gap-3 text-on-secondary-container">
+                <span className="material-symbols-outlined text-[24px]">health_and_safety</span>
+                <div className="text-left">
+                  <span className="block text-sm font-semibold">Personal Safety Plan</span>
+                  <span className="block text-sm opacity-80">Your coping strategies and emergency contacts.</span>
+                </div>
+              </div>
+              <span className="text-sm font-medium text-on-secondary-container bg-surface-container-lowest px-5 py-2 rounded-full shadow-sm whitespace-nowrap group-open:hidden">
+                View Plan
+              </span>
+              <span className="text-sm font-medium text-on-secondary-container bg-surface-container-lowest px-5 py-2 rounded-full shadow-sm whitespace-nowrap hidden group-open:inline">
+                Close
+              </span>
+            </summary>
+            <div className="px-5 pb-5 border-t border-secondary-fixed-dim/50 pt-4 space-y-4 text-on-secondary-container">
+              <div>
+                <h4 className="text-sm font-bold mb-1">1. Warning Signs</h4>
+                <p className="text-sm opacity-80">Thoughts of worthlessness, withdrawal from friends, difficulty sleeping, loss of interest in activities.</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-bold mb-1">2. Coping Strategies</h4>
+                <ul className="text-sm opacity-80 list-disc ml-4 space-y-1">
+                  <li>Deep breathing (4-7-8 technique)</li>
+                  <li>Go for a walk outside</li>
+                  <li>Call a friend or family member</li>
+                  <li>Use the grounding exercise on this page</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="text-sm font-bold mb-1">3. People I Can Contact</h4>
+                <ul className="text-sm opacity-80 list-disc ml-4 space-y-1">
+                  <li>University Counselling Centre: 0800-HELP</li>
+                  <li>Trusted friend or family member</li>
+                  <li>Campus security (for immediate danger)</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="text-sm font-bold mb-1">4. Professional Help</h4>
+                <p className="text-sm opacity-80">If coping strategies aren&apos;t working, contact your counsellor or go to the nearest hospital emergency department.</p>
               </div>
             </div>
-            <span className="text-sm font-medium text-on-secondary-container bg-surface-container-lowest px-5 py-2 rounded-full shadow-sm whitespace-nowrap">
-              View Plan
-            </span>
-          </button>
+          </details>
         </div>
 
         {/* Stabilization Tools + Professional Support */}

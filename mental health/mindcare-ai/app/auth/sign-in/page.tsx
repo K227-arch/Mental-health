@@ -14,18 +14,52 @@ export default function SignInPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState<string | null>(null);
+  const [resetMode, setResetMode] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const errorParam = params.get("error");
     if (errorParam) setError(errorParam);
+    if (params.get("reset") === "success") {
+      setError(null);
+      setResetSent(true);
+    }
   }, []);
-  const [loading, setLoading] = useState(false);
-  const [oauthLoading, setOauthLoading] = useState<string | null>(null);
 
   const getRedirect = () => {
     if (typeof window === "undefined") return role === "counsellor" ? "/counsellor" : "/dashboard";
     return new URLSearchParams(window.location.search).get("redirect") || (role === "counsellor" ? "/counsellor" : "/dashboard");
+  };
+
+  const handleResetPassword = async () => {
+    if (!email) {
+      setError("Please enter your email address first.");
+      return;
+    }
+    setResetLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to send reset email");
+      } else {
+        setResetSent(true);
+        setResetMode(false);
+      }
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setResetLoading(false);
+    }
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -223,7 +257,7 @@ export default function SignInPage() {
                   <label htmlFor="password" className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
                     Password
                   </label>
-                  <button type="button" className="text-xs text-primary font-medium hover:underline">
+                  <button type="button" onClick={() => { setResetMode(true); handleResetPassword(); }} className="text-xs text-primary font-medium hover:underline">
                     Forgot?
                   </button>
                 </div>
@@ -251,6 +285,13 @@ export default function SignInPage() {
                   </button>
                 </div>
               </div>
+
+              {resetSent && (
+                <div className="flex items-start gap-2 p-3 bg-secondary-container text-on-secondary-container text-sm rounded-xl animate-fade-in">
+                  <span className="material-symbols-outlined text-[18px] shrink-0 mt-0.5">check_circle</span>
+                  <span>Password reset email sent. Check your inbox.</span>
+                </div>
+              )}
 
               {error && (
                 <div className="flex items-start gap-2 p-3 bg-error-container/80 text-on-error-container text-sm rounded-xl animate-fade-in">

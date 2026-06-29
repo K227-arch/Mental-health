@@ -181,8 +181,8 @@ export default function DashboardPage() {
                 </div>
               </div>
               <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-secondary-container text-on-secondary-container text-xs font-semibold">
-                <span className="w-2 h-2 rounded-full bg-secondary mr-2 animate-pulse" />
-                Live Sync Active
+                <span className="w-2 h-2 rounded-full bg-secondary mr-2" />
+                Session Active
               </span>
             </div>
 
