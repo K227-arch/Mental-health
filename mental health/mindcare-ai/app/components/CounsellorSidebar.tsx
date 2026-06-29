@@ -7,6 +7,7 @@ import clsx from "clsx";
 const navItems = [
   { href: "/counsellor", label: "Dashboard", icon: "dashboard" },
   { href: "/counsellor/chat", label: "Chat", icon: "forum" },
+  { href: "/counsellor/media", label: "Student Media", icon: "play_circle" },
   { href: "/counsellor/library", label: "Wellness Library", icon: "local_library" },
   { href: "/counsellor/analytics", label: "Analytics", icon: "monitoring" },
 ];
@@ -57,7 +58,7 @@ export default function CounsellorSidebar() {
       {/* Bottom */}
       <div className="mt-auto pt-4 border-t border-outline-variant flex flex-col gap-1">
         <Link
-          href="/counsellor"
+          href="/settings"
           className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-on-surface-variant hover:bg-surface-container-high transition-colors"
         >
           <span className="material-symbols-outlined">settings</span>

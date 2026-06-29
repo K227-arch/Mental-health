@@ -1,14 +1,43 @@
 "use client";
 
-import { useState } from "react";
-import { students, counsellorStats, riskColors } from "../lib/data";
+import { useState, useEffect } from "react";
+import { students as mockStudents, counsellorStats, riskColors } from "../lib/data";
 import type { Student } from "../lib/data";
 import clsx from "clsx";
+import { useTranslation } from "../lib/i18n";
 
 export default function CounsellorDashboard() {
-  const [selectedStudent, setSelectedStudent] = useState<Student>(students[0]);
+  const { t } = useTranslation();
+  const [students, setStudents] = useState<Student[]>(mockStudents);
+  const [selectedStudent, setSelectedStudent] = useState<Student>(mockStudents[0]);
   const [filter, setFilter] = useState<"All" | "Critical" | "High" | "Moderate" | "Minimal">("All");
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/counsellor/students")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.students && data.students.length > 0) {
+          // Map DB students to the Student interface
+          const dbStudents: Student[] = data.students.map((s: any) => ({
+            id: s.id,
+            anonymousId: s.anonymousId || s.id?.slice(0, 8),
+            faculty: "University",
+            year: 2,
+            riskLevel: s.riskLevel || "Moderate",
+            trend: "Stable" as const,
+            lastActive: s.lastActive ? new Date(s.lastActive).toLocaleString() : "Unknown",
+            phq9Score: s.phq9Score || 0,
+            moodLabel: s.severity || "Unknown",
+            depressionIndex: s.riskLevel === "Critical" ? "High" : s.riskLevel === "High" ? "Moderate" : "Low",
+            summary: s.aiSummary || `Student with ${s.riskLevel} risk level. PHQ-9 score: ${s.phq9Score || 0}.`,
+          }));
+          setStudents(dbStudents);
+          setSelectedStudent(dbStudents[0]);
+        }
+      })
+      .catch(() => {/* keep mock data */});
+  }, []);
 
   const filtered = filter === "All" ? students : students.filter((s) => s.riskLevel === filter);
 
@@ -75,12 +104,12 @@ export default function CounsellorDashboard() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
         <div>
-          <h1 className="text-3xl font-bold text-on-background">Decision Support Overview</h1>
-          <p className="text-on-surface-variant mt-1">Monitoring {students.length * 10} active anonymized cases.</p>
+          <h1 className="text-3xl font-bold text-on-background">{t("counsellor.dashboard.title")}</h1>
+          <p className="text-on-surface-variant mt-1">{t("counsellor.dashboard.monitoring")}</p>
         </div>
         <button onClick={handleExportReport} className="flex items-center gap-2 px-5 py-2.5 bg-surface-container-highest text-on-surface rounded-lg text-sm font-medium hover:bg-surface-variant transition-colors">
           <span className="material-symbols-outlined text-[18px]">download</span>
-          Export Report
+          {t("counsellor.export")}
         </button>
       </div>
 

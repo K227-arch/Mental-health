@@ -64,8 +64,9 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
               {mobileMenuOpen ? "close" : "menu"}
             </span>
           </button>
-          <Link href="/" className="font-bold text-2xl text-primary tracking-tight">
-            MindCare AI
+          <Link href="/" className="flex items-center gap-2">
+            <img src="/logo.jpeg" alt="Selfcare Hub" className="w-8 h-8 object-contain rounded-lg" />
+            <span className="font-bold text-2xl text-primary tracking-tight">Selfcare Hub</span>
           </Link>
         </div>
 
@@ -147,7 +148,7 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
                     Profile
                   </Link>
                   <Link
-                    href="/dashboard"
+                    href="/settings"
                     onClick={() => setDropdownOpen(false)}
                     className="flex items-center gap-2 px-3 py-2 text-sm text-on-surface hover:bg-surface-container rounded-lg transition-colors"
                   >

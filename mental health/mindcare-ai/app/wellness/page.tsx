@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -89,8 +89,28 @@ const exercises = [
 ];
 
 export default function WellnessPage() {
-  const [activeSection, setActiveSection] = useState<"exercises" | "resources" | "milestones" | "hope">("exercises");
+  const [activeSection, setActiveSection] = useState<"exercises" | "resources" | "shared" | "milestones" | "hope">("exercises");
   const [completedExercises, setCompletedExercises] = useState<string[]>([]);
+  const [sharedResources, setSharedResources] = useState<any[]>([]);
+  const [loadingShared, setLoadingShared] = useState(false);
+
+  useEffect(() => {
+    // Fetch shared resources for this student
+    fetch("/api/auth/me")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        if (d?.user?.id) {
+          setLoadingShared(true);
+          fetch(`/api/resources?assignedTo=${d.user.id}`)
+            .then((r) => r.ok ? r.json() : { resources: [] })
+            .then((data) => {
+              setSharedResources((data.resources || []).filter((r: any) => r.assigned_to));
+              setLoadingShared(false);
+            })
+            .catch(() => setLoadingShared(false));
+        }
+      });
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-surface">
@@ -116,7 +136,7 @@ export default function WellnessPage() {
         <div className="px-4 md:px-20 py-10 max-w-6xl mx-auto">
           {/* Tabs */}
           <div className="flex flex-wrap gap-2 mb-8 bg-surface-container-low rounded-xl p-1.5 w-fit">
-            {(["exercises", "resources", "milestones", "hope"] as const).map((tab) => (
+            {(["exercises", "resources", "shared", "milestones", "hope"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveSection(tab)}
@@ -126,7 +146,7 @@ export default function WellnessPage() {
                     : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
-                {tab === "hope" ? "Hope Gallery" : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                {tab === "hope" ? "Hope Gallery" : tab === "shared" ? `Shared (${sharedResources.length})` : tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
             ))}
           </div>
@@ -218,6 +238,65 @@ export default function WellnessPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Shared by Counsellor */}
+          {activeSection === "shared" && (
+            <div className="animate-fade-in">
+              <h2 className="text-xl font-bold text-on-surface mb-2">Shared by Your Counsellor</h2>
+              <p className="text-on-surface-variant text-sm mb-6">Resources your counsellor has selected specifically for you.</p>
+
+              {loadingShared ? (
+                <div className="text-center py-12 text-on-surface-variant">
+                  <span className="material-symbols-outlined animate-spin text-[24px]">progress_activity</span>
+                </div>
+              ) : sharedResources.length === 0 ? (
+                <div className="text-center py-16 bg-surface-container-lowest border border-outline-variant rounded-xl">
+                  <span className="material-symbols-outlined text-[48px] text-on-surface-variant/30 block mb-3">library_books</span>
+                  <p className="text-sm text-on-surface-variant">No resources shared yet.</p>
+                  <p className="text-xs text-on-surface-variant/60 mt-1">Your counsellor will share relevant materials after your screening.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {sharedResources.map((resource: any) => (
+                    <div
+                      key={resource.id}
+                      className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <span className="text-[10px] px-2 py-0.5 rounded uppercase tracking-wider font-semibold bg-secondary-container text-on-secondary-container">
+                          {resource.category}
+                        </span>
+                        <span className="material-symbols-outlined text-[18px] text-secondary">
+                          {resource.type === "video" ? "play_circle" : resource.type === "exercise" ? "self_improvement" : "article"}
+                        </span>
+                      </div>
+                      <h3 className="text-sm font-bold text-on-surface mb-2">{resource.title}</h3>
+                      <p className="text-xs text-on-surface-variant mb-4 flex-1 leading-relaxed">{resource.description}</p>
+                      <div className="flex items-center justify-between pt-3 border-t border-outline-variant">
+                        <span className="text-[10px] text-on-surface-variant flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[12px]">schedule</span>
+                          {resource.read_time || "5 min"}
+                        </span>
+                        {resource.content_url ? (
+                          <a
+                            href={resource.content_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
+                          >
+                            Open
+                            <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+                          </a>
+                        ) : (
+                          <span className="text-xs text-on-surface-variant">No attachment</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

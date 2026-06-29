@@ -107,11 +107,11 @@ export default function SignUpPage() {
         </div>
 
         <div className="relative z-10 max-w-md text-center">
-          <div className="w-20 h-20 bg-white/15 backdrop-blur-sm rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg border border-white/20">
-            <span className="material-symbols-outlined icon-fill text-white text-[40px]">
-              {role === "counsellor" ? "medical_information" : "favorite"}
-            </span>
-          </div>
+          <img
+            src="/logo.jpeg"
+            alt="Selfcare Hub"
+            className="w-20 h-20 object-contain rounded-2xl mx-auto mb-4 shadow-lg border border-white/20 bg-white/90"
+          />
           <p className="text-white/70 text-xs font-medium uppercase tracking-widest mb-6">
             {role === "counsellor" ? "Counsellor Portal" : "Student Portal"}
           </p>
@@ -166,15 +166,13 @@ export default function SignUpPage() {
         </div>
 
         <div className="relative z-10 w-full max-w-sm">
-          {/* Mobile logo */}
+          {/* Logo + Header */}
           <div className="text-center mb-6">
-            <Link href="/" className="inline-flex items-center gap-2">
-              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-                <span className="material-symbols-outlined icon-fill text-on-primary text-[22px]">psychiatry</span>
-              </div>
-              <span className="font-black text-2xl text-primary">MindCare AI</span>
+            <Link href="/" className="inline-block">
+              <img src="/logo.jpeg" alt="Selfcare Hub" className="w-14 h-14 object-contain rounded-xl mx-auto mb-3" />
             </Link>
-            <p className="text-on-surface-variant text-xs font-medium uppercase tracking-wider mt-2">
+            <h2 className="font-black text-xl text-primary">Selfcare Hub</h2>
+            <p className="text-on-surface-variant text-xs font-medium uppercase tracking-widest mt-1.5">
               {role === "counsellor" ? "Counsellor Portal" : "Student Portal"}
             </p>
           </div>

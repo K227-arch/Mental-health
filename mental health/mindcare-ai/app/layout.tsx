@@ -3,7 +3,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "MindCare AI — Student Wellness System",
+  title: "Selfcare Hub — Student Wellness System",
   description:
     "AI-powered mental health support and wellness management for university students.",
   keywords: "mental health, student wellness, AI screening, PHQ-9, university support",

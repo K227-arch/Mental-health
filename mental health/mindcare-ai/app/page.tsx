@@ -112,10 +112,8 @@ export default function LandingPage() {
         className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-6 md:px-16 h-16 bg-surface/85 backdrop-blur-xl border-b border-outline-variant/20 shadow-sm"
       >
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <span className="material-symbols-outlined icon-fill text-on-primary text-[18px]">psychiatry</span>
-          </div>
-          <span className="font-black text-xl text-primary tracking-tight">MindCare AI</span>
+          <img src="/logo.jpeg" alt="Selfcare Hub" className="w-8 h-8 object-contain rounded-lg" />
+          <span className="font-black text-xl text-primary tracking-tight">Selfcare Hub</span>
         </Link>
         <div className="hidden md:flex items-center gap-6">
           <a href="#features" className="text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">Features</a>
@@ -369,7 +367,7 @@ export default function LandingPage() {
       >
         <div className="max-w-3xl mx-auto text-center">
           <span className="material-symbols-outlined text-primary/20 text-[48px] mb-4">format_quote</span>
-          <blockquote className="text-xl md:text-2xl font-medium text-on-surface leading-relaxed mb-6 italic">&quot;MindCare helped me realize I wasn&apos;t alone. The daily check-ins became my anchor during exam season. I finally had the courage to talk to a counsellor.&quot;</blockquote>
+          <blockquote className="text-xl md:text-2xl font-medium text-on-surface leading-relaxed mb-6 italic">&quot;Selfcare Hub helped me realize I wasn&apos;t alone. The daily check-ins became my anchor during exam season. I finally had the courage to talk to a counsellor.&quot;</blockquote>
           <div className="flex items-center justify-center gap-3">
             <div className="w-10 h-10 bg-primary-container rounded-full flex items-center justify-center">
               <span className="text-sm font-bold text-on-primary-container">SK</span>
@@ -466,7 +464,7 @@ export default function LandingPage() {
             Ready to prioritize your wellbeing?
           </h2>
           <p className="text-on-surface-variant text-lg mb-8 font-light">
-            Join thousands of students already using MindCare AI. Free, confidential, and available 24/7.
+            Join thousands of students already using Selfcare Hub. Free, confidential, and available 24/7.
           </p>
           <Link
             href="/auth/sign-up"

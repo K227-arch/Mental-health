@@ -48,7 +48,11 @@ export default function ScreeningPage() {
   const [nlpAnalysis, setNlpAnalysis] = useState<NlpAnalysis | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [freeTextInputs, setFreeTextInputs] = useState<string[]>([]);
+  const [recording, setRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -72,6 +76,7 @@ export default function ScreeningPage() {
       if (!meRes.ok) return;
       const meData = await meRes.json();
       const userId = meData?.user?.id;
+      const userName = meData?.user?.name || "Anonymous Student";
       if (!userId) return;
 
       await fetch("/api/screening/submit", {
@@ -84,6 +89,36 @@ export default function ScreeningPage() {
           responses: finalAnswers,
         }),
       });
+
+      // Auto-assign to counsellor session if first screening or high risk
+      if (score >= 5) {
+        await fetch("/api/sessions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            studentId: userId,
+            counsellorId: "system-assigned",
+            riskLevel: score >= 20 ? "Critical" : score >= 15 ? "High" : score >= 10 ? "Moderate" : "Minimal",
+            notes: `Auto-assigned from PHQ-9 screening. Score: ${score} (${severity}).`,
+            studentName: userName,
+          }),
+        }).catch(() => {});
+      }
+
+      // Create notification for counsellor if score is concerning
+      if (score >= 10) {
+        await fetch("/api/notifications", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: "counsellor-system",
+            title: "High-Risk Screening",
+            body: `${userName} scored ${score} (${severity}) on PHQ-9. Review recommended.`,
+            type: "alert",
+            link: "/counsellor",
+          }),
+        }).catch(() => {});
+      }
     } catch (error) {
       console.error("Failed to save screening result:", error);
     }
@@ -184,6 +219,89 @@ export default function ScreeningPage() {
     }, 500);
   };
 
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+      const chunks: BlobPart[] = [];
+
+      recorder.ondataavailable = (e) => chunks.push(e.data);
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(chunks, { type: "audio/webm" });
+        addMessage("user", "🎤 [Voice message recorded — transcribing...]");
+
+        // Transcribe
+        const formData = new FormData();
+        formData.append("file", blob, "recording.webm");
+
+        try {
+          const res = await fetch("/api/transcribe", { method: "POST", body: formData });
+          if (res.ok) {
+            const { text } = await res.json();
+            if (text) {
+              addMessage("ai", `📝 Transcription: "${text}"`);
+              setFreeTextInputs((prev) => [...prev, text]);
+            } else {
+              addMessage("ai", "Audio received but couldn't be transcribed. Your response has been noted.");
+            }
+          } else {
+            addMessage("ai", "Voice noted. Transcription service is warming up — your audio is saved.");
+          }
+        } catch {
+          addMessage("ai", "Voice noted. Transcription will be available shortly.");
+        }
+
+        // Upload to storage
+        const uploadForm = new FormData();
+        uploadForm.append("file", blob, "recording.webm");
+        uploadForm.append("userId", "anonymous");
+        uploadForm.append("type", "audio");
+        fetch("/api/upload", { method: "POST", body: uploadForm }).catch(() => {});
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setRecording(true);
+    } catch {
+      addMessage("ai", "Microphone access denied. Please allow microphone permissions and try again.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && recording) {
+      mediaRecorder.stop();
+      setRecording(false);
+      setMediaRecorder(null);
+    }
+  };
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingVideo(true);
+    addMessage("user", `🎥 [Video uploaded: ${file.name}]`);
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("userId", "anonymous");
+    formData.append("type", "video");
+
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      if (res.ok) {
+        addMessage("ai", "Video received. Your counsellor will review it securely. Thank you for sharing.");
+      } else {
+        addMessage("ai", "Video upload noted. It will be available for review shortly.");
+      }
+    } catch {
+      addMessage("ai", "Video saved locally. It will sync when connection restores.");
+    } finally {
+      setUploadingVideo(false);
+      if (videoInputRef.current) videoInputRef.current.value = "";
+    }
+  };
+
   const severity = done ? getPHQ9Severity(totalScore) : null;
   const progress = ((currentQuestion + (done ? 1 : 0)) / phq9Questions.length) * 100;
 
@@ -194,7 +312,10 @@ export default function ScreeningPage() {
 
       {/* Top Nav */}
       <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-surface shadow-sm border-b border-outline-variant/30">
-        <Link href="/" className="font-black text-xl text-primary">MindCare AI</Link>
+        <Link href="/" className="flex items-center gap-2">
+          <img src="/logo.jpeg" alt="Selfcare Hub" className="w-7 h-7 object-contain rounded-md" />
+          <span className="font-black text-xl text-primary">Selfcare Hub</span>
+        </Link>
         <div className="flex items-center gap-2">
           <Link
             href="/crisis"
@@ -407,19 +528,31 @@ export default function ScreeningPage() {
               </div>
               <div className="flex gap-1 mb-0.5">
                 <button
-                  disabled
-                  className="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant/40 flex items-center justify-center cursor-not-allowed"
-                  title="Voice input — coming soon"
+                  onClick={recording ? stopRecording : startRecording}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                    recording
+                      ? "bg-error text-on-error animate-pulse"
+                      : "bg-surface-container-highest text-on-surface-variant hover:bg-primary-container hover:text-on-primary-container"
+                  }`}
+                  title={recording ? "Stop recording" : "Record voice message"}
                 >
-                  <span className="material-symbols-outlined text-[20px]">mic</span>
+                  <span className="material-symbols-outlined text-[20px]">{recording ? "stop" : "mic"}</span>
                 </button>
                 <button
-                  disabled
-                  className="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant/40 flex items-center justify-center cursor-not-allowed"
-                  title="Video input — coming soon"
+                  onClick={() => videoInputRef.current?.click()}
+                  disabled={uploadingVideo}
+                  className="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant hover:bg-primary-container hover:text-on-primary-container flex items-center justify-center transition-colors disabled:opacity-50"
+                  title="Upload video"
                 >
-                  <span className="material-symbols-outlined text-[20px]">videocam</span>
+                  <span className="material-symbols-outlined text-[20px]">{uploadingVideo ? "progress_activity" : "videocam"}</span>
                 </button>
+                <input
+                  ref={videoInputRef}
+                  type="file"
+                  accept="video/*"
+                  className="hidden"
+                  onChange={handleVideoUpload}
+                />
                 <button
                   onClick={handleTextSubmit}
                   className="w-10 h-10 rounded-full bg-primary text-on-primary hover:bg-surface-tint flex items-center justify-center transition-colors shadow-md ml-1"

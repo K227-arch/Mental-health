@@ -5,12 +5,12 @@ const sections = [
   {
     title: "Acceptance of Terms",
     content:
-      "By accessing or using MindCare AI, you agree to be bound by these Terms of Service. If you do not agree with any part of these terms, you may not use our platform. These terms apply to all users, including students, faculty, counsellors, and administrators. Continued use of the platform after any changes to these terms constitutes acceptance of the updated terms.",
+      "By accessing or using Selfcare Hub, you agree to be bound by these Terms of Service. If you do not agree with any part of these terms, you may not use our platform. These terms apply to all users, including students, faculty, counsellors, and administrators. Continued use of the platform after any changes to these terms constitutes acceptance of the updated terms.",
   },
   {
     title: "Services",
     content:
-      "MindCare AI provides AI-powered mental health screening, mood tracking, wellness resources, and crisis support tools for university students. Our services are designed to support — not replace — professional mental health care. The AI screening tool provides preliminary assessments only and should not be used as a diagnostic tool. In case of emergency, please contact emergency services or crisis hotlines directly.",
+      "Selfcare Hub provides AI-powered mental health screening, mood tracking, wellness resources, and crisis support tools for university students. Our services are designed to support — not replace — professional mental health care. The AI screening tool provides preliminary assessments only and should not be used as a diagnostic tool. In case of emergency, please contact emergency services or crisis hotlines directly.",
   },
   {
     title: "User Responsibilities",
@@ -20,12 +20,12 @@ const sections = [
   {
     title: "Limitation of Liability",
     content:
-      "MindCare AI and its operators shall not be liable for any indirect, incidental, or consequential damages arising from the use or inability to use the platform. The AI screening tool provides assessments based on self-reported data and may not capture the full complexity of an individual's mental health condition. Always consult qualified mental health professionals for medical decisions. We make no guarantees regarding the availability or reliability of the service.",
+      "Selfcare Hub and its operators shall not be liable for any indirect, incidental, or consequential damages arising from the use or inability to use the platform. The AI screening tool provides assessments based on self-reported data and may not capture the full complexity of an individual's mental health condition. Always consult qualified mental health professionals for medical decisions. We make no guarantees regarding the availability or reliability of the service.",
   },
   {
     title: "Contact",
     content:
-      "For questions about these terms, please contact us at legal@mindcareai.app or write to: MindCare AI Legal, University Wellness Center, Kampala, Uganda. For technical support, reach out through the in-app help system or email support@mindcareai.app. We aim to respond to all inquiries within 48 hours.",
+      "For questions about these terms, please contact us at legal@mindcareai.app or write to: Selfcare Hub Legal, University Wellness Center, Kampala, Uganda. For technical support, reach out through the in-app help system or email support@mindcareai.app. We aim to respond to all inquiries within 48 hours.",
   },
 ];
 
@@ -38,8 +38,9 @@ export default function TermsOfService() {
       </div>
 
       <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-6 md:px-20 h-16 bg-surface/95 backdrop-blur-sm border-b border-outline-variant/30 shadow-sm">
-        <Link href="/" className="font-black text-2xl text-primary">
-          MindCare AI
+        <Link href="/" className="flex items-center gap-2">
+          <img src="/logo.jpeg" alt="Selfcare Hub" className="w-8 h-8 object-contain rounded-lg" />
+          <span className="font-black text-2xl text-primary">Selfcare Hub</span>
         </Link>
         <Link
           href="/"
@@ -82,7 +83,7 @@ export default function TermsOfService() {
           </div>
 
           <p className="text-xs text-on-surface-variant/60 mt-8 text-center">
-            These terms govern your use of the MindCare AI Student Wellness System.
+            These terms govern your use of the Selfcare Hub Student Wellness System.
           </p>
         </div>
       </main>

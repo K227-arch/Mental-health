@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { moodChartData, wellnessMilestones } from "../lib/data";
+import { wellnessMilestones } from "../lib/data";
+import { useTranslation } from "../lib/i18n";
 import {
   AreaChart,
   Area,
@@ -19,12 +20,14 @@ import {
 const moods = ["😢", "😔", "😐", "🙂", "😊"];
 
 export default function DashboardPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"30" | "90">("30");
   const [user, setUser] = useState<{ id?: string; name?: string } | null>(null);
   const [currentMood, setCurrentMood] = useState<number | null>(null);
   const [moodSaving, setMoodSaving] = useState(false);
   const [moodSaved, setMoodSaved] = useState(false);
   const [moodHistory, setMoodHistory] = useState<{ date: string; mood: number; label: string }[]>([]);
+  const [moodChartData, setMoodChartData] = useState<{ day: string; stress: number; intervention: number }[]>([]);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -42,12 +45,16 @@ export default function DashboardPage() {
 
   const fetchMoodHistory = async (userId: string) => {
     try {
-      const res = await fetch(`/api/mood?userId=${userId}&limit=7`);
+      const res = await fetch(`/api/mood?userId=${userId}&limit=30`);
       if (res.ok) {
         const data = await res.json();
         if (data.data && data.data.length > 0) {
           const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-          const history = data.data.reverse().map((entry: { mood_score: number; created_at: string }) => {
+          const entries = data.data.reverse();
+          
+          // Build mood history (last 7)
+          const last7 = entries.slice(-7);
+          const history = last7.map((entry: { mood_score: number; created_at: string }) => {
             const d = new Date(entry.created_at);
             const moodIndex = Math.min(Math.max(Math.round(entry.mood_score / 2), 0), 4);
             return {
@@ -57,29 +64,30 @@ export default function DashboardPage() {
             };
           });
           setMoodHistory(history);
+
+          // Build chart data from all entries
+          const chartData = entries.map((entry: { mood_score: number; stress_level: number; created_at: string }, i: number) => ({
+            day: `D${i + 1}`,
+            stress: entry.stress_level * 10,
+            intervention: entry.mood_score * 10,
+          }));
+          setMoodChartData(chartData);
         } else {
-          // Fallback if no data
           setMoodHistory([
             { date: "Mon", mood: 3, label: "😐" },
             { date: "Tue", mood: 4, label: "🙂" },
             { date: "Wed", mood: 2, label: "😔" },
-            { date: "Thu", mood: 3, label: "😐" },
-            { date: "Fri", mood: 4, label: "🙂" },
-            { date: "Sat", mood: 5, label: "😊" },
-            { date: "Sun", mood: 4, label: "🙂" },
+          ]);
+          setMoodChartData([
+            { day: "D1", stress: 30, intervention: 0 },
+            { day: "D3", stress: 45, intervention: 20 },
+            { day: "D5", stress: 60, intervention: 60 },
           ]);
         }
       }
     } catch {
-      setMoodHistory([
-        { date: "Mon", mood: 3, label: "😐" },
-        { date: "Tue", mood: 4, label: "🙂" },
-        { date: "Wed", mood: 2, label: "😔" },
-        { date: "Thu", mood: 3, label: "😐" },
-        { date: "Fri", mood: 4, label: "🙂" },
-        { date: "Sat", mood: 5, label: "😊" },
-        { date: "Sun", mood: 4, label: "🙂" },
-      ]);
+      setMoodHistory([{ date: "Today", mood: 3, label: "😐" }]);
+      setMoodChartData([{ day: "D1", stress: 30, intervention: 50 }]);
     }
   };
 
@@ -176,8 +184,8 @@ export default function DashboardPage() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
               <div className="flex items-center gap-3">
                 <div>
-                  <h1 className="text-3xl font-bold text-on-surface mb-1">Welcome back, {user?.name || "Student"}</h1>
-                  <p className="text-on-surface-variant text-sm">Take a deep breath. This is your safe space to check in with yourself and find support when you need it</p>
+                  <h1 className="text-3xl font-bold text-on-surface mb-1">{t("dashboard.welcome")}, {user?.name || "Student"}</h1>
+                  <p className="text-on-surface-variant text-sm">{t("dashboard.subtitle")}</p>
                 </div>
               </div>
               <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-secondary-container text-on-secondary-container text-xs font-semibold">
@@ -190,7 +198,7 @@ export default function DashboardPage() {
             <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
               <h3 className="text-sm font-semibold text-on-surface mb-3 flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-[20px]">mood</span>
-                How are you feeling right now?
+                {t("dashboard.mood.title")}
               </h3>
               <div className="flex gap-3 justify-center md:justify-start">
                 {moods.map((m, i) => (
@@ -210,7 +218,7 @@ export default function DashboardPage() {
               </div>
               {currentMood !== null && (
                 <p className="text-xs text-secondary font-medium mt-2 animate-fade-in">
-                  {moodSaving ? "Saving..." : moodSaved ? "Mood recorded ✓ — Saved to your wellness log." : "Mood selected"}
+                  {moodSaving ? t("dashboard.mood.saving") : moodSaved ? t("dashboard.mood.saved") : ""}
                 </p>
               )}
             </div>
@@ -297,43 +305,14 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-semibold text-on-surface flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary text-[20px]">event</span>
-                    Upcoming Sessions
+                    Your Sessions
                   </h3>
-                  <span className="text-xs text-primary font-medium">2 upcoming</span>
+                  <Link href="/dashboard/chat" className="text-xs text-primary font-medium hover:underline flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[14px]">forum</span>
+                    Open Chat
+                  </Link>
                 </div>
-                <div className="space-y-3">
-                  {[
-                    { title: "Weekly Check-in", counsellor: "Dr. Sarah Kim", date: "Jun 24, 2026", time: "10:00 AM", type: "Virtual" },
-                    { title: "Follow-up Assessment", counsellor: "Dr. Sarah Kim", date: "Jun 28, 2026", time: "2:30 PM", type: "In-Person" },
-                  ].map((s, i) => (
-                    <div key={i} className="flex items-center gap-4 bg-surface rounded-xl p-4 border border-outline-variant">
-                      <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center shrink-0">
-                        <span className="material-symbols-outlined text-primary text-[22px] icon-fill">calendar_month</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-on-surface">{s.title}</p>
-                        <p className="text-xs text-on-surface-variant">{s.counsellor}</p>
-                        <div className="flex items-center gap-3 mt-1">
-                          <span className="inline-flex items-center gap-1 text-xs text-secondary font-medium">
-                            <span className="material-symbols-outlined text-[14px]">calendar_today</span>
-                            {s.date}
-                          </span>
-                          <span className="inline-flex items-center gap-1 text-xs text-on-surface-variant">
-                            <span className="material-symbols-outlined text-[14px]">schedule</span>
-                            {s.time}
-                          </span>
-                          <span className="inline-flex items-center gap-1 text-xs text-on-surface-variant">
-                            <span className="material-symbols-outlined text-[14px]">location_on</span>
-                            {s.type}
-                          </span>
-                        </div>
-                      </div>
-                      <span className="shrink-0 px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container text-xs font-semibold">
-                        Confirmed
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                <SessionsList userId={user?.id} />
               </div>
 
               {/* Longitudinal Chart */}
@@ -476,6 +455,52 @@ export default function DashboardPage() {
         </main>
       </div>
       <Footer />
+    </div>
+  );
+}
+
+function SessionsList({ userId }: { userId?: string }) {
+  const [sessions, setSessions] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!userId) return;
+    fetch(`/api/sessions?studentId=${userId}`)
+      .then((r) => r.ok ? r.json() : { sessions: [] })
+      .then((data) => setSessions(data.sessions || []))
+      .catch(() => {});
+  }, [userId]);
+
+  if (sessions.length === 0) {
+    return (
+      <div className="text-center py-6 text-on-surface-variant">
+        <span className="material-symbols-outlined text-[32px] opacity-30 block mb-2">event_busy</span>
+        <p className="text-xs">No sessions yet. Complete a screening to get connected.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {sessions.slice(0, 3).map((s: any) => (
+        <div key={s.id} className="flex items-center gap-4 bg-surface rounded-xl p-4 border border-outline-variant">
+          <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined text-primary text-[22px] icon-fill">calendar_month</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-on-surface">Counselling Session</p>
+            <p className="text-xs text-on-surface-variant">Risk: {s.risk_level || "Unknown"}</p>
+            <span className="inline-flex items-center gap-1 text-xs text-secondary font-medium mt-1">
+              <span className="material-symbols-outlined text-[14px]">calendar_today</span>
+              {new Date(s.created_at).toLocaleDateString()}
+            </span>
+          </div>
+          <span className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold ${
+            s.status === "active" ? "bg-secondary-container text-on-secondary-container" : "bg-surface-container text-on-surface-variant"
+          }`}>
+            {s.status || "Active"}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
