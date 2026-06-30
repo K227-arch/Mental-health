@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
+import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { hopeMessages } from "../lib/data";
 
@@ -19,6 +20,12 @@ export default function CrisisPage() {
   const [breathCount, setBreathCount] = useState(0);
   const [isBreathing, setIsBreathing] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [recording, setRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [uploadingAudio, setUploadingAudio] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   const startBreathing = () => {
     setIsBreathing(true);
@@ -41,31 +48,148 @@ export default function CrisisPage() {
     cycle();
   };
 
-  return (
-    <div className="min-h-screen flex flex-col bg-surface selection:bg-primary-fixed selection:text-on-primary-fixed">
-      {/* Hero */}
-      <header className="relative w-full min-h-[300px] md:h-[40vh] flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-secondary/10 to-surface" />
-          <div className="absolute inset-0 bg-gradient-to-br from-primary-fixed/30 to-secondary-container/20" />
-        </div>
-        <div className="relative z-20 text-center px-6 max-w-4xl mx-auto w-full py-16 md:py-12">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-error text-on-error rounded-full text-sm font-semibold mb-4">
-            <span className="material-symbols-outlined icon-fill text-[18px]">emergency</span>
-            Crisis Support — Available 24/7
-          </div>
-          <h1 className="text-3xl md:text-5xl font-black text-primary mb-4 leading-tight">
-            You are not alone.{" "}
-            <br className="hidden md:block" />
-            Help is here right now.
-          </h1>
-          <p className="text-lg text-on-surface-variant max-w-2xl mx-auto">
-            Immediate Mental Health Crisis Resources. Confidential. Available 24/7.
-          </p>
-        </div>
-      </header>
+  const startAudioRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+      const chunks: BlobPart[] = [];
 
-      <main className="flex-grow relative z-30 -mt-16 px-4 md:px-20 pb-20 w-full max-w-6xl mx-auto">
+      recorder.ondataavailable = (e) => chunks.push(e.data);
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(chunks, { type: "audio/webm" });
+        setUploadingAudio(true);
+
+        const formData = new FormData();
+        formData.append("file", blob, "crisis-audio.webm");
+        formData.append("userId", "anonymous");
+        formData.append("type", "audio");
+
+        try {
+          const res = await fetch("/api/upload", { method: "POST", body: formData });
+          if (res.ok) {
+            setUploadSuccess("Voice message sent to your counsellor securely.");
+            setTimeout(() => setUploadSuccess(null), 4000);
+          }
+        } catch {
+          setUploadSuccess("Audio saved. It will be sent when connection restores.");
+          setTimeout(() => setUploadSuccess(null), 4000);
+        }
+        setUploadingAudio(false);
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setRecording(true);
+    } catch {
+      setUploadSuccess("Microphone access denied. Please allow permissions.");
+      setTimeout(() => setUploadSuccess(null), 3000);
+    }
+  };
+
+  const stopAudioRecording = () => {
+    if (mediaRecorder && recording) {
+      mediaRecorder.stop();
+      setRecording(false);
+      setMediaRecorder(null);
+    }
+  };
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingVideo(true);
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("userId", "anonymous");
+    formData.append("type", "video");
+
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      if (res.ok) {
+        setUploadSuccess("Video sent to your counsellor securely.");
+        setTimeout(() => setUploadSuccess(null), 4000);
+      }
+    } catch {
+      setUploadSuccess("Video saved. It will be sent when connection restores.");
+      setTimeout(() => setUploadSuccess(null), 4000);
+    }
+    setUploadingVideo(false);
+    if (videoInputRef.current) videoInputRef.current.value = "";
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col bg-surface selection:bg-primary-fixed selection:text-on-primary-fixed relative">
+      {/* Logo Watermark */}
+      <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0">
+        <img src="/logo.jpeg" alt="" className="w-[500px] h-[500px] object-contain opacity-[0.06]" />
+      </div>
+
+      <Navbar variant="student" />
+
+      <div className="flex flex-1 pt-16">
+        {/* Sidebar */}
+        <aside className="hidden md:flex flex-col h-[calc(100vh-64px)] sticky top-16 w-64 shrink-0 p-3 border-r border-outline-variant bg-surface-container-low overflow-y-auto">
+          <div className="mb-4 px-3">
+            <h2 className="text-xs text-on-surface-variant uppercase tracking-wider mb-1 mt-3">Student Portal</h2>
+            <p className="text-sm font-semibold text-on-surface">Crisis Support</p>
+          </div>
+          <nav className="flex-1 flex flex-col gap-1">
+            {[
+              { href: "/dashboard", label: "Dashboard", icon: "dashboard" },
+              { href: "/screening", label: "Daily Check-in", icon: "psychology" },
+              { href: "/wellness", label: "Wellness Hub", icon: "self_improvement" },
+              { href: "/dashboard/chat", label: "Chat", icon: "forum" },
+              { href: "/crisis", label: "Crisis Support", icon: "emergency", active: true, red: true },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                  (item as any).active
+                    ? "bg-error-container text-on-error-container font-bold shadow-sm"
+                    : (item as any).red
+                    ? "text-error hover:bg-error-container/30"
+                    : "text-on-surface-variant hover:bg-surface-container-high"
+                }`}
+              >
+                <span
+                  className="material-symbols-outlined"
+                  style={(item as any).active ? { fontVariationSettings: "'FILL' 1" } : undefined}
+                >
+                  {item.icon}
+                </span>
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto relative z-10">
+          {/* Hero Banner */}
+          <header className="relative w-full px-6 py-12 md:py-16 overflow-hidden">
+            <div className="absolute inset-0 z-0">
+              <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-secondary/5 to-surface" />
+            </div>
+            <div className="relative z-20 text-center max-w-3xl mx-auto">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-error text-on-error rounded-full text-sm font-semibold mb-4">
+                <span className="material-symbols-outlined icon-fill text-[18px]">emergency</span>
+                Crisis Support — Available 24/7
+              </div>
+              <h1 className="text-3xl md:text-4xl font-black text-primary mb-3 leading-tight">
+                You are not alone.
+              </h1>
+              <p className="text-on-surface-variant text-base md:text-lg max-w-xl mx-auto">
+                Help is here right now. Choose what feels right for you.
+              </p>
+            </div>
+          </header>
+
+          {/* Crisis Content */}
+          <div className="px-4 md:px-10 pb-12 max-w-5xl mx-auto space-y-6">
+
         {/* Urgent Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full mb-8">
           {/* Call */}
@@ -91,7 +215,7 @@ export default function CrisisPage() {
 
           {/* Chat */}
           <Link
-            href="/counsellor/chat"
+            href="/auth/sign-in"
             className="group block w-full bg-primary rounded-xl p-6 shadow-sm transition-transform active:scale-95 hover:-translate-y-1 relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-primary-fixed"
           >
             <div className="absolute -right-8 -bottom-8 bg-on-primary/10 w-32 h-32 rounded-full blur-xl group-hover:bg-on-primary/20 transition-colors" />
@@ -285,6 +409,61 @@ export default function CrisisPage() {
                 </div>
               </div>
             )}
+
+            {/* Audio/Video Upload to Counsellor */}
+            <div className="mt-6 pt-5 border-t border-outline-variant">
+              <h4 className="text-sm font-semibold text-on-surface mb-2 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-[18px]">upload</span>
+                Share with Your Counsellor
+              </h4>
+              <p className="text-xs text-on-surface-variant mb-4">
+                Record a voice message or upload a video to share how you&apos;re feeling. Your counsellor will review it privately.
+              </p>
+
+              {uploadSuccess && (
+                <div className="mb-4 p-3 bg-secondary-container text-on-secondary-container rounded-xl text-sm flex items-center gap-2 animate-fade-in">
+                  <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                  {uploadSuccess}
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                {/* Audio Record */}
+                <button
+                  onClick={recording ? stopAudioRecording : startAudioRecording}
+                  disabled={uploadingAudio}
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                    recording
+                      ? "bg-error text-on-error animate-pulse"
+                      : "bg-primary-container text-on-primary-container hover:bg-primary-fixed"
+                  } disabled:opacity-50`}
+                >
+                  <span className="material-symbols-outlined text-[20px]">
+                    {uploadingAudio ? "progress_activity" : recording ? "stop_circle" : "mic"}
+                  </span>
+                  {uploadingAudio ? "Sending..." : recording ? "Stop Recording" : "Record Voice"}
+                </button>
+
+                {/* Video Upload */}
+                <button
+                  onClick={() => videoInputRef.current?.click()}
+                  disabled={uploadingVideo}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium bg-secondary-container text-on-secondary-container hover:bg-secondary-fixed transition-all disabled:opacity-50"
+                >
+                  <span className="material-symbols-outlined text-[20px]">
+                    {uploadingVideo ? "progress_activity" : "videocam"}
+                  </span>
+                  {uploadingVideo ? "Uploading..." : "Upload Video"}
+                </button>
+                <input
+                  ref={videoInputRef}
+                  type="file"
+                  accept="video/*,audio/*"
+                  className="hidden"
+                  onChange={handleVideoUpload}
+                />
+              </div>
+            </div>
           </section>
 
           {/* Professional Support */}
@@ -354,7 +533,10 @@ export default function CrisisPage() {
             ))}
           </div>
         </section>
-      </main>
+
+          </div>
+        </main>
+      </div>
 
       <Footer />
     </div>

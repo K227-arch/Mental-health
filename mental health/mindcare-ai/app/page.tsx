@@ -103,7 +103,12 @@ const steps = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-surface overflow-x-hidden">
+    <div className="min-h-screen flex flex-col bg-surface overflow-x-hidden relative">
+      {/* 3D Bubbles Background — covers entire page */}
+      <div className="fixed inset-0 opacity-55 pointer-events-none z-0">
+        <MindScene />
+      </div>
+
       {/* Navbar */}
       <motion.nav
         initial={{ y: -20, opacity: 0 }}
@@ -146,14 +151,9 @@ export default function LandingPage() {
 
       {/* Hero with 3D Background */}
       <section className="relative flex flex-col items-center justify-center min-h-screen px-6 pt-16 text-center overflow-hidden">
-        {/* 3D Scene */}
-        <div className="absolute inset-0 opacity-55">
-          <MindScene />
-        </div>
-
         {/* Overlay for readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-surface/60 via-surface/30 to-surface pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,var(--color-surface)_75%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-surface/40 via-surface/20 to-surface/40 pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_50%,var(--color-surface)_80%)] pointer-events-none" />
 
         {/* Content */}
         <motion.div
@@ -247,7 +247,7 @@ export default function LandingPage() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
         transition={{ duration: 0.7 }}
-        className="px-6 md:px-16 py-16 bg-surface-container-lowest border-y border-outline-variant/20"
+        className="px-6 md:px-16 py-16 bg-surface-container-lowest/70 backdrop-blur-sm border-y border-outline-variant/20"
       >
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
           {stats.map((s) => (
@@ -289,7 +289,7 @@ export default function LandingPage() {
               <motion.div key={f.title} variants={fadeUp} custom={i}>
                 <Link
                   href={f.href}
-                  className="group bg-surface-container-lowest border border-outline-variant/40 rounded-2xl p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col gap-4 h-full"
+                  className="group bg-surface-container-lowest/80 backdrop-blur-sm border border-outline-variant/40 rounded-2xl p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col gap-4 h-full"
                 >
                   <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${f.color}`}>
                     <span className="material-symbols-outlined icon-fill text-[22px]">{f.icon}</span>
@@ -312,7 +312,7 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="px-6 md:px-16 py-24 bg-surface-container-lowest/50">
+      <section id="how-it-works" className="px-6 md:px-16 py-24 bg-surface-container-lowest/50 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -381,7 +381,7 @@ export default function LandingPage() {
       </motion.section>
 
       {/* Counsellor CTA */}
-      <section id="counsellors" className="px-6 md:px-16 py-20 bg-primary-container/10">
+      <section id="counsellors" className="px-6 md:px-16 py-20 bg-primary-container/10 backdrop-blur-sm">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -389,7 +389,7 @@ export default function LandingPage() {
           transition={{ duration: 0.7 }}
           className="max-w-5xl mx-auto"
         >
-          <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-8 md:p-14 shadow-sm flex flex-col md:flex-row items-center gap-10">
+          <div className="bg-surface-container-lowest/80 backdrop-blur-sm border border-outline-variant/40 rounded-3xl p-8 md:p-14 shadow-sm flex flex-col md:flex-row items-center gap-10">
             <div className="flex-1">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-secondary-container text-on-secondary-container text-xs font-semibold rounded-full mb-5">
                 <span className="material-symbols-outlined text-[14px]">medical_information</span>

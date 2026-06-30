@@ -14,18 +14,19 @@ function RisingBubble({ startPosition, color, speed, size, distort }: {
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const offset = useRef(Math.random() * Math.PI * 2);
+  const startOffset = useRef(Math.random() * 14); // stagger start times
 
   useFrame((state) => {
     if (!meshRef.current) return;
-    const t = state.clock.elapsedTime * speed;
+    const t = state.clock.elapsedTime * speed + startOffset.current;
 
-    // Rise from bottom to top, reset when past top
-    let y = startPosition[1] + (t % 12) - 6;
-    if (y > 6) y -= 12;
+    // Start from bottom (-7) and rise to top (7), then loop back to bottom
+    const range = 14; // total vertical travel distance
+    let y = -7 + (t % range);
 
     // Gentle horizontal sway
-    const x = startPosition[0] + Math.sin(t * 0.5 + offset.current) * 0.4;
-    const z = startPosition[2] + Math.cos(t * 0.3 + offset.current) * 0.3;
+    const x = startPosition[0] + Math.sin(t * 0.4 + offset.current) * 0.6;
+    const z = startPosition[2] + Math.cos(t * 0.25 + offset.current) * 0.4;
 
     meshRef.current.position.set(x, y, z);
     meshRef.current.rotation.x = t * 0.1;
@@ -55,22 +56,22 @@ function Particles({ count = 60 }: { count?: number }) {
     const pos = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
       pos[i * 3] = (Math.random() - 0.5) * 10;
-      pos[i * 3 + 1] = (Math.random() - 0.5) * 10;
-      pos[i * 3 + 2] = (Math.random() - 0.5) * 8;
+      pos[i * 3 + 1] = -7 + Math.random() * 14; // spread vertically from bottom to top
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 6;
     }
     return pos;
   }, [count]);
 
-  useFrame((state) => {
+  useFrame(() => {
     if (!points.current) return;
-    points.current.rotation.y = state.clock.elapsedTime * 0.02;
 
-    // Move particles upward
+    // Move particles upward from bottom to top
     const posArray = points.current.geometry.attributes.position.array as Float32Array;
     for (let i = 0; i < count; i++) {
-      posArray[i * 3 + 1] += 0.003;
-      if (posArray[i * 3 + 1] > 5) {
-        posArray[i * 3 + 1] = -5;
+      posArray[i * 3 + 1] += 0.008; // rise speed
+      if (posArray[i * 3 + 1] > 7) {
+        posArray[i * 3 + 1] = -7; // reset to bottom
+        posArray[i * 3] = (Math.random() - 0.5) * 10; // randomize X on reset
       }
     }
     points.current.geometry.attributes.position.needsUpdate = true;
@@ -97,13 +98,13 @@ export default function MindScene() {
     for (let i = 0; i < 14; i++) {
       configs.push({
         startPosition: [
-          (Math.random() - 0.5) * 8,
-          (Math.random() - 0.5) * 12 - 3,
-          (Math.random() - 0.5) * 4 - 1,
+          (Math.random() - 0.5) * 8,  // spread across width
+          -7,                           // all start at bottom
+          (Math.random() - 0.5) * 3 - 1,
         ] as [number, number, number],
         color: colors[i % colors.length],
-        speed: 0.2 + Math.random() * 0.4,
-        size: 0.25 + Math.random() * 0.6,
+        speed: 0.15 + Math.random() * 0.35,
+        size: 0.2 + Math.random() * 0.55,
         distort: 0.2 + Math.random() * 0.3,
       });
     }

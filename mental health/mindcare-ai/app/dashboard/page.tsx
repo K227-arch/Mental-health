@@ -124,7 +124,11 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background relative">
+      {/* Logo Watermark */}
+      <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0">
+        <img src="/logo.jpeg" alt="" className="w-[500px] h-[500px] object-contain opacity-[0.06]" />
+      </div>
       <Navbar variant="student" />
 
       <div className="flex flex-1 pt-16">
@@ -381,8 +385,8 @@ export default function DashboardPage() {
               <div className="md:col-span-6 bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
                 <h3 className="text-sm font-semibold text-on-surface mb-4">This Week's Mood</h3>
                 <div className="flex justify-between items-end gap-2">
-                  {moodHistory.map((d) => (
-                    <div key={d.date} className="flex flex-col items-center gap-1 flex-1">
+                  {moodHistory.map((d, i) => (
+                    <div key={`${d.date}-${i}`} className="flex flex-col items-center gap-1 flex-1">
                       <span className="text-lg">{d.label}</span>
                       <div
                         className="w-full bg-primary/20 rounded-sm"
