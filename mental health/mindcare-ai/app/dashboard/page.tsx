@@ -155,7 +155,7 @@ export default function DashboardPage() {
               { href: "/dashboard", label: "Dashboard", icon: "dashboard", active: true },
               { href: "/screening", label: "Daily Check-in", icon: "psychology" },
               { href: "/wellness", label: "Wellness Hub", icon: "self_improvement" },
-              { href: "/crisis", label: "Crisis Support", icon: "emergency", red: true },
+              { href: "/dashboard/crisis", label: "Crisis Support", icon: "emergency", red: true },
             ].map((item) => (
               <Link
                 key={item.href}
@@ -445,7 +445,7 @@ export default function DashboardPage() {
                 </div>
               </Link>
               <Link
-                href="/crisis"
+                href="/dashboard/crisis"
                 className="flex items-center gap-3 p-4 bg-error-container text-on-error-container rounded-xl shadow-sm hover:opacity-90 transition-opacity"
               >
                 <span className="material-symbols-outlined icon-fill">emergency</span>
