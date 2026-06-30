@@ -55,7 +55,10 @@ export default function CounsellorChat() {
   }, []);
 
   useEffect(() => {
-    if (!selectedSession?.sessionId) return;
+    if (!selectedSession?.sessionId) {
+      setMessages([]);
+      return;
+    }
     fetch(`/api/messages?sessionId=${selectedSession.sessionId}`)
       .then((r) => r.ok ? r.json() : { messages: [] })
       .then((data) => setMessages(data.messages || []))
@@ -63,6 +66,7 @@ export default function CounsellorChat() {
 
     // Poll for new messages every 3 seconds
     const interval = setInterval(() => {
+      if (!selectedSession?.sessionId) return;
       fetch(`/api/messages?sessionId=${selectedSession.sessionId}`)
         .then((r) => r.ok ? r.json() : null)
         .then((data) => {
@@ -82,11 +86,46 @@ export default function CounsellorChat() {
     if (!input.trim() || !selectedSession || !user?.id) return;
     setSending(true);
 
+    let sessionId = selectedSession.sessionId;
+
+    // If no session exists, create one
+    if (!sessionId) {
+      try {
+        const sessRes = await fetch("/api/sessions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            studentId: selectedSession.id,
+            counsellorId: user.id,
+            riskLevel: selectedSession.riskLevel || "Minimal",
+            notes: "Session created from chat.",
+            studentName: selectedSession.name,
+          }),
+        });
+        if (sessRes.ok) {
+          const sessData = await sessRes.json();
+          sessionId = sessData.session?.id;
+          // Update the selected session with the new ID
+          setSelectedSession({ ...selectedSession, sessionId: sessionId || "" });
+          setSessions((prev) =>
+            prev.map((s) => s.id === selectedSession.id ? { ...s, sessionId: sessionId || "" } : s)
+          );
+        }
+      } catch {
+        // Session creation failed
+      }
+    }
+
+    if (!sessionId) {
+      setSending(false);
+      return;
+    }
+
     const res = await fetch("/api/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        sessionId: selectedSession.sessionId,
+        sessionId,
         senderId: user.id,
         senderRole: "counsellor",
         content: input.trim(),
@@ -96,7 +135,12 @@ export default function CounsellorChat() {
 
     if (res.ok) {
       const data = await res.json();
-      setMessages((prev) => [...prev, data.message]);
+      if (data.message) {
+        setMessages((prev) => {
+          const exists = prev.some((m) => m.id === data.message.id);
+          return exists ? prev : [...prev, data.message];
+        });
+      }
       setInput("");
     }
     setSending(false);
@@ -185,9 +229,9 @@ export default function CounsellorChat() {
                   No messages yet. Start the conversation.
                 </div>
               ) : (
-                messages.map((msg) => (
+                messages.map((msg, idx) => (
                   <div
-                    key={msg.id}
+                    key={`${msg.id}-${idx}`}
                     className={clsx(
                       "max-w-[70%] px-4 py-3 rounded-2xl text-sm",
                       msg.sender_role === "counsellor"

@@ -136,9 +136,9 @@ export default function StudentChatPage() {
                   <p>No messages yet. Say hello to your counsellor!</p>
                 </div>
               ) : (
-                messages.map((msg) => (
+                messages.map((msg, idx) => (
                   <div
-                    key={msg.id}
+                    key={`${msg.id}-${idx}`}
                     className={`max-w-[75%] px-4 py-3 rounded-2xl text-sm ${
                       msg.sender_role === "student"
                         ? "ml-auto bg-primary text-on-primary rounded-br-sm"
