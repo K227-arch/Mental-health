@@ -1,9 +1,12 @@
 "use client";
 
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { MeshDistortMaterial, Sphere } from "@react-three/drei";
 import * as THREE from "three";
+
+// Shared scroll state
+const scrollState = { velocity: 0, direction: 0 };
 
 function RisingBubble({ startPosition, color, speed, size, distort }: {
   startPosition: [number, number, number];
@@ -14,23 +17,27 @@ function RisingBubble({ startPosition, color, speed, size, distort }: {
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const offset = useRef(Math.random() * Math.PI * 2);
-  const startOffset = useRef(Math.random() * 14); // stagger start times
+  const yPos = useRef(startPosition[1]);
 
   useFrame((state) => {
     if (!meshRef.current) return;
-    const t = state.clock.elapsedTime * speed + startOffset.current;
+    const t = state.clock.elapsedTime;
 
-    // Start from bottom (-7) and rise to top (7), then loop back to bottom
-    const range = 14; // total vertical travel distance
-    let y = -7 + (t % range);
+    // Move based on scroll direction + natural drift
+    const scrollInfluence = scrollState.velocity * 0.4;
+    yPos.current += (speed * 0.015) + scrollInfluence;
+
+    // Wrap around
+    if (yPos.current > 7) yPos.current = -7;
+    if (yPos.current < -7) yPos.current = 7;
 
     // Gentle horizontal sway
-    const x = startPosition[0] + Math.sin(t * 0.4 + offset.current) * 0.6;
-    const z = startPosition[2] + Math.cos(t * 0.25 + offset.current) * 0.4;
+    const x = startPosition[0] + Math.sin(t * 0.4 * speed + offset.current) * 0.6;
+    const z = startPosition[2] + Math.cos(t * 0.25 * speed + offset.current) * 0.4;
 
-    meshRef.current.position.set(x, y, z);
-    meshRef.current.rotation.x = t * 0.1;
-    meshRef.current.rotation.z = t * 0.15;
+    meshRef.current.position.set(x, yPos.current, z);
+    meshRef.current.rotation.x = t * 0.1 * speed;
+    meshRef.current.rotation.z = t * 0.15 * speed;
   });
 
   return (
@@ -56,7 +63,7 @@ function Particles({ count = 60 }: { count?: number }) {
     const pos = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
       pos[i * 3] = (Math.random() - 0.5) * 10;
-      pos[i * 3 + 1] = -7 + Math.random() * 14; // spread vertically from bottom to top
+      pos[i * 3 + 1] = -7 + Math.random() * 14;
       pos[i * 3 + 2] = (Math.random() - 0.5) * 6;
     }
     return pos;
@@ -65,13 +72,18 @@ function Particles({ count = 60 }: { count?: number }) {
   useFrame(() => {
     if (!points.current) return;
 
-    // Move particles upward from bottom to top
     const posArray = points.current.geometry.attributes.position.array as Float32Array;
+    const scrollInfluence = scrollState.velocity * 0.3;
+
     for (let i = 0; i < count; i++) {
-      posArray[i * 3 + 1] += 0.008; // rise speed
+      posArray[i * 3 + 1] += 0.005 + scrollInfluence;
       if (posArray[i * 3 + 1] > 7) {
-        posArray[i * 3 + 1] = -7; // reset to bottom
-        posArray[i * 3] = (Math.random() - 0.5) * 10; // randomize X on reset
+        posArray[i * 3 + 1] = -7;
+        posArray[i * 3] = (Math.random() - 0.5) * 10;
+      }
+      if (posArray[i * 3 + 1] < -7) {
+        posArray[i * 3 + 1] = 7;
+        posArray[i * 3] = (Math.random() - 0.5) * 10;
       }
     }
     points.current.geometry.attributes.position.needsUpdate = true;
@@ -91,19 +103,52 @@ function Particles({ count = 60 }: { count?: number }) {
 }
 
 export default function MindScene() {
-  // Generate bubble configs
+  // Track scroll/wheel velocity
+  useEffect(() => {
+    const onWheel = (e: WheelEvent) => {
+      // deltaY positive = scrolling down, negative = scrolling up
+      scrollState.velocity = e.deltaY * 0.005;
+      scrollState.direction = e.deltaY > 0 ? 1 : -1;
+    };
+
+    // Also listen for scroll as backup
+    let lastScrollY = window.scrollY;
+    const onScroll = () => {
+      const currentY = window.scrollY;
+      const delta = currentY - lastScrollY;
+      if (Math.abs(delta) > 1) {
+        scrollState.velocity = delta * 0.015;
+        scrollState.direction = delta > 0 ? 1 : -1;
+      }
+      lastScrollY = currentY;
+    };
+
+    // Decay velocity over time
+    const decay = setInterval(() => {
+      scrollState.velocity *= 0.9;
+    }, 30);
+
+    window.addEventListener("wheel", onWheel, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("scroll", onScroll);
+      clearInterval(decay);
+    };
+  }, []);
+
   const bubbles = useMemo(() => {
     const colors = ["#074469", "#006a64", "#9ccbf7", "#9deee5", "#2a5c82", "#84d5cc"];
     const configs = [];
     for (let i = 0; i < 14; i++) {
       configs.push({
         startPosition: [
-          (Math.random() - 0.5) * 8,  // spread across width
-          -7,                           // all start at bottom
+          (Math.random() - 0.5) * 8,
+          -7 + Math.random() * 14,
           (Math.random() - 0.5) * 3 - 1,
         ] as [number, number, number],
         color: colors[i % colors.length],
-        speed: 0.15 + Math.random() * 0.35,
+        speed: 0.3 + Math.random() * 0.5,
         size: 0.2 + Math.random() * 0.55,
         distort: 0.2 + Math.random() * 0.3,
       });
@@ -123,12 +168,10 @@ export default function MindScene() {
         <pointLight position={[-3, -3, 2]} intensity={0.4} color="#9deee5" />
         <pointLight position={[3, 2, -2]} intensity={0.3} color="#cde5ff" />
 
-        {/* Rising bubbles */}
         {bubbles.map((b, i) => (
           <RisingBubble key={i} {...b} />
         ))}
 
-        {/* Floating particles also rising */}
         <Particles count={80} />
       </Canvas>
     </div>

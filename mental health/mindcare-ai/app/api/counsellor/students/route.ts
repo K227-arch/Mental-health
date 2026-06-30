@@ -1,20 +1,22 @@
 import { NextResponse } from "next/server";
-import { insforge } from "@/lib/insforge";
+import { insforgeAdmin as insforge } from "@/lib/insforge";
 
 export async function GET() {
   try {
-    // Get all active counsellor sessions with student data
-    const { data: sessions, error } = await insforge.database
-      .from("counsellor_sessions")
+    // Fetch all student profiles
+    const { data: profiles, error: profilesError } = await insforge.database
+      .from("student_profiles")
       .select()
-      .order("updated_at", { ascending: false });
+      .order("created_at", { ascending: false });
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (profilesError) {
+      return NextResponse.json({ error: profilesError.message }, { status: 500 });
     }
 
+    const allProfiles = profiles || [];
+
     // Get latest screening results for each student
-    const studentIds = [...new Set((sessions || []).map((s: any) => s.student_id))];
+    const studentIds = allProfiles.map((p: any) => p.id);
 
     let screenings: any[] = [];
     if (studentIds.length > 0) {
@@ -37,26 +39,49 @@ export async function GET() {
       moods = data || [];
     }
 
-    // Combine data per student
-    const students = (sessions || []).map((session: any) => {
-      const latestScreening = screenings.find((s: any) => s.user_id === session.student_id);
-      const latestMood = moods.find((m: any) => m.user_id === session.student_id);
+    // Get sessions
+    let sessions: any[] = [];
+    if (studentIds.length > 0) {
+      const { data } = await insforge.database
+        .from("counsellor_sessions")
+        .select()
+        .in("student_id", studentIds)
+        .order("updated_at", { ascending: false });
+      sessions = data || [];
+    }
+
+    // Build student data
+    const students = allProfiles.map((profile: any) => {
+      const latestScreening = screenings.find((s: any) => s.user_id === profile.id);
+      const latestMood = moods.find((m: any) => m.user_id === profile.id);
+      const session = sessions.find((s: any) => s.student_id === profile.id);
+
+      const phq9Score = latestScreening?.score || 0;
+      const assessmentType = latestScreening?.assessment_type || "none";
+      let riskLevel = "Minimal";
+      if (phq9Score >= 20) riskLevel = "Critical";
+      else if (phq9Score >= 15) riskLevel = "High";
+      else if (phq9Score >= 10) riskLevel = "Moderate";
 
       return {
-        id: session.student_id,
-        sessionId: session.id,
-        name: session.student_name || "Anonymous Student",
-        anonymousId: session.student_id?.slice(0, 8) || "unknown",
-        riskLevel: session.risk_level || latestScreening?.risk_level || "Moderate",
-        phq9Score: session.phq9_score || latestScreening?.score || 0,
-        severity: latestScreening?.severity || "Unknown",
+        id: profile.id,
+        sessionId: session?.id || null,
+        name: profile.name || "Anonymous Student",
+        email: profile.email,
+        anonymousId: profile.anonymous_id || profile.id?.slice(0, 8),
+        faculty: profile.faculty || "Not specified",
+        year: profile.year_of_study || 0,
+        role: profile.role || "student",
+        riskLevel: session?.risk_level || latestScreening?.risk_level || riskLevel,
+        phq9Score,
+        assessmentType,
+        severity: latestScreening?.severity || "No screening yet",
         moodScore: latestMood?.mood_score || null,
         stressLevel: latestMood?.stress_level || null,
-        lastActive: session.updated_at,
-        status: session.status,
-        notes: session.notes,
-        aiSummary: session.ai_summary,
-        interventionLogged: session.intervention_logged,
+        lastActive: session?.updated_at || latestMood?.created_at || latestScreening?.created_at || profile.created_at,
+        status: session?.status || "no session",
+        notes: session?.notes || "",
+        aiSummary: session?.ai_summary || "",
       };
     });
 

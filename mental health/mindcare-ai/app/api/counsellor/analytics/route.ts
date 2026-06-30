@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { insforge } from "@/lib/insforge";
+import { insforgeAdmin as insforge } from "@/lib/insforge";
 
 export async function GET() {
   try {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@insforge/sdk/ssr";
-import { insforge } from "@/lib/insforge";
+import { insforge, insforgeAdmin } from "@/lib/insforge";
 
 export async function GET(request: NextRequest) {
   const client = createServerClient({
@@ -15,19 +15,27 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ user: null }, { status: 401 });
   }
 
-  // Fetch role from student_profiles
+  // Fetch role from student_profiles — create if not exists
   let role = "student";
-  try {
-    const { data: profile } = await insforge.database
+  const { data: profile } = await insforgeAdmin.database
+    .from("student_profiles")
+    .select("role")
+    .eq("id", data.user.id)
+    .limit(1);
+
+  if (!profile || profile.length === 0) {
+    // Profile doesn't exist — create one using admin client
+    await insforgeAdmin.database
       .from("student_profiles")
-      .select("role")
-      .eq("id", data.user.id)
-      .single();
-    if (profile?.role) {
-      role = profile.role;
-    }
-  } catch {
-    // Profile may not exist yet
+      .insert({
+        id: data.user.id,
+        name: data.user.profile?.name || data.user.email?.split("@")[0] || "Student",
+        email: data.user.email || "",
+        role: "student",
+        anonymous_id: data.user.id.slice(0, 8),
+      });
+  } else if (profile[0]?.role) {
+    role = profile[0].role;
   }
 
   const response = NextResponse.json({

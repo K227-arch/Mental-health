@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { insforge } from "@/lib/insforge";
+import { insforgeAdmin as insforge } from "@/lib/insforge";
 
 // GET - fetch resources (optionally filtered by assigned_to for student-specific)
 export async function GET(request: NextRequest) {

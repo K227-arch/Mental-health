@@ -1,42 +1,44 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { students as mockStudents, counsellorStats, riskColors } from "../lib/data";
+import { riskColors } from "../lib/data";
 import type { Student } from "../lib/data";
 import clsx from "clsx";
 import { useTranslation } from "../lib/i18n";
 
 export default function CounsellorDashboard() {
   const { t } = useTranslation();
-  const [students, setStudents] = useState<Student[]>(mockStudents);
-  const [selectedStudent, setSelectedStudent] = useState<Student>(mockStudents[0]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [filter, setFilter] = useState<"All" | "Critical" | "High" | "Moderate" | "Minimal">("All");
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch("/api/counsellor/students")
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
         if (data?.students && data.students.length > 0) {
-          // Map DB students to the Student interface
           const dbStudents: Student[] = data.students.map((s: any) => ({
             id: s.id,
-            anonymousId: s.anonymousId || s.id?.slice(0, 8),
-            faculty: "University",
-            year: 2,
-            riskLevel: s.riskLevel || "Moderate",
+            anonymousId: s.name || s.anonymousId || s.id?.slice(0, 8),
+            faculty: s.faculty || "Not specified",
+            year: s.year || 0,
+            riskLevel: s.riskLevel || "Minimal",
             trend: "Stable" as const,
-            lastActive: s.lastActive ? new Date(s.lastActive).toLocaleString() : "Unknown",
+            lastActive: s.lastActive ? new Date(s.lastActive).toLocaleString() : "Never",
             phq9Score: s.phq9Score || 0,
-            moodLabel: s.severity || "Unknown",
+            moodLabel: s.severity || (s.assessmentType !== "none" ? `${(s.assessmentType || "").toUpperCase()} completed` : "No screening"),
             depressionIndex: s.riskLevel === "Critical" ? "High" : s.riskLevel === "High" ? "Moderate" : "Low",
-            summary: s.aiSummary || `Student with ${s.riskLevel} risk level. PHQ-9 score: ${s.phq9Score || 0}.`,
+            summary: s.aiSummary || `${s.name}. ${s.assessmentType && s.assessmentType !== "none" ? `Latest: ${s.assessmentType.toUpperCase()} — Score: ${s.phq9Score}.` : "No assessments yet."} Risk: ${s.riskLevel}.`,
+            hasNewMessage: false,
           }));
           setStudents(dbStudents);
           setSelectedStudent(dbStudents[0]);
         }
+        setLoading(false);
       })
-      .catch(() => {/* keep mock data */});
+      .catch(() => setLoading(false));
   }, []);
 
   const filtered = filter === "All" ? students : students.filter((s) => s.riskLevel === filter);
@@ -51,14 +53,17 @@ export default function CounsellorDashboard() {
   };
 
   const handleScheduleSession = () => {
+    if (!selectedStudent) return;
     showFeedback(`Session booking link sent to ${selectedStudent.anonymousId}.`);
   };
 
   const handleWellnessCheck = () => {
+    if (!selectedStudent) return;
     showFeedback(`Wellness check initiated for ${selectedStudent.anonymousId}. Campus security notified.`);
   };
 
   const handleClinicalReferral = async () => {
+    if (!selectedStudent) return;
     try {
       await fetch("/api/referrals", {
         method: "POST",
@@ -77,6 +82,7 @@ export default function CounsellorDashboard() {
   };
 
   const handleDismissAlert = () => {
+    if (!selectedStudent) return;
     showFeedback(`Alert dismissed for ${selectedStudent.anonymousId}.`);
   };
 
@@ -89,6 +95,7 @@ export default function CounsellorDashboard() {
   };
 
   const handleEscalate = () => {
+    if (!selectedStudent) return;
     showFeedback(`Case escalated to psychologist for ${selectedStudent.anonymousId}. Priority flag set.`);
   };
 
@@ -115,34 +122,38 @@ export default function CounsellorDashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {counsellorStats.map((stat) => (
+        {[
+          { label: "Total Students", value: String(students.length), icon: "groups", color: "#074469" },
+          { label: "Critical Alerts", value: String(students.filter(s => s.riskLevel === "Critical").length), icon: "warning", color: "#ba1a1a" },
+          { label: "Active Sessions", value: String(students.filter(s => s.lastActive !== "Never").length), icon: "pending_actions", color: "#006a64" },
+          { label: "Avg PHQ-9", value: students.length > 0 ? String(Math.round(students.reduce((a, s) => a + s.phq9Score, 0) / students.length)) : "0", icon: "analytics", color: "#074469" },
+        ].map((stat) => (
           <div key={stat.label} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 flex flex-col gap-2 shadow-sm">
             <div className="flex justify-between items-start">
               <span className="text-xs text-on-surface-variant font-medium">{stat.label}</span>
-              <span
-                className="material-symbols-outlined icon-fill text-[22px]"
-                style={{
-                  color:
-                    stat.label === "Active Critical Alerts"
-                      ? "#ba1a1a"
-                      : stat.label === "Pending Interventions"
-                      ? "#006a64"
-                      : "#074469",
-                }}
-              >
-                {stat.icon}
-              </span>
+              <span className="material-symbols-outlined icon-fill text-[22px]" style={{ color: stat.color }}>{stat.icon}</span>
             </div>
             <div className="text-3xl font-black text-on-background">{stat.value}</div>
-            <div className={`text-xs flex items-center gap-1 ${stat.trendColor}`}>
-              <span className="material-symbols-outlined text-[14px]">{stat.trendIcon}</span>
-              {stat.trend}
-            </div>
           </div>
         ))}
       </div>
 
       {/* Case Management */}
+      {loading ? (
+        <div className="flex items-center justify-center py-20 text-on-surface-variant">
+          <span className="material-symbols-outlined animate-spin text-[24px] mr-2">progress_activity</span>
+          Loading students...
+        </div>
+      ) : students.length === 0 ? (
+        <div className="text-center py-20 bg-surface-container-lowest border border-outline-variant rounded-xl">
+          <span className="material-symbols-outlined text-[48px] text-on-surface-variant/30 block mb-3">groups</span>
+          <h3 className="text-lg font-semibold text-on-surface mb-2">No students yet</h3>
+          <p className="text-sm text-on-surface-variant max-w-md mx-auto">
+            Students will appear here once they sign up and complete their first PHQ-9 screening. 
+            Share the student portal link to get started.
+          </p>
+        </div>
+      ) : (
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[600px]">
         {/* Case List */}
         <div className="lg:col-span-3 flex flex-col gap-3">
@@ -161,16 +172,16 @@ export default function CounsellorDashboard() {
             </select>
           </div>
           <div className="flex flex-col gap-2 overflow-y-auto max-h-[540px] pr-1">
-            {filtered.map((student) => {
+            {filtered.map((student, idx) => {
               const colors = riskColors[student.riskLevel];
               return (
                 <button
-                  key={student.id}
+                  key={`${student.id}-${idx}`}
                   onClick={() => setSelectedStudent(student)}
                   className={clsx(
                     "w-full text-left bg-surface-container-lowest border-l-4 border-y border-r border-outline-variant rounded-r-xl p-4 cursor-pointer transition-colors relative overflow-hidden",
                     colors.border,
-                    selectedStudent.id === student.id
+                    selectedStudent?.id === student.id
                       ? "bg-surface-container-low shadow-md"
                       : "hover:bg-surface-container-low"
                   )}
@@ -213,6 +224,7 @@ export default function CounsellorDashboard() {
         </div>
 
         {/* Detail Panel */}
+        {selectedStudent && (
         <div className="lg:col-span-6 bg-surface-container-lowest border border-outline-variant rounded-xl flex flex-col overflow-hidden shadow-sm">
           {/* Header */}
           <div className="p-5 border-b border-outline-variant flex justify-between items-start bg-surface-bright">
@@ -248,70 +260,71 @@ export default function CounsellorDashboard() {
                   </div>
                   <h3 className="text-sm font-bold text-on-primary-fixed-variant">AI Risk Interpretation</h3>
                 </div>
-                <span className="text-xs text-on-surface-variant uppercase tracking-wider">Confidence: 92%</span>
+                <span className="text-xs text-on-surface-variant uppercase tracking-wider">
+                  {selectedStudent.phq9Score > 0 ? `PHQ-9: ${selectedStudent.phq9Score}` : "No screening data"}
+                </span>
               </div>
               <p className="text-sm text-on-surface mb-4 bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/50">
-                {selectedStudent.anonymousId} has been escalated to{" "}
-                <strong className={riskColors[selectedStudent.riskLevel].text}>
-                  {selectedStudent.riskLevel} Risk
-                </strong>{" "}
-                based on a confluence of clinical markers, sentiment analysis, and interaction patterns.
+                {selectedStudent.summary}
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="bg-surface-container-lowest p-3 rounded-lg border border-error-container/50 flex items-start gap-3">
                   <span className="material-symbols-outlined text-error text-[20px] shrink-0 mt-0.5">monitor_heart</span>
                   <div>
-                    <h4 className="text-xs font-bold text-on-surface mb-1">PHQ-9 Score Trend</h4>
+                    <h4 className="text-xs font-bold text-on-surface mb-1">PHQ-9 Score</h4>
                     <p className="text-xs text-on-surface-variant">
-                      Proxy score: <strong>{selectedStudent.phq9Score}</strong> ({selectedStudent.moodLabel}). Risk escalation flagged.
+                      {selectedStudent.phq9Score > 0 
+                        ? <>Score: <strong>{selectedStudent.phq9Score}</strong> — {selectedStudent.moodLabel}</>
+                        : "No screening completed yet."}
                     </p>
                   </div>
                 </div>
                 <div className="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/50 flex items-start gap-3">
-                  <span className="material-symbols-outlined text-primary text-[20px] shrink-0 mt-0.5">sentiment_dissatisfied</span>
+                  <span className="material-symbols-outlined text-primary text-[20px] shrink-0 mt-0.5">mood</span>
                   <div>
-                    <h4 className="text-xs font-bold text-on-surface mb-1">Sentiment Analysis</h4>
+                    <h4 className="text-xs font-bold text-on-surface mb-1">Depression Index</h4>
                     <p className="text-xs text-on-surface-variant">
-                      NLP detected keywords related to stress and difficulty coping.
+                      Level: <strong>{selectedStudent.depressionIndex}</strong>
                     </p>
                   </div>
                 </div>
                 <div className="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/50 flex items-start gap-3">
-                  <span className="material-symbols-outlined text-tertiary text-[20px] shrink-0 mt-0.5">school</span>
+                  <span className="material-symbols-outlined text-secondary text-[20px] shrink-0 mt-0.5">school</span>
                   <div>
-                    <h4 className="text-xs font-bold text-on-surface mb-1">Academic Stressors</h4>
+                    <h4 className="text-xs font-bold text-on-surface mb-1">Student Info</h4>
                     <p className="text-xs text-on-surface-variant">
-                      LMS integration indicates missed assignments this week.
+                      {selectedStudent.faculty}, Year {selectedStudent.year}
                     </p>
                   </div>
                 </div>
                 <div className="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/50 flex items-start gap-3">
                   <span className="material-symbols-outlined text-secondary text-[20px] shrink-0 mt-0.5">schedule</span>
                   <div>
-                    <h4 className="text-xs font-bold text-on-surface mb-1">Erratic Interactions</h4>
+                    <h4 className="text-xs font-bold text-on-surface mb-1">Last Activity</h4>
                     <p className="text-xs text-on-surface-variant">
-                      Primary engagement between 2:00–4:30 AM over 3 days.
+                      {selectedStudent.lastActive}
                     </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Flagged Chat Snippets */}
-            {selectedStudent.flaggedSnippet && (
-              <div>
-                <h3 className="text-sm font-bold text-on-surface mb-3 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[18px]">forum</span>
-                  Flagged Chat Snippets
-                </h3>
-                <div className="bg-surface-container-low border border-outline-variant rounded-xl p-3">
-                  <div className="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/50">
-                    <p className="text-sm italic text-on-surface-variant">"{selectedStudent.flaggedSnippet}"</p>
-                    <p className="text-[10px] text-outline mt-2 text-right">{selectedStudent.flaggedTime}</p>
-                  </div>
-                </div>
+            {/* Trend Indicator */}
+            <div className="flex items-center gap-4 p-4 bg-surface-container-lowest border border-outline-variant rounded-xl">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                selectedStudent.trend === "Declining" ? "bg-error-container text-on-error-container" :
+                selectedStudent.trend === "Improving" ? "bg-secondary-container text-on-secondary-container" :
+                "bg-surface-container-high text-on-surface"
+              }`}>
+                <span className="material-symbols-outlined text-[20px]">
+                  {selectedStudent.trend === "Declining" ? "trending_down" : selectedStudent.trend === "Improving" ? "trending_up" : "trending_flat"}
+                </span>
               </div>
-            )}
+              <div>
+                <p className="text-sm font-semibold text-on-surface">Trend: {selectedStudent.trend}</p>
+                <p className="text-xs text-on-surface-variant">Based on screening history and mood entries</p>
+              </div>
+            </div>
 
             {/* Recommended Interventions */}
             <div>
@@ -320,15 +333,15 @@ export default function CounsellorDashboard() {
                 <button onClick={handleScheduleSession} className="flex flex-col items-start gap-1 p-4 rounded-xl border border-outline-variant bg-surface hover:bg-surface-container transition-colors text-left">
                   <div className="flex items-center gap-2 text-primary font-bold text-sm">
                     <span className="material-symbols-outlined text-[18px]">calendar_month</span>
-                    Schedule Urgent Session
+                    Schedule Session
                   </div>
-                  <span className="text-xs text-on-surface-variant">Send automated priority booking link for today.</span>
+                  <span className="text-xs text-on-surface-variant">Send priority booking link to {selectedStudent.anonymousId}.</span>
                 </button>
-                {selectedStudent.riskLevel === "Critical" && (
+                {(selectedStudent.riskLevel === "Critical" || selectedStudent.riskLevel === "High") && (
                   <button onClick={handleWellnessCheck} className="flex flex-col items-start gap-1 p-4 rounded-xl border border-error-container bg-error-container/10 hover:bg-error-container/20 transition-colors text-left">
                     <div className="flex items-center gap-2 text-error font-bold text-sm">
                       <span className="material-symbols-outlined text-[18px]">contact_emergency</span>
-                      Initiate Wellness Check
+                      Wellness Check
                     </div>
                     <span className="text-xs text-on-surface-variant">Alert campus security or emergency contact.</span>
                   </button>
@@ -338,7 +351,7 @@ export default function CounsellorDashboard() {
                     <span className="material-symbols-outlined text-[18px]">medical_services</span>
                     Clinical Referral
                   </div>
-                  <span className="text-xs text-on-surface-variant">Prepare documentation for external psychiatric evaluation.</span>
+                  <span className="text-xs text-on-surface-variant">Prepare documentation for external evaluation.</span>
                 </button>
               </div>
             </div>
@@ -347,7 +360,7 @@ export default function CounsellorDashboard() {
           {/* Action Footer */}
           <div className="p-4 border-t border-outline-variant bg-surface-bright flex justify-end gap-3">
             <button onClick={handleDismissAlert} className="px-5 py-2 rounded-lg border border-outline text-on-surface-variant text-sm font-medium hover:bg-surface-container transition-colors">
-              Dismiss Alert
+              Dismiss
             </button>
             <button onClick={handleLogIntervention} className="px-5 py-2 rounded-lg bg-primary text-on-primary text-sm font-semibold shadow-sm hover:opacity-90 transition-opacity flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px]">edit_document</span>
@@ -355,6 +368,7 @@ export default function CounsellorDashboard() {
             </button>
           </div>
         </div>
+        )}
 
         {/* Action Center */}
         <div className="lg:col-span-3 flex flex-col gap-5">
@@ -423,6 +437,7 @@ export default function CounsellorDashboard() {
           </div>
         </div>
       </section>
+      )}
     </div>
   );
 }

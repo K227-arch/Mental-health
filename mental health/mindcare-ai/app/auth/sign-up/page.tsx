@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, FormEvent } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { insforge } from "@/lib/insforge";
 
 export default function SignUpPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const role = searchParams.get("role") === "counsellor" ? "counsellor" : "student";
+  const [role, setRole] = useState<"student" | "counsellor">("student");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,10 +18,10 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
 
-  const getRedirect = () => {
-    if (typeof window === "undefined") return role === "counsellor" ? "/counsellor" : "/dashboard";
-    return new URLSearchParams(window.location.search).get("redirect") || (role === "counsellor" ? "/counsellor" : "/dashboard");
-  };
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("role") === "counsellor") setRole("counsellor");
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -39,12 +38,13 @@ export default function SignUpPage() {
     }
 
     setLoading(true);
+    const redirectTarget = role === "counsellor" ? "/counsellor" : "/dashboard";
 
     try {
       const res = await fetch("/api/auth/sign-up", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, name, redirect: getRedirect() }),
+        body: JSON.stringify({ email, password, name, redirect: redirectTarget }),
       });
       const data = await res.json();
 
@@ -54,7 +54,7 @@ export default function SignUpPage() {
         return;
       }
 
-      router.push(data.redirect || "/dashboard");
+      router.push(data.redirect || redirectTarget);
     } catch {
       setError("Network error. Please try again.");
       setLoading(false);
@@ -64,7 +64,7 @@ export default function SignUpPage() {
   const handleOAuth = async (provider: string) => {
     setError(null);
     setOauthLoading(provider);
-    const redirect = getRedirect();
+    const redirect = role === "counsellor" ? "/counsellor" : "/dashboard";
     document.cookie = `insforge_redirect=${redirect}; path=/; max-age=600; SameSite=Lax`;
     const { data, error } = await insforge.auth.signInWithOAuth(provider as any, {
       redirectTo: `${window.location.origin}/api/auth/callback`,
@@ -351,18 +351,18 @@ export default function SignUpPage() {
 
           <p className="text-center text-sm text-on-surface-variant mt-5">
             Already have an account?{" "}
-            <Link href={`/auth/sign-in${role === "counsellor" ? "?role=counsellor" : ""}`} className="text-primary font-semibold hover:underline">
+            <a href={`/auth/sign-in${role === "counsellor" ? "?role=counsellor" : ""}`} className="text-primary font-semibold hover:underline">
               Sign in
-            </Link>
+            </a>
           </p>
 
           <div className="text-center mt-3">
-            <Link
+            <a
               href={`/auth/sign-up${role === "counsellor" ? "" : "?role=counsellor"}`}
               className="text-xs text-on-surface-variant/70 hover:text-primary transition-colors"
             >
               {role === "counsellor" ? "← Switch to Student Sign Up" : "Are you a counsellor? →"}
-            </Link>
+            </a>
           </div>
 
           <p className="text-center text-xs text-on-surface-variant/50 mt-3">

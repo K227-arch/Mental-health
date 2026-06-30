@@ -2,7 +2,10 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { phq9Questions, getPHQ9Severity } from "../lib/data";
+import Navbar from "../components/Navbar";
+import StudentSidebar from "../components/StudentSidebar";
+import { phq9Questions, getPHQ9Severity, assessmentModels } from "../lib/data";
+import type { AssessmentModel } from "../lib/data";
 
 interface Message {
   id: string;
@@ -30,6 +33,9 @@ const greetings = [
 ];
 
 export default function ScreeningPage() {
+  const [selectedModel, setSelectedModel] = useState<AssessmentModel>(assessmentModels[0]);
+  const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
+  const [started, setStarted] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
   const [messages, setMessages] = useState<Message[]>([
@@ -37,8 +43,7 @@ export default function ScreeningPage() {
       id: "1",
       role: "ai",
       content:
-        "Hello. I'm here to support you.\n\nOver the last two weeks, how often have you been bothered by the following problem?\n\n" +
-        phq9Questions[0].text,
+        "Hello. I'm here to support you.\n\nPlease select an assessment model above, then click 'Start Assessment' to begin.",
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     },
   ]);
@@ -57,6 +62,20 @@ export default function ScreeningPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const startAssessment = () => {
+    setStarted(true);
+    setCurrentQuestion(0);
+    setAnswers([]);
+    setDone(false);
+    setTotalScore(0);
+    setNlpAnalysis(null);
+    const questions = selectedModel.questions;
+    addMessage(
+      "ai",
+      `📋 **${selectedModel.name}**\n\n${selectedModel.description}\n\n---\n\n${selectedModel.intro}\n\n**Question 1 of ${questions.length}:**\n${questions[0].text}`
+    );
+  };
 
   const addMessage = (role: "ai" | "user", content: string) => {
     setMessages((prev) => [
@@ -87,38 +106,35 @@ export default function ScreeningPage() {
           score,
           severity,
           responses: finalAnswers,
+          assessmentType: selectedModel.id,
         }),
       });
 
-      // Auto-assign to counsellor session if first screening or high risk
-      if (score >= 5) {
-        await fetch("/api/sessions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            studentId: userId,
-            counsellorId: "system-assigned",
-            riskLevel: score >= 20 ? "Critical" : score >= 15 ? "High" : score >= 10 ? "Moderate" : "Minimal",
-            notes: `Auto-assigned from PHQ-9 screening. Score: ${score} (${severity}).`,
-            studentName: userName,
-          }),
-        }).catch(() => {});
-      }
+      // Always create a counsellor session after completing an assessment
+      await fetch("/api/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: userId,
+          counsellorId: "system-assigned",
+          riskLevel: score >= 20 ? "Critical" : score >= 15 ? "High" : score >= 10 ? "Moderate" : "Minimal",
+          notes: `Auto-assigned from ${selectedModel.shortName} screening. Score: ${score} (${severity}).`,
+          studentName: userName,
+        }),
+      }).catch(() => {});
 
-      // Create notification for counsellor if score is concerning
-      if (score >= 10) {
-        await fetch("/api/notifications", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: "counsellor-system",
-            title: "High-Risk Screening",
-            body: `${userName} scored ${score} (${severity}) on PHQ-9. Review recommended.`,
-            type: "alert",
-            link: "/counsellor",
-          }),
-        }).catch(() => {});
-      }
+      // Notify counsellor about completed assessment
+      await fetch("/api/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: "counsellor-system",
+          title: `${selectedModel.shortName} Completed`,
+          body: `${userName} completed ${selectedModel.shortName}. Score: ${score} (${severity}).`,
+          type: score >= selectedModel.maxScore * 0.5 ? "alert" : "info",
+          link: "/counsellor",
+        }),
+      }).catch(() => {});
     } catch (error) {
       console.error("Failed to save screening result:", error);
     }
@@ -170,38 +186,37 @@ export default function ScreeningPage() {
 
   const handleOptionSelect = (optionIndex: number) => {
     if (done) return;
-    const question = phq9Questions[currentQuestion];
+    const questions = selectedModel.questions;
+    const question = questions[currentQuestion];
     addMessage("user", question.options[optionIndex]);
 
     const newAnswers = [...answers, optionIndex];
     setAnswers(newAnswers);
 
     setTimeout(() => {
-      if (currentQuestion + 1 < phq9Questions.length) {
-        const nextQ = phq9Questions[currentQuestion + 1];
+      if (currentQuestion + 1 < questions.length) {
+        const nextQ = questions[currentQuestion + 1];
         addMessage(
           "ai",
-          `Thank you for sharing that.\n\nOver the last two weeks, how often have you been bothered by:\n\n${nextQ.text}`
+          `Thank you for sharing that.\n\n**Question ${currentQuestion + 2} of ${questions.length}:**\n${nextQ.text}`
         );
         setCurrentQuestion((prev) => prev + 1);
       } else {
         const score = newAnswers.reduce((a, b) => a + b, 0);
         setTotalScore(score);
         setDone(true);
-        const severity = getPHQ9Severity(score);
+        const severity = selectedModel.getSeverity(score);
         addMessage(
           "ai",
-          `Thank you for completing the check-in.\n\nBased on your responses, your PHQ-9 score is **${score}** — indicating **${severity.label}** level.\n\n${
-            score >= 15
+          `Thank you for completing the ${selectedModel.shortName} assessment.\n\nYour score is **${score}** — indicating **${severity.label}**.\n\n${
+            score >= selectedModel.maxScore * 0.7
               ? "I want you to know that help is available. Your counselor will be notified securely. Please consider reaching out to crisis support if you need immediate help."
-              : score >= 10
+              : score >= selectedModel.maxScore * 0.5
               ? "Your wellbeing matters. I recommend scheduling a session with a counselor to discuss what you're experiencing."
               : "You're doing okay, but keep checking in. Small steps make a big difference."
           }\n\nRunning AI-powered NLP analysis on your responses... 🔍`
         );
-        // Save results to database
         saveScreeningResult(newAnswers, score, severity.label);
-        // Trigger NLP analysis
         runNlpAnalysis(newAnswers, score);
       }
     }, 500);
@@ -302,51 +317,107 @@ export default function ScreeningPage() {
     }
   };
 
-  const severity = done ? getPHQ9Severity(totalScore) : null;
-  const progress = ((currentQuestion + (done ? 1 : 0)) / phq9Questions.length) * 100;
+  const severity = done ? selectedModel.getSeverity(totalScore) : null;
+  const progress = ((currentQuestion + (done ? 1 : 0)) / selectedModel.questions.length) * 100;
 
   return (
     <div className="min-h-screen flex flex-col bg-surface relative overflow-hidden">
-      <div className="bg-blob-1" />
-      <div className="bg-blob-2" />
+      {/* Logo Watermark */}
+      <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0">
+        <img src="/logo.jpeg" alt="" className="w-[500px] h-[500px] object-contain opacity-[0.04]" />
+      </div>
 
-      {/* Top Nav */}
-      <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-surface shadow-sm border-b border-outline-variant/30">
-        <Link href="/" className="flex items-center gap-2">
-          <img src="/logo.jpeg" alt="Selfcare Hub" className="w-7 h-7 object-contain rounded-md" />
-          <span className="font-black text-xl text-primary">Selfcare Hub</span>
-        </Link>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/crisis"
-            className="flex items-center gap-1 px-3 py-1.5 text-error text-sm font-medium hover:bg-error-container/50 rounded-full transition-colors"
-          >
-            <span className="material-symbols-outlined icon-fill text-[18px]">medical_services</span>
-            Emergency Help
-          </Link>
-        </div>
-      </header>
+      {/* Navbar */}
+      <Navbar variant="student" />
 
-      <main className="flex-1 w-full max-w-3xl mx-auto mt-16 relative z-10 flex flex-col px-4 md:px-6 pb-8" style={{ height: "calc(100vh - 64px)" }}>
+      <div className="flex flex-1 pt-16">
+        {/* Sidebar */}
+        <StudentSidebar />
+
+        {/* Main Content */}
+        <main className="flex-1 flex flex-col relative z-10 overflow-hidden" style={{ height: "calc(100vh - 64px)" }}>
+          <div className="flex-1 w-full max-w-3xl mx-auto flex flex-col px-4 md:px-6 pb-8 overflow-hidden">
         {/* Header */}
         <div className="flex flex-col items-center justify-center py-6">
           <h1 className="text-2xl md:text-3xl font-bold text-on-surface text-center mb-1">Daily Check-in</h1>
           <p className="text-on-surface-variant text-sm text-center max-w-md mb-4">
-            Take a moment for yourself. We'll walk through a few questions to understand how you're feeling.
+            Take a moment for yourself. Select an assessment and we&apos;ll walk through it together.
           </p>
+
+          {/* Model Selector */}
+          <div className="relative w-full max-w-md mb-4">
+            <button
+              onClick={() => setModelDropdownOpen(!modelDropdownOpen)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/50 rounded-xl text-sm font-semibold text-on-surface hover:bg-surface-container-low transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-[18px]">psychology</span>
+                {selectedModel.shortName} — {selectedModel.name.replace(selectedModel.shortName + " ", "")}
+              </span>
+              <span className="material-symbols-outlined text-[18px] text-on-surface-variant">{modelDropdownOpen ? "expand_less" : "expand_more"}</span>
+            </button>
+            {modelDropdownOpen && (
+              <div className="absolute top-full mt-1 left-0 right-0 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg z-20 overflow-hidden animate-fade-in">
+                {assessmentModels.map((model) => (
+                  <button
+                    key={model.id}
+                    onClick={() => {
+                      setSelectedModel(model);
+                      setModelDropdownOpen(false);
+                      if (started) {
+                        setStarted(false);
+                        setMessages([{ id: "1", role: "ai", content: "Assessment model changed. Click 'Start Assessment' to begin the new assessment.", time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }]);
+                        setCurrentQuestion(0);
+                        setAnswers([]);
+                        setDone(false);
+                      }
+                    }}
+                    className={`w-full text-left px-4 py-3 border-b border-outline-variant/20 hover:bg-surface-container-low transition-colors ${
+                      selectedModel.id === model.id ? "bg-primary-container/30" : ""
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-sm font-semibold text-on-surface">{model.shortName}</span>
+                        <span className="text-xs text-on-surface-variant ml-2">{model.name.replace(model.shortName + " ", "")}</span>
+                      </div>
+                      {selectedModel.id === model.id && <span className="material-symbols-outlined text-primary text-[16px]">check</span>}
+                    </div>
+                    <p className="text-xs text-on-surface-variant mt-0.5 line-clamp-2">{model.description.slice(0, 80)}...</p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Start Button */}
+          {!started && (
+            <button
+              onClick={startAssessment}
+              className="px-6 py-2.5 bg-primary text-on-primary rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity shadow-md flex items-center gap-2 mb-4"
+            >
+              <span className="material-symbols-outlined text-[18px]">play_arrow</span>
+              Start Assessment
+            </button>
+          )}
+
           {/* Progress */}
-          <div className="w-full max-w-md bg-surface-container rounded-full h-2 overflow-hidden">
-            <div
-              className="bg-primary h-full rounded-full transition-all duration-500 ease-out"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <div className="flex justify-between w-full max-w-md mt-1">
-            <span className="text-xs text-on-surface-variant">
-              Question {Math.min(currentQuestion + 1, phq9Questions.length)} of {phq9Questions.length}
-            </span>
-            <span className="text-xs text-primary font-semibold">PHQ-9 Assessment</span>
-          </div>
+          {started && (
+            <>
+              <div className="w-full max-w-md bg-surface-container rounded-full h-2 overflow-hidden">
+                <div
+                  className="bg-primary h-full rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <div className="flex justify-between w-full max-w-md mt-1">
+                <span className="text-xs text-on-surface-variant">
+                  Question {Math.min(currentQuestion + 1, selectedModel.questions.length)} of {selectedModel.questions.length}
+                </span>
+                <span className="text-xs text-primary font-semibold">{selectedModel.shortName} Assessment</span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Chat Area */}
@@ -387,10 +458,10 @@ export default function ScreeningPage() {
             ))}
 
             {/* Options (current question) */}
-            {!done && currentQuestion < phq9Questions.length && (
+            {started && !done && currentQuestion < selectedModel.questions.length && (
               <div className="self-start max-w-[85%] ml-11 animate-fade-in">
                 <div className="flex flex-col gap-2">
-                  {phq9Questions[currentQuestion].options.map((opt, i) => (
+                  {selectedModel.questions[currentQuestion].options.map((opt, i) => (
                     <button
                       key={i}
                       onClick={() => handleOptionSelect(i)}
@@ -563,7 +634,9 @@ export default function ScreeningPage() {
             </div>
           </div>
         </div>
-      </main>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

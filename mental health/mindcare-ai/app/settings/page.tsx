@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
+import StudentSidebar from "../components/StudentSidebar";
 import { useTranslation, languages } from "../lib/i18n";
 
 export default function SettingsPage() {
@@ -59,7 +60,9 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-surface">
       <Navbar variant="student" />
-      <div className="pt-20 px-6 md:px-16 max-w-2xl mx-auto pb-20">
+      <div className="flex flex-1 pt-16">
+        <StudentSidebar />
+        <main className="flex-1 overflow-y-auto px-6 md:px-16 max-w-2xl py-10">
         <h1 className="text-3xl font-bold text-on-surface mb-2">Settings</h1>
         <p className="text-on-surface-variant text-sm mb-8">Manage your profile and preferences.</p>
 
@@ -166,6 +169,7 @@ export default function SettingsPage() {
             )}
           </div>
         </div>
+        </main>
       </div>
     </div>
   );

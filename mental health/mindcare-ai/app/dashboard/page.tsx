@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
+import StudentSidebar from "../components/StudentSidebar";
 import Footer from "../components/Footer";
 import { wellnessMilestones } from "../lib/data";
 import { useTranslation } from "../lib/i18n";
@@ -140,46 +141,7 @@ export default function DashboardPage() {
           />
         )}
 
-        {/* Sidebar */}
-        <aside className={`flex-col h-[calc(100vh-64px)] sticky top-16 w-64 shrink-0 p-3 border-r border-outline-variant bg-surface-container-low overflow-y-auto ${
-          mobileSidebarOpen
-            ? "fixed left-0 top-16 z-40 shadow-2xl animate-slide-in"
-            : "hidden"
-        } md:flex`}>
-          <div className="mb-4 px-3">
-            <h2 className="text-xs text-on-surface-variant uppercase tracking-wider mb-1 mt-3">Student Portal</h2>
-            <p className="text-sm font-semibold text-on-surface">My Wellness</p>
-          </div>
-          <nav className="flex-1 flex flex-col gap-1">
-            {[
-              { href: "/dashboard", label: "Dashboard", icon: "dashboard", active: true },
-              { href: "/screening", label: "Daily Check-in", icon: "psychology" },
-              { href: "/wellness", label: "Wellness Hub", icon: "self_improvement" },
-              { href: "/dashboard/crisis", label: "Crisis Support", icon: "emergency", red: true },
-            ].map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                  item.active
-                    ? "bg-primary-container text-on-primary-container font-bold shadow-sm"
-                    : item.red
-                    ? "text-error hover:bg-error-container/30"
-                    : "text-on-surface-variant hover:bg-surface-container-high"
-                }`}
-              >
-                <span
-                  className="material-symbols-outlined"
-                  style={item.active ? { fontVariationSettings: "'FILL' 1" } : undefined}
-                >
-                  {item.icon}
-                </span>
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-
-        </aside>
+        <StudentSidebar />
 
         {/* Main */}
         <main className="flex-1 overflow-y-auto bg-surface p-4 md:p-10">
@@ -188,7 +150,7 @@ export default function DashboardPage() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
               <div className="flex items-center gap-3">
                 <div>
-                  <h1 className="text-3xl font-bold text-on-surface mb-1">{t("dashboard.welcome")}, {user?.name || "Student"}</h1>
+                  <h1 className="text-3xl font-bold text-on-surface mb-1">{t("dashboard.welcome")}{user?.name ? `, ${user.name}` : ""}</h1>
                   <p className="text-on-surface-variant text-sm">{t("dashboard.subtitle")}</p>
                 </div>
               </div>

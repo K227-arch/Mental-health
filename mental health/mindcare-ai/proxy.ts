@@ -16,16 +16,6 @@ export default function proxy(request: NextRequest) {
     return NextResponse.redirect(signInUrl);
   }
 
-  // Role-based access: counsellor routes require counsellor role
-  // We check for a role cookie set during login
-  if (pathname.startsWith("/counsellor")) {
-    const userRole = request.cookies.get("user_role")?.value;
-    // If role cookie exists and is NOT counsellor, redirect
-    if (userRole && userRole !== "counsellor" && userRole !== "admin") {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
-  }
-
   return NextResponse.next();
 }
 

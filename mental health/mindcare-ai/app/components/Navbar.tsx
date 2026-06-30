@@ -48,7 +48,7 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
 
   const initials = user?.name
     ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
-    : user?.email?.slice(0, 2).toUpperCase() || "?";
+    : user?.email?.slice(0, 2).toUpperCase() || "";
 
   return (
     <>
@@ -73,41 +73,11 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
         {/* Desktop Nav Links - Student only */}
         {variant === "student" && (
           <nav className="hidden md:flex items-center gap-1">
-            {[
-              { href: "/dashboard", label: "Dashboard", icon: "dashboard" },
-              { href: "/screening", label: "Screening", icon: "psychology" },
-              { href: "/wellness", label: "Wellness", icon: "self_improvement" },
-              { href: "/crisis", label: "Crisis Support", icon: "emergency", red: true },
-            ].map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={clsx(
-                  "flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                  item.red
-                    ? "text-error hover:bg-error-container/50"
-                    : pathname === item.href
-                    ? "bg-primary-container text-on-primary-container"
-                    : "text-on-surface-variant hover:bg-surface-container"
-                )}
-              >
-                <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
-                {item.label}
-              </Link>
-            ))}
           </nav>
         )}
 
         {/* Right Actions */}
         <div className="flex items-center gap-2">
-          <Link
-            href="/crisis"
-            className="hidden sm:flex items-center gap-1 px-3 py-1.5 text-error text-sm font-medium hover:bg-error-container/50 rounded-full transition-colors"
-          >
-            <span className="material-symbols-outlined icon-fill text-[18px]">medical_services</span>
-            Emergency Help
-          </Link>
-
           <div className="h-5 w-px bg-outline-variant mx-1" />
 
           <LanguageSwitcher variant="light" />
@@ -120,8 +90,10 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
             >
               {user?.avatar_url ? (
                 <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
-              ) : (
+              ) : initials ? (
                 <span className="text-xs font-semibold">{initials}</span>
+              ) : (
+                <span className="material-symbols-outlined text-[18px]">person</span>
               )}
             </button>
 
@@ -129,7 +101,7 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
               <div className="absolute right-0 top-full mt-2 w-56 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg animate-fade-in overflow-hidden">
                 {user ? (
                   <div className="p-4 border-b border-outline-variant">
-                    <p className="text-sm font-semibold text-on-surface truncate">{user.name || "User"}</p>
+                    <p className="text-sm font-semibold text-on-surface truncate">{user.name || user.email || "Loading..."}</p>
                     <p className="text-xs text-on-surface-variant truncate mt-0.5">{user.email}</p>
                   </div>
                 ) : (

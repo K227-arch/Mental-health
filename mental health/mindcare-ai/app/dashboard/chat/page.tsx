@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Navbar from "../../components/Navbar";
+import StudentSidebar from "../../components/StudentSidebar";
 
 interface ChatMsg {
   id: string;
@@ -89,9 +90,12 @@ export default function StudentChatPage() {
     return (
       <div className="min-h-screen bg-surface">
         <Navbar variant="student" />
-        <div className="flex items-center justify-center h-[calc(100vh-64px)] pt-16 text-on-surface-variant">
-          <span className="material-symbols-outlined animate-spin text-[24px] mr-2">progress_activity</span>
-          Loading...
+        <div className="flex pt-16">
+          <StudentSidebar />
+          <div className="flex-1 flex items-center justify-center h-[calc(100vh-64px)] text-on-surface-variant">
+            <span className="material-symbols-outlined animate-spin text-[24px] mr-2">progress_activity</span>
+            Loading...
+          </div>
         </div>
       </div>
     );
@@ -100,7 +104,9 @@ export default function StudentChatPage() {
   return (
     <div className="min-h-screen bg-surface flex flex-col">
       <Navbar variant="student" />
-      <div className="flex-1 flex flex-col pt-16 max-w-3xl w-full mx-auto">
+      <div className="flex flex-1 pt-16">
+        <StudentSidebar />
+        <div className="flex-1 flex flex-col max-w-3xl w-full mx-auto">
         {/* Header */}
         <div className="px-6 py-4 border-b border-outline-variant">
           <h1 className="text-lg font-bold text-on-surface flex items-center gap-2">
@@ -173,6 +179,7 @@ export default function StudentChatPage() {
             </div>
           </>
         )}
+        </div>
       </div>
     </div>
   );

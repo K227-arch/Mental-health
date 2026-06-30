@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
+import StudentSidebar from "../components/StudentSidebar";
 import Footer from "../components/Footer";
 import { wellnessMilestones, hopeMessages } from "../lib/data";
 
@@ -116,7 +117,10 @@ export default function WellnessPage() {
     <div className="min-h-screen flex flex-col bg-surface">
       <Navbar variant="student" />
 
-      <main className="flex-1 pt-16">
+      <div className="flex flex-1 pt-16">
+        <StudentSidebar />
+
+        <main className="flex-1 overflow-y-auto">
         {/* Hero Banner */}
         <div className="bg-gradient-to-br from-secondary-container/30 to-primary-container/20 px-6 md:px-20 py-16 text-center border-b border-outline-variant/30">
           <div className="max-w-2xl mx-auto">
@@ -377,7 +381,8 @@ export default function WellnessPage() {
             </div>
           )}
         </div>
-      </main>
+        </main>
+      </div>
 
       <Footer />
     </div>
