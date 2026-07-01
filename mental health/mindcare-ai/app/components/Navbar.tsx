@@ -38,21 +38,25 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
   }, []);
 
   const fetchNotifications = (userId: string) => {
-    // Fetch notifications for this user AND system notifications (for counsellors)
     fetch(`/api/notifications?userId=${userId}`)
       .then((r) => r.ok ? r.json() : { notifications: [] })
       .then((data) => {
         let notifs = (data.notifications || []).filter((n: any) => !n.is_read);
-        // Also fetch counsellor-system notifications if user has counsellor role
+
         if (variant === "counsellor") {
+          // Counsellor sees their own + system notifications
           fetch(`/api/notifications?userId=counsellor-system`)
             .then((r) => r.ok ? r.json() : { notifications: [] })
             .then((sysData) => {
               const sysNotifs = (sysData.notifications || []).filter((n: any) => !n.is_read);
-              setNotifications([...sysNotifs, ...notifs].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+              const combined = [...sysNotifs, ...notifs];
+              // Deduplicate by ID
+              const unique = combined.filter((n, i, arr) => arr.findIndex((x) => x.id === n.id) === i);
+              setNotifications(unique.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
             })
             .catch(() => setNotifications(notifs));
         } else {
+          // Student sees only their own notifications
           setNotifications(notifs);
         }
       })

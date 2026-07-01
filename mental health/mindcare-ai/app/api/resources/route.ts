@@ -103,3 +103,41 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
+// PATCH - update a resource (e.g., assign to student)
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { id, assignedTo } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: "id required" }, { status: 400 });
+    }
+
+    const { data, error } = await insforge.database
+      .from("library_resources")
+      .update({ assigned_to: assignedTo, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Send notification to student
+    if (assignedTo) {
+      const resource = data?.[0];
+      await insforge.database.from("notifications").insert({
+        user_id: assignedTo,
+        title: "New Resource Shared",
+        body: `Your counsellor shared "${resource?.title || "a resource"}" with you.`,
+        type: "resource",
+        link: "/wellness",
+      });
+    }
+
+    return NextResponse.json({ resource: data?.[0] });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}

@@ -54,11 +54,22 @@ export async function POST(request: NextRequest) {
 
     // Also create a notification for the recipient
     const notifUserId = senderRole === "counsellor" ? body.studentId : body.counsellorId;
-    if (notifUserId) {
+    if (notifUserId && notifUserId !== "counsellor-system") {
       await insforge.database.from("notifications").insert({
         user_id: notifUserId,
-        title: "New Message",
-        body: `You have a new message from your ${senderRole}.`,
+        title: senderRole === "counsellor" ? "New Message from Counsellor" : "New Message from Student",
+        body: content.length > 50 ? content.slice(0, 50) + "..." : content,
+        type: "message",
+        link: senderRole === "counsellor" ? "/dashboard/chat" : "/counsellor/chat",
+      });
+    }
+
+    // If student sends and counsellorId is "counsellor-system", notify all counsellors via system
+    if (senderRole === "student" && (!body.counsellorId || body.counsellorId === "counsellor-system")) {
+      await insforge.database.from("notifications").insert({
+        user_id: "counsellor-system",
+        title: "New Student Message",
+        body: content.length > 50 ? content.slice(0, 50) + "..." : content,
         type: "message",
         link: "/counsellor/chat",
       });

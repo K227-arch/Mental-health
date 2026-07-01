@@ -20,6 +20,7 @@ export default function StudentChatPage() {
   const [loading, setLoading] = useState(true);
   const [recording, setRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [micError, setMicError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -149,9 +150,14 @@ export default function StudentChatPage() {
       recorder.start();
       setMediaRecorder(recorder);
       setRecording(true);
-    } catch (err) {
-      console.error("Mic error:", err);
-      alert("Microphone access denied. Please allow microphone permissions in your browser settings.");
+    } catch (err: any) {
+      const msg = err?.name === "NotFoundError"
+        ? "No microphone detected. Please connect a microphone and try again."
+        : err?.name === "NotAllowedError"
+        ? "Microphone access was denied. Please allow mic permissions in your browser settings."
+        : "Unable to access microphone. Check your device settings.";
+      setMicError(msg);
+      setTimeout(() => setMicError(null), 5000);
     }
   };
 
@@ -236,6 +242,12 @@ export default function StudentChatPage() {
 
             {/* Input */}
             <div className="px-6 py-4 border-t border-outline-variant">
+              {micError && (
+                <div className="mb-3 p-3 bg-error-container/80 text-on-error-container text-xs rounded-xl flex items-center gap-2 animate-fade-in">
+                  <span className="material-symbols-outlined text-[16px]">mic_off</span>
+                  {micError}
+                </div>
+              )}
               <div className="flex gap-2">
                 <button
                   onClick={recording ? stopVoiceRecording : startVoiceRecording}

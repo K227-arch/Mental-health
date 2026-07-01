@@ -142,22 +142,21 @@ export default function CounsellorLibrary() {
     if (!shareStudent || !showShareModal) return;
     setSaving(true);
 
-    // Create a copy assigned to the student
+    // Update the existing resource to assign it to the student (no duplication)
     const res = await fetch("/api/resources", {
-      method: "POST",
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        title: showShareModal.title,
-        description: showShareModal.description,
-        category: showShareModal.category,
-        type: showShareModal.type,
-        contentUrl: showShareModal.content_url,
-        readTime: showShareModal.read_time,
+        id: showShareModal.id,
         assignedTo: shareStudent,
       }),
     });
 
     if (res.ok) {
+      // Update local state
+      setResources((prev) =>
+        prev.map((r) => r.id === showShareModal.id ? { ...r, assigned_to: shareStudent } : r)
+      );
       setShowShareModal(null);
       setShareStudent("");
       setFeedback("Resource shared with student. They'll be notified.");
@@ -254,9 +253,22 @@ export default function CounsellorLibrary() {
               <h3 className="text-sm font-bold text-on-surface mb-2 leading-snug">{resource.title}</h3>
               <p className="text-xs text-on-surface-variant mb-4 flex-1 leading-relaxed">{resource.description}</p>
               {resource.assigned_to && (
-                <div className="text-[10px] text-secondary font-medium mb-2 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[12px]">person</span>
-                  Shared with student
+                <div className="text-[10px] text-secondary font-medium mb-2 flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[12px]">person</span>
+                    Shared with student
+                  </span>
+                  {resource.content_url && (
+                    <a
+                      href={resource.content_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-0.5 text-primary hover:underline"
+                    >
+                      Open
+                      <span className="material-symbols-outlined text-[12px]">open_in_new</span>
+                    </a>
+                  )}
                 </div>
               )}
               <div className="flex items-center justify-between pt-3 border-t border-outline-variant">
@@ -273,7 +285,7 @@ export default function CounsellorLibrary() {
                     <span className="material-symbols-outlined text-[14px]">share</span>
                     Share
                   </button>
-                  {resource.content_url && (
+                  {!resource.assigned_to && resource.content_url && (
                     <a
                       href={resource.content_url}
                       target="_blank"
