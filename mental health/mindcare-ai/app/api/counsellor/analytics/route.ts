@@ -6,9 +6,9 @@ export async function GET() {
     // Fetch screening results for risk distribution
     const { data: screenings } = await insforge.database
       .from("screening_results")
-      .select("score, severity, risk_level, created_at")
+      .select("score, severity, risk_level, created_at, assessment_type")
       .order("created_at", { ascending: false })
-      .limit(100);
+      .limit(200);
 
     // Fetch mood entries for engagement data
     const { data: moods } = await insforge.database
@@ -100,6 +100,74 @@ export async function GET() {
       fromStudent: (messages || []).filter((m: any) => m.sender_role === "student").length,
     };
 
+    // Model comparison analytics
+    const modelNames: Record<string, string> = {
+      phq9: "PHQ-9",
+      gad7: "GAD-7",
+      who5: "WHO-5",
+      pcptsd5: "PC-PTSD-5",
+      pss10: "PSS-10",
+    };
+
+    const modelMaxScores: Record<string, number> = {
+      phq9: 27,
+      gad7: 21,
+      who5: 25,
+      pcptsd5: 5,
+      pss10: 40,
+    };
+
+    // Group screenings by model
+    const modelUsage: Record<string, { count: number; totalScore: number; avgScore: number; highRiskCount: number; scores: number[] }> = {};
+    (screenings || []).forEach((s: any) => {
+      const type = s.assessment_type || "phq9";
+      if (!modelUsage[type]) {
+        modelUsage[type] = { count: 0, totalScore: 0, avgScore: 0, highRiskCount: 0, scores: [] };
+      }
+      modelUsage[type].count++;
+      modelUsage[type].totalScore += s.score || 0;
+      modelUsage[type].scores.push(s.score || 0);
+      const maxScore = modelMaxScores[type] || 27;
+      if ((s.score || 0) >= maxScore * 0.55) modelUsage[type].highRiskCount++;
+    });
+
+    // Calculate averages
+    Object.keys(modelUsage).forEach((key) => {
+      const m = modelUsage[key];
+      m.avgScore = m.count > 0 ? Math.round((m.totalScore / m.count) * 10) / 10 : 0;
+    });
+
+    // Model usage distribution (pie chart data)
+    const modelUsageDistribution = Object.entries(modelUsage).map(([key, val]) => ({
+      name: modelNames[key] || key.toUpperCase(),
+      value: val.count,
+      color: key === "phq9" ? "#074469" : key === "gad7" ? "#006a64" : key === "who5" ? "#316289" : key === "pcptsd5" ? "#ba1a1a" : "#40413e",
+    }));
+
+    // Model comparison (bar chart data)
+    const modelComparison = Object.entries(modelUsage).map(([key, val]) => ({
+      model: modelNames[key] || key.toUpperCase(),
+      assessments: val.count,
+      avgScore: val.avgScore,
+      highRisk: val.highRiskCount,
+      maxScore: modelMaxScores[key] || 27,
+      avgPct: val.count > 0 ? Math.round((val.avgScore / (modelMaxScores[key] || 27)) * 100) : 0,
+    }));
+
+    // Score distribution per model (for radar/comparison)
+    const modelScoreRanges = Object.entries(modelUsage).map(([key, val]) => {
+      const max = modelMaxScores[key] || 27;
+      const low = val.scores.filter((s) => s < max * 0.35).length;
+      const moderate = val.scores.filter((s) => s >= max * 0.35 && s < max * 0.55).length;
+      const high = val.scores.filter((s) => s >= max * 0.55).length;
+      return {
+        model: modelNames[key] || key.toUpperCase(),
+        low,
+        moderate,
+        high,
+      };
+    });
+
     return NextResponse.json({
       riskDistribution,
       engagementData: engagementData.length > 0 ? engagementData : [
@@ -122,6 +190,9 @@ export async function GET() {
       messageActivity,
       totalScreenings: (screenings || []).length,
       totalSessions: (sessions || []).length,
+      modelUsageDistribution,
+      modelComparison,
+      modelScoreRanges,
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

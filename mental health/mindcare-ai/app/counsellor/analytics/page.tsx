@@ -31,6 +31,9 @@ export default function CounsellorAnalytics() {
   const interventionData = data?.interventionData || [];
   const riskDistribution = data?.riskDistribution || [];
   const engagementData = data?.engagementData || [];
+  const modelUsageDistribution = data?.modelUsageDistribution || [];
+  const modelComparison = data?.modelComparison || [];
+  const modelScoreRanges = data?.modelScoreRanges || [];
 
   return (
     <div className="p-4 md:p-8 max-w-[1200px] mx-auto space-y-8">
@@ -144,6 +147,158 @@ export default function CounsellorAnalytics() {
           </div>
         </div>
       </div>
+
+      {/* Model Analytics Section */}
+      <div>
+        <h2 className="text-xl font-bold text-on-surface mb-2">Assessment Models</h2>
+        <p className="text-on-surface-variant text-sm mb-6">Comparing performance and usage across all screening models.</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Model Usage Distribution */}
+        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
+          <h3 className="text-sm font-bold text-on-surface mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary text-[18px]">donut_large</span>
+            Model Usage Distribution
+          </h3>
+          <div className="h-48">
+            {modelUsageDistribution.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={modelUsageDistribution} cx="50%" cy="50%" outerRadius={70} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
+                    {modelUsageDistribution.map((entry: any, index: number) => (
+                      <Cell key={index} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-on-surface-variant text-sm">No assessment data yet</div>
+            )}
+          </div>
+        </div>
+
+        {/* Model Comparison - Avg Score % */}
+        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
+          <h3 className="text-sm font-bold text-on-surface mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-secondary text-[18px]">compare</span>
+            Average Severity (% of max score)
+          </h3>
+          <div className="h-48">
+            {modelComparison.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={modelComparison}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#c1c7cf40" />
+                  <XAxis dataKey="model" tick={{ fontSize: 10 }} stroke="#72787f" />
+                  <YAxis tick={{ fontSize: 11 }} stroke="#72787f" unit="%" />
+                  <Tooltip formatter={(value: any) => `${value}%`} />
+                  <Bar dataKey="avgPct" fill="#074469" radius={[4, 4, 0, 0]} name="Avg Severity %" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-on-surface-variant text-sm">No assessment data yet</div>
+            )}
+          </div>
+        </div>
+
+        {/* Score Range Distribution per Model */}
+        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
+          <h3 className="text-sm font-bold text-on-surface mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary text-[18px]">stacked_bar_chart</span>
+            Risk Level Distribution by Model
+          </h3>
+          <div className="h-48">
+            {modelScoreRanges.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={modelScoreRanges}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#c1c7cf40" />
+                  <XAxis dataKey="model" tick={{ fontSize: 10 }} stroke="#72787f" />
+                  <YAxis tick={{ fontSize: 11 }} stroke="#72787f" />
+                  <Tooltip />
+                  <Legend wrapperStyle={{ fontSize: "11px" }} />
+                  <Bar dataKey="low" stackId="a" fill="#006a64" name="Low Risk" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="moderate" stackId="a" fill="#316289" name="Moderate" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="high" stackId="a" fill="#ba1a1a" name="High Risk" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-on-surface-variant text-sm">No assessment data yet</div>
+            )}
+          </div>
+        </div>
+
+        {/* Model Assessments Count */}
+        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
+          <h3 className="text-sm font-bold text-on-surface mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-secondary text-[18px]">leaderboard</span>
+            Assessments per Model
+          </h3>
+          <div className="h-48">
+            {modelComparison.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={modelComparison} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#c1c7cf40" />
+                  <XAxis type="number" tick={{ fontSize: 11 }} stroke="#72787f" />
+                  <YAxis dataKey="model" type="category" tick={{ fontSize: 10 }} stroke="#72787f" width={60} />
+                  <Tooltip />
+                  <Legend wrapperStyle={{ fontSize: "11px" }} />
+                  <Bar dataKey="assessments" fill="#006a64" name="Total" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="highRisk" fill="#ba1a1a" name="High Risk" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-on-surface-variant text-sm">No assessment data yet</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Model Summary Table */}
+      {modelComparison.length > 0 && (
+        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
+          <h3 className="text-sm font-bold text-on-surface mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary text-[18px]">table_chart</span>
+            Model Performance Summary
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-outline-variant">
+                  <th className="text-left py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase">Model</th>
+                  <th className="text-center py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase">Assessments</th>
+                  <th className="text-center py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase">Avg Score</th>
+                  <th className="text-center py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase">Max Score</th>
+                  <th className="text-center py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase">Avg Severity</th>
+                  <th className="text-center py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase">High Risk</th>
+                </tr>
+              </thead>
+              <tbody>
+                {modelComparison.map((m: any) => (
+                  <tr key={m.model} className="border-b border-outline-variant/30 hover:bg-surface-container-low">
+                    <td className="py-3 px-3 font-semibold text-on-surface">{m.model}</td>
+                    <td className="py-3 px-3 text-center text-on-surface">{m.assessments}</td>
+                    <td className="py-3 px-3 text-center text-on-surface">{m.avgScore}</td>
+                    <td className="py-3 px-3 text-center text-on-surface-variant">{m.maxScore}</td>
+                    <td className="py-3 px-3 text-center">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                        m.avgPct >= 55 ? "bg-error-container text-on-error-container" :
+                        m.avgPct >= 35 ? "bg-primary-container text-on-primary-container" :
+                        "bg-secondary-container text-on-secondary-container"
+                      }`}>
+                        {m.avgPct}%
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-center">
+                      <span className="text-error font-semibold">{m.highRisk}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

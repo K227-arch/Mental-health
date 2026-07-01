@@ -91,11 +91,31 @@ export default function ScreeningPage() {
 
   const saveScreeningResult = async (finalAnswers: number[], score: number, severity: string) => {
     try {
+      let userId: string | null = null;
+      let userName = "Anonymous Student";
+
+      // Try to get user info from /api/auth/me
       const meRes = await fetch("/api/auth/me");
-      if (!meRes.ok) return;
-      const meData = await meRes.json();
-      const userId = meData?.user?.id;
-      const userName = meData?.user?.name || "Anonymous Student";
+      if (meRes.ok) {
+        const meData = await meRes.json();
+        userId = meData?.user?.id;
+        userName = meData?.user?.name || userName;
+      }
+
+      // Fallback: try to read from cookie
+      if (!userId) {
+        try {
+          const cookies = document.cookie.split(";").map((c) => c.trim());
+          const accessCookie = cookies.find((c) => c.startsWith("insforge_access_token="));
+          if (accessCookie) {
+            const token = accessCookie.split("=")[1];
+            const payload = JSON.parse(atob(token.split(".")[1]));
+            userId = payload.sub || payload.user_id;
+            userName = payload.name || payload.email?.split("@")[0] || userName;
+          }
+        } catch { /* can't decode */ }
+      }
+
       if (!userId) return;
 
       await fetch("/api/screening/submit", {

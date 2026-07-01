@@ -447,26 +447,48 @@ function SessionsList({ userId }: { userId?: string }) {
 
   return (
     <div className="space-y-3">
-      {sessions.slice(0, 3).map((s: any) => (
-        <div key={s.id} className="flex items-center gap-4 bg-surface rounded-xl p-4 border border-outline-variant">
-          <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center shrink-0">
-            <span className="material-symbols-outlined text-primary text-[22px] icon-fill">calendar_month</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-on-surface">Counselling Session</p>
-            <p className="text-xs text-on-surface-variant">Risk: {s.risk_level || "Unknown"}</p>
-            <span className="inline-flex items-center gap-1 text-xs text-secondary font-medium mt-1">
-              <span className="material-symbols-outlined text-[14px]">calendar_today</span>
-              {new Date(s.created_at).toLocaleDateString()}
+      {sessions.slice(0, 5).map((s: any) => {
+        // Parse scheduled date/time from notes if available
+        const scheduledMatch = s.notes?.match(/Scheduled session: (\S+) at (\S+)/);
+        const scheduledDate = scheduledMatch?.[1];
+        const scheduledTime = scheduledMatch?.[2];
+
+        return (
+          <div key={s.id} className="flex items-center gap-4 bg-surface rounded-xl p-4 border border-outline-variant">
+            <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-primary text-[22px] icon-fill">calendar_month</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-on-surface">
+                {scheduledDate ? "Scheduled Session" : "Counselling Session"}
+              </p>
+              {scheduledDate ? (
+                <div className="flex items-center gap-3 mt-1">
+                  <span className="inline-flex items-center gap-1 text-xs text-secondary font-medium">
+                    <span className="material-symbols-outlined text-[14px]">calendar_today</span>
+                    {new Date(scheduledDate).toLocaleDateString("en", { weekday: "short", month: "short", day: "numeric" })}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-xs text-on-surface-variant">
+                    <span className="material-symbols-outlined text-[14px]">schedule</span>
+                    {scheduledTime}
+                  </span>
+                </div>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-xs text-on-surface-variant mt-1">
+                  <span className="material-symbols-outlined text-[14px]">calendar_today</span>
+                  {new Date(s.created_at).toLocaleDateString()}
+                </span>
+              )}
+            </div>
+            <span className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold ${
+              scheduledDate ? "bg-secondary-container text-on-secondary-container" : 
+              s.status === "active" ? "bg-primary-container text-on-primary-container" : "bg-surface-container text-on-surface-variant"
+            }`}>
+              {scheduledDate ? "Scheduled" : s.status || "Active"}
             </span>
           </div>
-          <span className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold ${
-            s.status === "active" ? "bg-secondary-container text-on-secondary-container" : "bg-surface-container text-on-surface-variant"
-          }`}>
-            {s.status || "Active"}
-          </span>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

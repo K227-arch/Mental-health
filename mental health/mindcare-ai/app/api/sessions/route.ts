@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     if (studentId) {
       query = query.eq("student_id", studentId);
     }
-    if (counsellorId) {
+    if (counsellorId && counsellorId !== "all") {
       query = query.eq("counsellor_id", counsellorId);
     }
 

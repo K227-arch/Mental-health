@@ -13,8 +13,18 @@ export default function CounsellorDashboard() {
   const [filter, setFilter] = useState<"All" | "Critical" | "High" | "Moderate" | "Minimal">("All");
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<{ id?: string } | null>(null);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [scheduleTime, setScheduleTime] = useState("");
+  const [scheduledSessions, setScheduledSessions] = useState<{ date: string; time: string; studentId: string; studentName: string }[]>([]);
+  const [savingSchedule, setSavingSchedule] = useState(false);
 
   useEffect(() => {
+    fetch("/api/auth/me").then((r) => r.ok ? r.json() : null).then((d) => {
+      if (d?.user) setUser(d.user);
+    });
+
     fetch("/api/counsellor/students")
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
@@ -28,8 +38,8 @@ export default function CounsellorDashboard() {
             trend: "Stable" as const,
             lastActive: s.lastActive ? new Date(s.lastActive).toLocaleString() : "Never",
             phq9Score: s.phq9Score || 0,
-            moodLabel: s.severity || (s.assessmentType !== "none" ? `${(s.assessmentType || "").toUpperCase()} completed` : "No screening"),
-            depressionIndex: s.riskLevel === "Critical" ? "High" : s.riskLevel === "High" ? "Moderate" : "Low",
+            moodLabel: s.severity || (s.assessmentType && s.assessmentType !== "none" ? `${(s.assessmentType || "").toUpperCase()} completed` : "No screening"),
+            depressionIndex: s.assessmentType?.toUpperCase() || "N/A",
             summary: s.aiSummary || `${s.name}. ${s.assessmentType && s.assessmentType !== "none" ? `Latest: ${s.assessmentType.toUpperCase()} — Score: ${s.phq9Score}.` : "No assessments yet."} Risk: ${s.riskLevel}.`,
             hasNewMessage: false,
           }));
@@ -39,6 +49,25 @@ export default function CounsellorDashboard() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+
+    // Fetch scheduled sessions from database
+    fetch("/api/sessions?counsellorId=all")
+      .then((r) => r.ok ? r.json() : { sessions: [] })
+      .then((data) => {
+        const scheduled = (data.sessions || [])
+          .filter((s: any) => s.notes?.includes("Scheduled session:"))
+          .map((s: any) => {
+            const match = s.notes.match(/Scheduled session: (\S+) at (\S+)/);
+            return {
+              date: match?.[1] || "",
+              time: match?.[2] || "",
+              studentId: s.student_id,
+              studentName: s.student_name || s.student_id?.slice(0, 8),
+            };
+          });
+        setScheduledSessions(scheduled);
+      })
+      .catch(() => {});
   }, []);
 
   const filtered = filter === "All" ? students : students.filter((s) => s.riskLevel === filter);
@@ -54,7 +83,54 @@ export default function CounsellorDashboard() {
 
   const handleScheduleSession = () => {
     if (!selectedStudent) return;
-    showFeedback(`Session booking link sent to ${selectedStudent.anonymousId}.`);
+    setScheduleDate("");
+    setScheduleTime("");
+    setShowScheduleModal(true);
+  };
+
+  const saveScheduledSession = async () => {
+    if (!selectedStudent || !scheduleDate || !scheduleTime) return;
+    setSavingSchedule(true);
+
+    const newSession = {
+      date: scheduleDate,
+      time: scheduleTime,
+      studentId: selectedStudent.id,
+      studentName: selectedStudent.anonymousId,
+    };
+
+    // Save to database as a counsellor session
+    await fetch("/api/sessions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        studentId: selectedStudent.id,
+        counsellorId: user?.id || "counsellor",
+        riskLevel: selectedStudent.riskLevel || "Minimal",
+        notes: `Scheduled session: ${scheduleDate} at ${scheduleTime}`,
+        studentName: selectedStudent.anonymousId,
+      }),
+    }).catch(() => {});
+
+    // Save to local state for immediate display
+    setScheduledSessions((prev) => [...prev, newSession]);
+
+    // Send notification to student
+    await fetch("/api/notifications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: selectedStudent.id,
+        title: "Session Scheduled",
+        body: `Your counsellor has scheduled a session for ${new Date(scheduleDate).toLocaleDateString("en", { weekday: "long", month: "short", day: "numeric" })} at ${scheduleTime}.`,
+        type: "reminder",
+        link: "/dashboard",
+      }),
+    }).catch(() => {});
+
+    setSavingSchedule(false);
+    setShowScheduleModal(false);
+    showFeedback(`Session scheduled for ${selectedStudent.anonymousId} on ${scheduleDate} at ${scheduleTime}.`);
   };
 
   const handleWellnessCheck = () => {
@@ -126,7 +202,7 @@ export default function CounsellorDashboard() {
           { label: "Total Students", value: String(students.length), icon: "groups", color: "#074469" },
           { label: "Critical Alerts", value: String(students.filter(s => s.riskLevel === "Critical").length), icon: "warning", color: "#ba1a1a" },
           { label: "Active Sessions", value: String(students.filter(s => s.lastActive !== "Never").length), icon: "pending_actions", color: "#006a64" },
-          { label: "Avg PHQ-9", value: students.length > 0 ? String(Math.round(students.reduce((a, s) => a + s.phq9Score, 0) / students.length)) : "0", icon: "analytics", color: "#074469" },
+          { label: "Avg Score", value: students.length > 0 ? String(Math.round(students.reduce((a, s) => a + s.phq9Score, 0) / students.length)) : "0", icon: "analytics", color: "#074469" },
         ].map((stat) => (
           <div key={stat.label} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 flex flex-col gap-2 shadow-sm">
             <div className="flex justify-between items-start">
@@ -261,7 +337,7 @@ export default function CounsellorDashboard() {
                   <h3 className="text-sm font-bold text-on-primary-fixed-variant">AI Risk Interpretation</h3>
                 </div>
                 <span className="text-xs text-on-surface-variant uppercase tracking-wider">
-                  {selectedStudent.phq9Score > 0 ? `PHQ-9: ${selectedStudent.phq9Score}` : "No screening data"}
+                  {selectedStudent.phq9Score > 0 ? `${selectedStudent.depressionIndex}: ${selectedStudent.phq9Score}` : "No screening data"}
                 </span>
               </div>
               <p className="text-sm text-on-surface mb-4 bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/50">
@@ -271,7 +347,7 @@ export default function CounsellorDashboard() {
                 <div className="bg-surface-container-lowest p-3 rounded-lg border border-error-container/50 flex items-start gap-3">
                   <span className="material-symbols-outlined text-error text-[20px] shrink-0 mt-0.5">monitor_heart</span>
                   <div>
-                    <h4 className="text-xs font-bold text-on-surface mb-1">PHQ-9 Score</h4>
+                    <h4 className="text-xs font-bold text-on-surface mb-1">{selectedStudent.depressionIndex} Score</h4>
                     <p className="text-xs text-on-surface-variant">
                       {selectedStudent.phq9Score > 0 
                         ? <>Score: <strong>{selectedStudent.phq9Score}</strong> — {selectedStudent.moodLabel}</>
@@ -326,34 +402,30 @@ export default function CounsellorDashboard() {
               </div>
             </div>
 
-            {/* Recommended Interventions */}
+            {/* Scheduled Sessions */}
             <div>
-              <h3 className="text-sm font-bold text-on-surface mb-3">Recommended Interventions</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <button onClick={handleScheduleSession} className="flex flex-col items-start gap-1 p-4 rounded-xl border border-outline-variant bg-surface hover:bg-surface-container transition-colors text-left">
-                  <div className="flex items-center gap-2 text-primary font-bold text-sm">
-                    <span className="material-symbols-outlined text-[18px]">calendar_month</span>
-                    Schedule Session
-                  </div>
-                  <span className="text-xs text-on-surface-variant">Send priority booking link to {selectedStudent.anonymousId}.</span>
-                </button>
-                {(selectedStudent.riskLevel === "Critical" || selectedStudent.riskLevel === "High") && (
-                  <button onClick={handleWellnessCheck} className="flex flex-col items-start gap-1 p-4 rounded-xl border border-error-container bg-error-container/10 hover:bg-error-container/20 transition-colors text-left">
-                    <div className="flex items-center gap-2 text-error font-bold text-sm">
-                      <span className="material-symbols-outlined text-[18px]">contact_emergency</span>
-                      Wellness Check
-                    </div>
-                    <span className="text-xs text-on-surface-variant">Alert campus security or emergency contact.</span>
-                  </button>
-                )}
-                <button onClick={handleClinicalReferral} className="flex flex-col items-start gap-1 p-4 rounded-xl border border-outline-variant bg-surface hover:bg-surface-container transition-colors text-left md:col-span-2">
-                  <div className="flex items-center gap-2 text-on-surface font-bold text-sm">
-                    <span className="material-symbols-outlined text-[18px]">medical_services</span>
-                    Clinical Referral
-                  </div>
-                  <span className="text-xs text-on-surface-variant">Prepare documentation for external evaluation.</span>
-                </button>
-              </div>
+              <h3 className="text-sm font-bold text-on-surface mb-3">Scheduled Sessions</h3>
+              {scheduledSessions.filter((s) => selectedStudent && s.studentId === selectedStudent.id).length > 0 ? (
+                <div className="space-y-2">
+                  {scheduledSessions
+                    .filter((s) => selectedStudent && s.studentId === selectedStudent.id)
+                    .map((s, i) => (
+                      <div key={i} className="flex items-center gap-3 p-3 bg-secondary-container/30 border border-secondary/20 rounded-xl">
+                        <span className="material-symbols-outlined text-secondary text-[20px]">event</span>
+                        <div>
+                          <p className="text-sm font-medium text-on-surface">{new Date(s.date).toLocaleDateString("en", { weekday: "short", month: "short", day: "numeric" })}</p>
+                          <p className="text-xs text-on-surface-variant">{s.time}</p>
+                        </div>
+                        <span className="ml-auto px-2 py-0.5 bg-secondary-container text-on-secondary-container text-[10px] font-semibold rounded-full uppercase">Confirmed</span>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <div className="p-4 bg-surface-container-low border border-outline-variant/30 rounded-xl text-center">
+                  <span className="material-symbols-outlined text-on-surface-variant/30 text-[28px] block mb-1">event_busy</span>
+                  <p className="text-xs text-on-surface-variant">No sessions scheduled yet. Use the Action Center to schedule one.</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -386,15 +458,6 @@ export default function CounsellorDashboard() {
               <button onClick={handleSendMessage} className="w-full flex items-center gap-3 px-4 py-2.5 border border-outline-variant bg-surface hover:bg-surface-container rounded-lg text-sm text-on-surface transition-colors">
                 <span className="material-symbols-outlined text-[18px]">mail</span>
                 Send Secure Message
-              </button>
-              <button onClick={handleClinicalReferral} className="w-full flex items-center gap-3 px-4 py-2.5 border border-outline-variant bg-surface hover:bg-surface-container rounded-lg text-sm text-on-surface transition-colors">
-                <span className="material-symbols-outlined text-[18px]">medical_services</span>
-                Initiate Referral
-              </button>
-              <div className="my-1 border-t border-outline-variant" />
-              <button onClick={handleEscalate} className="w-full flex items-center gap-3 px-4 py-2.5 bg-error-container text-on-error-container rounded-lg text-sm font-medium hover:bg-error/20 transition-colors">
-                <span className="material-symbols-outlined text-[18px]">contact_emergency</span>
-                Escalate to Psychologist
               </button>
             </div>
           </div>
@@ -437,6 +500,64 @@ export default function CounsellorDashboard() {
           </div>
         </div>
       </section>
+      )}
+      
+      {/* Schedule Session Modal */}
+      {showScheduleModal && selectedStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 w-full max-w-sm shadow-xl animate-fade-in">
+            <h2 className="text-lg font-bold text-on-surface mb-2 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-[22px]">calendar_month</span>
+              Schedule Session
+            </h2>
+            <p className="text-xs text-on-surface-variant mb-5">
+              Schedule a session with <strong>{selectedStudent.anonymousId}</strong>. They&apos;ll receive a notification.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">Date</label>
+                <input
+                  type="date"
+                  value={scheduleDate}
+                  onChange={(e) => setScheduleDate(e.target.value)}
+                  min={new Date().toISOString().split("T")[0]}
+                  className="w-full px-4 py-2.5 bg-surface border border-outline-variant/50 rounded-xl text-sm text-on-surface focus:ring-2 focus:ring-primary/30 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">Time</label>
+                <input
+                  type="time"
+                  value={scheduleTime}
+                  onChange={(e) => setScheduleTime(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-surface border border-outline-variant/50 rounded-xl text-sm text-on-surface focus:ring-2 focus:ring-primary/30 outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowScheduleModal(false)}
+                className="flex-1 px-4 py-2.5 border border-outline-variant rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveScheduledSession}
+                disabled={!scheduleDate || !scheduleTime || savingSchedule}
+                className="flex-1 px-4 py-2.5 bg-primary text-on-primary rounded-xl text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center justify-center gap-2"
+              >
+                {savingSchedule ? (
+                  <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                ) : (
+                  <span className="material-symbols-outlined text-[16px]">save</span>
+                )}
+                {savingSchedule ? "Saving..." : "Save Session"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
