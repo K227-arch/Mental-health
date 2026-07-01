@@ -156,6 +156,8 @@ export default function ScreeningPage() {
           answers: answersPayload,
           phq9Score: score,
           freeText: freeTextInputs.join(". "),
+          assessmentType: selectedModel.id,
+          maxScore: selectedModel.maxScore,
         }),
       });
 

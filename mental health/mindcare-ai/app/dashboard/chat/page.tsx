@@ -18,6 +18,8 @@ export default function StudentChatPage() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [recording, setRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -85,6 +87,81 @@ export default function StudentChatPage() {
 
   const formatTime = (dateStr: string) =>
     new Date(dateStr).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+  const startVoiceRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      let mimeType = "audio/webm";
+      if (!MediaRecorder.isTypeSupported("audio/webm")) {
+        mimeType = "audio/mp4";
+        if (!MediaRecorder.isTypeSupported("audio/mp4")) {
+          mimeType = "";
+        }
+      }
+      
+      const recorder = mimeType 
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
+      const chunks: BlobPart[] = [];
+
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        if (chunks.length === 0) return;
+        const blob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
+
+        const formData = new FormData();
+        formData.append("file", blob, `voice-note.${recorder.mimeType.includes("mp4") ? "mp4" : "webm"}`);
+        formData.append("userId", user?.id || "student");
+        formData.append("type", "audio");
+
+        try {
+          const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+          if (uploadRes.ok && session) {
+            const uploadData = await uploadRes.json();
+            const audioUrl = uploadData.url || uploadData.key;
+
+            const res = await fetch("/api/messages", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                sessionId: session.id,
+                senderId: user?.id,
+                senderRole: "student",
+                content: `🎤 Voice note: ${audioUrl}`,
+                counsellorId: "counsellor-system",
+              }),
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.message) {
+                setMessages((prev) => {
+                  const exists = prev.some((m) => m.id === data.message.id);
+                  return exists ? prev : [...prev, data.message];
+                });
+              }
+            }
+          }
+        } catch { /* upload failed */ }
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setRecording(true);
+    } catch (err) {
+      console.error("Mic error:", err);
+      alert("Microphone access denied. Please allow microphone permissions in your browser settings.");
+    }
+  };
+
+  const stopVoiceRecording = () => {
+    if (mediaRecorder && recording) {
+      mediaRecorder.stop();
+      setRecording(false);
+      setMediaRecorder(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -160,17 +237,29 @@ export default function StudentChatPage() {
             {/* Input */}
             <div className="px-6 py-4 border-t border-outline-variant">
               <div className="flex gap-2">
+                <button
+                  onClick={recording ? stopVoiceRecording : startVoiceRecording}
+                  className={`px-3 py-3 rounded-xl font-medium text-sm transition-all flex items-center gap-1 ${
+                    recording
+                      ? "bg-error text-on-error animate-pulse"
+                      : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
+                  }`}
+                  title={recording ? "Stop recording" : "Record voice note"}
+                >
+                  <span className="material-symbols-outlined text-[18px]">{recording ? "stop" : "mic"}</span>
+                </button>
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-                  placeholder="Type a message..."
-                  className="flex-1 px-4 py-3 bg-surface-container-low border border-outline-variant/40 rounded-xl text-sm text-on-surface focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none placeholder:text-on-surface-variant/40"
+                  placeholder={recording ? "Recording..." : "Type a message..."}
+                  disabled={recording}
+                  className="flex-1 px-4 py-3 bg-surface-container-low border border-outline-variant/40 rounded-xl text-sm text-on-surface focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none placeholder:text-on-surface-variant/40 disabled:opacity-50"
                 />
                 <button
                   onClick={sendMessage}
-                  disabled={!input.trim() || sending}
+                  disabled={!input.trim() || sending || recording}
                   className="px-4 py-3 bg-primary text-on-primary rounded-xl font-medium text-sm hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-1"
                 >
                   <span className="material-symbols-outlined text-[18px]">send</span>
