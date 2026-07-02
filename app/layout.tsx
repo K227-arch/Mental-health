@@ -1,18 +1,16 @@
 ﻿import type { Metadata } from "next";
 import "./globals.css";
+import PushProvider from "./components/PushProvider";
+import BubbleBackground from "./components/BubbleBackground";
 
 export const metadata: Metadata = {
-  title: "MindCare AI ΓÇö Student Wellness System",
+  title: "MindCare AI — Student Wellness System",
   description:
     "AI-powered mental health support and wellness management for university students.",
   keywords: "mental health, student wellness, AI screening, PHQ-9, university support",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="light" suppressHydrationWarning>
       <head>
@@ -28,6 +26,10 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-surface text-on-surface antialiased min-h-screen">
+        {/* Rising bubble background — fixed, behind all content */}
+        <BubbleBackground />
+        {/* Push notification SW + realtime crisis alerts for counsellors */}
+        <PushProvider />
         {children}
       </body>
     </html>
