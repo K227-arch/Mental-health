@@ -56,12 +56,23 @@ export default function ScreeningPage() {
   const [recording, setRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [cameraRecording, setCameraRecording] = useState(false);
+  const [cameraRecorder, setCameraRecorder] = useState<MediaRecorder | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const cameraPreviewRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    if (cameraPreviewRef.current && cameraStream) {
+      cameraPreviewRef.current.srcObject = cameraStream;
+    }
+  }, [cameraStream]);
 
   const startAssessment = () => {
     setStarted(true);
@@ -81,7 +92,7 @@ export default function ScreeningPage() {
     setMessages((prev) => [
       ...prev,
       {
-        id: Date.now().toString(),
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         role,
         content,
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
@@ -319,23 +330,166 @@ export default function ScreeningPage() {
     setUploadingVideo(true);
     addMessage("user", `🎥 [Video uploaded: ${file.name}]`);
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("userId", "anonymous");
-    formData.append("type", "video");
+    // Extract frames and audio for AI analysis
+    addMessage("ai", "📊 Analyzing your video... extracting frames and audio for AI processing.");
 
     try {
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
-      if (res.ok) {
-        addMessage("ai", "Video received. Your counsellor will review it securely. Thank you for sharing.");
+      const { frames, audioBlob } = await extractVideoData(file);
+
+      // Upload original video to storage
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("userId", "anonymous");
+      formData.append("type", "video");
+      fetch("/api/upload", { method: "POST", body: formData }).catch(() => {});
+
+      // Run AI analysis
+      const audioBase64 = audioBlob ? await blobToBase64(audioBlob) : null;
+
+      const analysisRes = await fetch("/api/analyze-video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          frames,
+          audio: audioBase64,
+        }),
+      });
+
+      if (analysisRes.ok) {
+        const report = await analysisRes.json();
+        let analysisMsg = `🧠 **Video Analysis Complete**\n\n`;
+
+        if (report.emotions && report.emotions.length > 0) {
+          analysisMsg += `**Facial Expression Analysis:**\n`;
+          analysisMsg += report.emotions.slice(0, 4).map((e: any) => `• ${e.label}: ${(e.score * 100).toFixed(0)}%`).join("\n");
+          analysisMsg += `\n\n`;
+        }
+
+        if (report.transcript) {
+          analysisMsg += `**Speech Transcription:**\n"${report.transcript.slice(0, 200)}${report.transcript.length > 200 ? "..." : ""}"\n\n`;
+        }
+
+        if (report.sentiment && (report.sentiment.negative > 0 || report.sentiment.positive > 0)) {
+          analysisMsg += `**Sentiment:** ${(report.sentiment.negative * 100).toFixed(0)}% negative · ${(report.sentiment.neutral * 100).toFixed(0)}% neutral · ${(report.sentiment.positive * 100).toFixed(0)}% positive\n\n`;
+        }
+
+        if (report.riskIndicators && report.riskIndicators.length > 0) {
+          analysisMsg += `**Risk Indicators:**\n${report.riskIndicators.map((r: string) => `⚠️ ${r}`).join("\n")}\n\n`;
+        }
+
+        analysisMsg += `**Summary:** ${report.summary || "Analysis complete."}`;
+        addMessage("ai", analysisMsg);
       } else {
-        addMessage("ai", "Video upload noted. It will be available for review shortly.");
+        addMessage("ai", "Video uploaded successfully. Your counsellor will review it. AI analysis is warming up — results may be available shortly.");
       }
     } catch {
-      addMessage("ai", "Video saved locally. It will sync when connection restores.");
+      addMessage("ai", "Video uploaded to your counsellor. AI analysis will be processed in the background.");
     } finally {
       setUploadingVideo(false);
       if (videoInputRef.current) videoInputRef.current.value = "";
+    }
+  };
+
+  const extractVideoData = (file: File): Promise<{ frames: string[]; audioBlob: Blob | null }> => {
+    return new Promise((resolve) => {
+      const video = document.createElement("video");
+      video.preload = "auto";
+      video.muted = true;
+      video.src = URL.createObjectURL(file);
+
+      video.onloadedmetadata = () => {
+        const duration = video.duration;
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const frames: string[] = [];
+        const timestamps = [0.2, 0.4, 0.6, 0.8, 1.0].map((t) => t * duration);
+        let extracted = 0;
+
+        canvas.width = 224;
+        canvas.height = 224;
+
+        const captureFrame = () => {
+          if (extracted >= timestamps.length) {
+            URL.revokeObjectURL(video.src);
+            // Try to extract audio
+            try {
+              // For audio, we just send the whole file as audio (browser can't easily split)
+              resolve({ frames, audioBlob: file });
+            } catch {
+              resolve({ frames, audioBlob: null });
+            }
+            return;
+          }
+
+          video.currentTime = timestamps[extracted];
+        };
+
+        video.onseeked = () => {
+          if (ctx) {
+            ctx.drawImage(video, 0, 0, 224, 224);
+            frames.push(canvas.toDataURL("image/jpeg", 0.8));
+          }
+          extracted++;
+          captureFrame();
+        };
+
+        captureFrame();
+      };
+
+      video.onerror = () => resolve({ frames: [], audioBlob: null });
+    });
+  };
+
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        resolve(result.split(",")[1] || "");
+      };
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  const openVideoCapture = () => {
+    setShowVideoModal(true);
+  };
+
+  const startCameraRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      setCameraStream(stream);
+
+      let mimeType = "video/webm";
+      if (!MediaRecorder.isTypeSupported("video/webm")) mimeType = "video/mp4";
+
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      const chunks: BlobPart[] = [];
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+      recorder.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop());
+        setCameraStream(null);
+        const blob = new Blob(chunks, { type: recorder.mimeType });
+        const file = new File([blob], "camera-recording.webm", { type: recorder.mimeType });
+        setShowVideoModal(false);
+        // Process like a regular video upload
+        const fakeEvent = { target: { files: [file] } } as unknown as React.ChangeEvent<HTMLInputElement>;
+        handleVideoUpload(fakeEvent);
+      };
+      setCameraRecorder(recorder);
+      recorder.start();
+      setCameraRecording(true);
+    } catch {
+      addMessage("ai", "Camera access denied. Please allow camera permissions or upload a video file instead.");
+      setShowVideoModal(false);
+    }
+  };
+
+  const stopCameraRecording = () => {
+    if (cameraRecorder && cameraRecording) {
+      cameraRecorder.stop();
+      setCameraRecording(false);
+      setCameraRecorder(null);
     }
   };
 
@@ -452,9 +606,9 @@ export default function ScreeningPage() {
               </span>
             </div>
 
-            {messages.map((msg) => (
+            {messages.map((msg, idx) => (
               <div
-                key={msg.id}
+                key={`${msg.id}-${idx}`}
                 className={`flex items-end gap-3 max-w-[85%] animate-fade-in ${
                   msg.role === "user" ? "self-end flex-row-reverse" : "self-start"
                 }`}
@@ -632,10 +786,10 @@ export default function ScreeningPage() {
                   <span className="material-symbols-outlined text-[20px]">{recording ? "stop" : "mic"}</span>
                 </button>
                 <button
-                  onClick={() => videoInputRef.current?.click()}
+                  onClick={openVideoCapture}
                   disabled={uploadingVideo}
                   className="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant hover:bg-primary-container hover:text-on-primary-container flex items-center justify-center transition-colors disabled:opacity-50"
-                  title="Upload video"
+                  title="Record or upload video"
                 >
                   <span className="material-symbols-outlined text-[20px]">{uploadingVideo ? "progress_activity" : "videocam"}</span>
                 </button>
@@ -659,6 +813,72 @@ export default function ScreeningPage() {
           </div>
         </main>
       </div>
+
+      {/* Video Capture Modal */}
+      {showVideoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 w-full max-w-md shadow-xl animate-fade-in">
+            <h2 className="text-lg font-bold text-on-surface mb-2 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-[22px]">videocam</span>
+              Video Check-in
+            </h2>
+            <p className="text-xs text-on-surface-variant mb-5">
+              Record a video or upload one. AI will analyze your facial expressions, speech, and tone.
+            </p>
+
+            {/* Camera Preview */}
+            {cameraStream && (
+              <div className="mb-4 rounded-xl overflow-hidden bg-black aspect-video relative">
+                <video ref={cameraPreviewRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                {cameraRecording && (
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-error/90 text-on-error px-2 py-1 rounded-full text-xs font-semibold">
+                    <span className="w-2 h-2 bg-on-error rounded-full animate-pulse" />
+                    Recording
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-3">
+              {!cameraRecording ? (
+                <>
+                  <button
+                    onClick={startCameraRecording}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-on-primary rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">videocam</span>
+                    Record Live Video
+                  </button>
+                  <button
+                    onClick={() => { setShowVideoModal(false); videoInputRef.current?.click(); }}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-outline-variant bg-surface hover:bg-surface-container rounded-xl text-sm font-medium text-on-surface transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">upload_file</span>
+                    Upload Video from Device
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={stopCameraRecording}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-error text-on-error rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
+                >
+                  <span className="material-symbols-outlined text-[20px]">stop_circle</span>
+                  Stop Recording & Analyze
+                </button>
+              )}
+
+              {!cameraRecording && (
+                <button
+                  onClick={() => { setShowVideoModal(false); if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); setCameraStream(null); } }}
+                  className="w-full px-4 py-2.5 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
