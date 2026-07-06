@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import clsx from "clsx";
+import { useTranslation } from "../../lib/i18n";
 
 interface Resource {
   id: string;
@@ -20,7 +21,7 @@ interface StudentOption {
   name: string;
 }
 
-const categories = ["All", "CBT", "Mindfulness", "Sleep", "Anxiety", "Depression", "Self-Care", "General"];
+const categories = ["All", "CBT", "Mindfulness", "Sleep", "Anxiety", "Depression", "Self-Care", "General", "Custom"];
 const typeOptions = ["article", "video", "exercise", "worksheet", "guide"];
 
 const categoryColors: Record<string, string> = {
@@ -42,6 +43,7 @@ const typeIcons: Record<string, string> = {
 };
 
 export default function CounsellorLibrary() {
+  const { t } = useTranslation();
   const [resources, setResources] = useState<Resource[]>([]);
   const [students, setStudents] = useState<StudentOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,7 +88,9 @@ export default function CounsellorLibrary() {
 
   const filtered = resources.filter((r) =>
     r.title.toLowerCase().includes(search.toLowerCase()) ||
-    r.description.toLowerCase().includes(search.toLowerCase())
+    r.description.toLowerCase().includes(search.toLowerCase()) ||
+    r.category.toLowerCase().includes(search.toLowerCase()) ||
+    r.type.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleAdd = async () => {
@@ -185,15 +189,15 @@ export default function CounsellorLibrary() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-on-surface">Wellness Library</h1>
-          <p className="text-on-surface-variant mt-1">Manage and share resources with students.</p>
+          <h1 className="text-3xl font-bold text-on-surface">{t("counsellor.library.title")}</h1>
+          <p className="text-on-surface-variant mt-1">{t("counsellor.library.subtitle")}</p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
           className="flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity shadow-sm"
         >
           <span className="material-symbols-outlined text-[18px]">add</span>
-          Add Resource
+          {t("counsellor.library.addResource")}
         </button>
       </div>
 
@@ -205,7 +209,7 @@ export default function CounsellorLibrary() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search resources..."
+            placeholder={t("counsellor.library.searchPlaceholder")}
             className="w-full pl-11 pr-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-xl text-sm text-on-surface focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
           />
         </div>
@@ -242,67 +246,76 @@ export default function CounsellorLibrary() {
           {filtered.map((resource) => (
             <div
               key={resource.id}
-              className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col"
+              className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col"
             >
-              <div className="flex items-start justify-between mb-3">
-                <span className={clsx("text-[10px] px-2 py-0.5 rounded uppercase tracking-wider font-semibold", categoryColors[resource.category] || categoryColors["General"])}>
-                  {resource.category}
-                </span>
-                <span className="material-symbols-outlined text-[20px] text-on-surface-variant/60">{typeIcons[resource.type] || "article"}</span>
-              </div>
-              <h3 className="text-sm font-bold text-on-surface mb-2 leading-snug">{resource.title}</h3>
-              <p className="text-xs text-on-surface-variant mb-4 flex-1 leading-relaxed">{resource.description}</p>
-              {resource.assigned_to && (
-                <div className="text-[10px] text-secondary font-medium mb-2 flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[12px]">person</span>
-                    Shared with student
-                  </span>
+              {/* Video thumbnail */}
+              {resource.type === "video" && (
+                <div className="aspect-video bg-gradient-to-br from-primary-container to-secondary-container flex items-center justify-center relative">
+                  <span className="material-symbols-outlined icon-fill text-primary text-[48px]">play_circle</span>
                   {resource.content_url && (
                     <a
                       href={resource.content_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-0.5 text-primary hover:underline"
+                      className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-opacity"
                     >
-                      Open
-                      <span className="material-symbols-outlined text-[12px]">open_in_new</span>
+                      <span className="material-symbols-outlined icon-fill text-white text-[56px]">play_circle</span>
                     </a>
                   )}
+                  <span className="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded font-medium">
+                    {resource.read_time}
+                  </span>
                 </div>
               )}
-              <div className="flex items-center justify-between pt-3 border-t border-outline-variant">
-                <span className="text-[10px] text-outline flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[12px]">schedule</span>
-                  {resource.read_time}
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setShowShareModal(resource)}
-                    className="text-xs font-semibold text-secondary hover:underline flex items-center gap-0.5"
-                    title="Share with student"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">share</span>
-                    Share
-                  </button>
-                  {!resource.assigned_to && resource.content_url && (
-                    <a
-                      href={resource.content_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs font-semibold text-primary hover:underline flex items-center gap-0.5"
-                    >
-                      Open
-                      <span className="material-symbols-outlined text-[14px]">open_in_new</span>
-                    </a>
+              <div className="p-5 flex flex-col flex-1">
+                <div className="flex items-start justify-between mb-3">
+                  <span className={clsx("text-[10px] px-2 py-0.5 rounded uppercase tracking-wider font-semibold", categoryColors[resource.category] || categoryColors["General"])}>
+                    {resource.category}
+                  </span>
+                  {resource.type !== "video" && (
+                    <span className="material-symbols-outlined text-[20px] text-on-surface-variant/60">{typeIcons[resource.type] || "article"}</span>
                   )}
-                  <button
-                    onClick={() => handleDelete(resource.id)}
-                    className="text-xs text-error hover:underline"
-                    title="Delete"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">delete</span>
-                  </button>
+                </div>
+                <h3 className="text-sm font-bold text-on-surface mb-2 leading-snug">{resource.title}</h3>
+                <p className="text-xs text-on-surface-variant mb-4 flex-1 leading-relaxed">{resource.description}</p>
+                {resource.assigned_to && (
+                  <div className="text-[10px] text-secondary font-medium mb-2 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[12px]">person</span>
+                    Shared with student
+                  </div>
+                )}
+                <div className="flex items-center justify-between pt-3 border-t border-outline-variant">
+                  <span className="text-[10px] text-outline flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[12px]">schedule</span>
+                    {resource.read_time}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {resource.content_url && (
+                      <a
+                        href={resource.content_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-semibold text-primary hover:underline flex items-center gap-0.5"
+                        title="Open"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+                      </a>
+                    )}
+                    <button
+                      onClick={() => setShowShareModal(resource)}
+                      className="text-xs font-semibold text-secondary hover:underline flex items-center gap-0.5"
+                      title="Share with student"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">share</span>
+                    </button>
+                    <button
+                      onClick={() => handleDelete(resource.id)}
+                      className="text-xs text-error hover:underline"
+                      title="Delete"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">delete</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

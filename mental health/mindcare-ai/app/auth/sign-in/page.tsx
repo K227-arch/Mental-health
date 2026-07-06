@@ -4,9 +4,11 @@ import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { insforge } from "@/lib/insforge";
+import { useTranslation } from "../../lib/i18n";
 
 export default function SignInPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [role, setRole] = useState<"student" | "counsellor">("student");
 
   const [email, setEmail] = useState("");
@@ -128,15 +130,15 @@ export default function SignInPage() {
             className="w-20 h-20 object-contain rounded-2xl mx-auto mb-4 shadow-lg border border-white/20 bg-white/90"
           />
           <p className="text-white/70 text-xs font-medium uppercase tracking-widest mb-6">
-            {role === "counsellor" ? "Counsellor Portal" : "Student Portal"}
+            {role === "counsellor" ? t("auth.portal.counsellor") : t("auth.portal.student")}
           </p>
           <h1 className="text-4xl font-black text-white mb-4 leading-tight">
-            {role === "counsellor" ? "Support students, save lives." : "Your mind matters."}
+            {role === "counsellor" ? t("auth.signin.heroCounsellor") : t("auth.signin.heroStudent")}
           </h1>
           <p className="text-white/80 text-lg leading-relaxed mb-8">
             {role === "counsellor"
-              ? "Access your dashboard to monitor student wellbeing, review screenings, and provide timely interventions."
-              : "AI-powered mental health support designed for university students. Safe, confidential, and always available."}
+              ? t("auth.signin.descCounsellor")
+              : t("auth.signin.descStudent")}
           </p>
 
           <div className="space-y-4 text-left">
@@ -190,15 +192,15 @@ export default function SignInPage() {
             </Link>
             <h2 className="font-black text-xl text-primary">Selfcare Hub</h2>
             <p className="text-on-surface-variant text-xs font-medium uppercase tracking-widest mt-1.5">
-              {role === "counsellor" ? "Counsellor Portal" : "Student Portal"}
+              {role === "counsellor" ? t("auth.portal.counsellor") : t("auth.portal.student")}
             </p>
           </div>
 
           {/* Form Card */}
           <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-7 shadow-lg shadow-primary/5">
-            <h1 className="text-lg font-bold text-on-surface mb-1">Sign In</h1>
+            <h1 className="text-lg font-bold text-on-surface mb-1">{t("auth.signin.title")}</h1>
             <p className="text-xs text-on-surface-variant mb-6">
-              {role === "counsellor" ? "Access your counsellor dashboard" : "Access your wellness dashboard"}
+              {role === "counsellor" ? t("auth.signin.counsellorSubtitle") : t("auth.signin.subtitle")}
             </p>
 
             {/* OAuth */}
@@ -217,19 +219,19 @@ export default function SignInPage() {
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                 </svg>
               )}
-              {oauthLoading === "google" ? "Connecting..." : "Continue with Google"}
+              {oauthLoading === "google" ? t("auth.signin.connecting") : t("auth.signin.google")}
             </button>
 
             <div className="flex items-center gap-3 my-6">
               <div className="flex-1 h-px bg-outline-variant/50" />
-              <span className="text-xs text-on-surface-variant/70 font-medium">or</span>
+              <span className="text-xs text-on-surface-variant/70 font-medium">{t("auth.signin.or")}</span>
               <div className="flex-1 h-px bg-outline-variant/50" />
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="email" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
-                  Email
+                  {t("auth.signin.email")}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
@@ -250,10 +252,10 @@ export default function SignInPage() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label htmlFor="password" className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
-                    Password
+                    {t("auth.signin.password")}
                   </label>
                   <button type="button" onClick={() => { setResetMode(true); handleResetPassword(); }} className="text-xs text-primary font-medium hover:underline">
-                    Forgot?
+                    {t("auth.signin.forgot")}
                   </button>
                 </div>
                 <div className="relative">
@@ -284,7 +286,7 @@ export default function SignInPage() {
               {resetSent && (
                 <div className="flex items-start gap-2 p-3 bg-secondary-container text-on-secondary-container text-sm rounded-xl animate-fade-in">
                   <span className="material-symbols-outlined text-[18px] shrink-0 mt-0.5">check_circle</span>
-                  <span>Password reset email sent. Check your inbox.</span>
+                  <span>{t("auth.signin.resetSent")}</span>
                 </div>
               )}
 
@@ -305,15 +307,15 @@ export default function SignInPage() {
                 ) : (
                   <span className="material-symbols-outlined text-[20px]">login</span>
                 )}
-                {loading ? "Signing in..." : "Sign In"}
+                {loading ? t("auth.signin.signingIn") : t("auth.signin.button")}
               </button>
             </form>
           </div>
 
           <p className="text-center text-sm text-on-surface-variant mt-6">
-            Don&apos;t have an account?{" "}
+            {t("auth.signin.noAccount")}{" "}
             <a href={`/auth/sign-up${role === "counsellor" ? "?role=counsellor" : ""}`} className="text-primary font-semibold hover:underline">
-              Create one
+              {t("auth.signin.createOne")}
             </a>
           </p>
 
@@ -322,12 +324,12 @@ export default function SignInPage() {
               href={`/auth/sign-in${role === "counsellor" ? "" : "?role=counsellor"}`}
               className="text-xs text-on-surface-variant/70 hover:text-primary transition-colors"
             >
-              {role === "counsellor" ? "← Switch to Student Portal" : "Are you a counsellor? →"}
+              {role === "counsellor" ? t("auth.signin.switchStudent") : t("auth.signin.switchCounsellor")}
             </a>
           </div>
 
           <p className="text-center text-xs text-on-surface-variant/50 mt-4">
-            Protected by encryption · HIPAA-aligned
+            {t("auth.signin.protected")}
           </p>
         </div>
       </div>

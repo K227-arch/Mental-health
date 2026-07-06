@@ -5,6 +5,7 @@ import Link from "next/link";
 import Navbar from "../components/Navbar";
 import StudentSidebar from "../components/StudentSidebar";
 import { phq9Questions, getPHQ9Severity, assessmentModels } from "../lib/data";
+import { useTranslation } from "../lib/i18n";
 import type { AssessmentModel } from "../lib/data";
 
 interface Message {
@@ -33,6 +34,7 @@ const greetings = [
 ];
 
 export default function ScreeningPage() {
+  const { t } = useTranslation();
   const [selectedModel, setSelectedModel] = useState<AssessmentModel>(assessmentModels[0]);
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
   const [started, setStarted] = useState(false);
@@ -515,9 +517,9 @@ export default function ScreeningPage() {
           <div className="flex-1 w-full max-w-3xl mx-auto flex flex-col px-4 md:px-6 pb-8 overflow-hidden">
         {/* Header */}
         <div className="flex flex-col items-center justify-center py-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-on-surface text-center mb-1">Daily Check-in</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-on-surface text-center mb-1">{t("screening.checkinTitle")}</h1>
           <p className="text-on-surface-variant text-sm text-center max-w-md mb-4">
-            Take a moment for yourself. Select an assessment and we&apos;ll walk through it together.
+            {t("screening.checkinSubtitle")}
           </p>
 
           {/* Model Selector */}
@@ -573,7 +575,7 @@ export default function ScreeningPage() {
               className="px-6 py-2.5 bg-primary text-on-primary rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity shadow-md flex items-center gap-2 mb-4"
             >
               <span className="material-symbols-outlined text-[18px]">play_arrow</span>
-              Start Assessment
+              {t("screening.startAssessment")}
             </button>
           )}
 
@@ -650,13 +652,13 @@ export default function ScreeningPage() {
               </div>
             )}
 
-            {/* Score result */}
+            {/* Result - no scores shown to student */}
             {done && severity && (
               <div className="self-center my-4 animate-fade-in">
                 <div className={`px-6 py-4 rounded-2xl border text-center ${severity.bg} border-outline-variant/30`}>
-                  <div className="text-4xl font-black text-primary mb-1">{totalScore}</div>
+                  <span className="material-symbols-outlined text-primary text-[40px] mb-2">check_circle</span>
                   <div className={`text-sm font-bold ${severity.color}`}>{severity.label}</div>
-                  <div className="text-xs text-on-surface-variant mt-1">PHQ-9 Score</div>
+                  <div className="text-xs text-on-surface-variant mt-1">Assessment Complete</div>
                 </div>
 
                 {/* NLP Analysis Results */}
@@ -717,10 +719,10 @@ export default function ScreeningPage() {
 
                 <div className="flex flex-col sm:flex-row gap-3 mt-4 justify-center">
                   <Link
-                    href="/dashboard"
+                    href="/wellness"
                     className="px-5 py-2.5 bg-primary text-on-primary text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity text-center"
                   >
-                    View Dashboard
+                    Explore Wellness Resources
                   </Link>
                   {totalScore >= 15 && (
                     <Link

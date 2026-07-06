@@ -4,9 +4,11 @@ import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { insforge } from "@/lib/insforge";
+import { useTranslation } from "../../lib/i18n";
 
 export default function SignUpPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [role, setRole] = useState<"student" | "counsellor">("student");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -113,15 +115,15 @@ export default function SignUpPage() {
             className="w-20 h-20 object-contain rounded-2xl mx-auto mb-4 shadow-lg border border-white/20 bg-white/90"
           />
           <p className="text-white/70 text-xs font-medium uppercase tracking-widest mb-6">
-            {role === "counsellor" ? "Counsellor Portal" : "Student Portal"}
+            {role === "counsellor" ? t("auth.portal.counsellor") : t("auth.portal.student")}
           </p>
           <h1 className="text-4xl font-black text-white mb-4 leading-tight">
-            {role === "counsellor" ? "Join the care team." : "Start your wellness journey."}
+            {role === "counsellor" ? t("auth.signup.heroCounsellor") : t("auth.signup.heroStudent")}
           </h1>
           <p className="text-white/80 text-lg leading-relaxed mb-8">
             {role === "counsellor"
-              ? "Register to access your counsellor dashboard and start supporting students with AI-assisted insights."
-              : "Join thousands of students taking control of their mental health with AI-powered support."}
+              ? t("auth.signup.descCounsellor")
+              : t("auth.signup.descStudent")}
           </p>
 
           {role === "counsellor" ? (
@@ -173,15 +175,15 @@ export default function SignUpPage() {
             </Link>
             <h2 className="font-black text-xl text-primary">Selfcare Hub</h2>
             <p className="text-on-surface-variant text-xs font-medium uppercase tracking-widest mt-1.5">
-              {role === "counsellor" ? "Counsellor Portal" : "Student Portal"}
+              {role === "counsellor" ? t("auth.portal.counsellor") : t("auth.portal.student")}
             </p>
           </div>
 
           {/* Form Card */}
           <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-7 shadow-lg shadow-primary/5">
-            <h1 className="text-lg font-bold text-on-surface mb-1">Create Account</h1>
+            <h1 className="text-lg font-bold text-on-surface mb-1">{t("auth.signup.title")}</h1>
             <p className="text-xs text-on-surface-variant mb-5">
-              {role === "counsellor" ? "Set up your counsellor account" : "Takes less than a minute"}
+              {role === "counsellor" ? t("auth.signup.counsellorSubtitle") : t("auth.signup.subtitle")}
             </p>
 
             {/* OAuth */}
@@ -200,7 +202,7 @@ export default function SignUpPage() {
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                 </svg>
               )}
-              {oauthLoading === "google" ? "Connecting..." : "Sign up with Google"}
+              {oauthLoading === "google" ? t("auth.signin.connecting") : t("auth.signup.google")}
             </button>
 
             <div className="flex items-center gap-3 my-5">
@@ -212,7 +214,7 @@ export default function SignUpPage() {
             <form onSubmit={handleSubmit} className="space-y-3.5">
               <div>
                 <label htmlFor="name" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
-                  Full Name
+                  {t("auth.signup.fullName")}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
@@ -223,7 +225,7 @@ export default function SignUpPage() {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Your full name"
+                    placeholder={t("auth.signup.namePlaceholder")}
                     required
                     className="w-full pl-10 pr-4 py-2.5 bg-surface-container-low border border-outline-variant/40 text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all placeholder:text-on-surface-variant/40"
                   />
@@ -232,7 +234,7 @@ export default function SignUpPage() {
 
               <div>
                 <label htmlFor="email" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
-                  Email
+                  {t("auth.signin.email")}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
@@ -252,7 +254,7 @@ export default function SignUpPage() {
 
               <div>
                 <label htmlFor="password" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
-                  Password
+                  {t("auth.signup.password")}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
@@ -294,7 +296,7 @@ export default function SignUpPage() {
 
               <div>
                 <label htmlFor="confirmPassword" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
-                  Confirm Password
+                  {t("auth.signup.confirmPassword")}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
@@ -322,7 +324,7 @@ export default function SignUpPage() {
                 {confirmPassword && password !== confirmPassword && (
                   <p className="text-xs text-error mt-1.5 flex items-center gap-1">
                     <span className="material-symbols-outlined text-[14px]">error</span>
-                    Passwords don&apos;t match
+                    {t("auth.signup.passwordsNoMatch")}
                   </p>
                 )}
               </div>
@@ -344,15 +346,15 @@ export default function SignUpPage() {
                 ) : (
                   <span className="material-symbols-outlined text-[20px]">person_add</span>
                 )}
-                {loading ? "Creating account..." : "Create Account"}
+                {loading ? t("auth.signup.creating") : t("auth.signup.title")}
               </button>
             </form>
           </div>
 
           <p className="text-center text-sm text-on-surface-variant mt-5">
-            Already have an account?{" "}
+            {t("auth.signup.hasAccount")}{" "}
             <a href={`/auth/sign-in${role === "counsellor" ? "?role=counsellor" : ""}`} className="text-primary font-semibold hover:underline">
-              Sign in
+              {t("auth.signup.signIn")}
             </a>
           </p>
 
@@ -361,7 +363,7 @@ export default function SignUpPage() {
               href={`/auth/sign-up${role === "counsellor" ? "" : "?role=counsellor"}`}
               className="text-xs text-on-surface-variant/70 hover:text-primary transition-colors"
             >
-              {role === "counsellor" ? "← Switch to Student Sign Up" : "Are you a counsellor? →"}
+              {role === "counsellor" ? t("auth.signup.switchStudent") : t("auth.signup.switchCounsellor")}
             </a>
           </div>
 

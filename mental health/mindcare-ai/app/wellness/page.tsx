@@ -6,6 +6,7 @@ import Navbar from "../components/Navbar";
 import StudentSidebar from "../components/StudentSidebar";
 import Footer from "../components/Footer";
 import { wellnessMilestones, hopeMessages } from "../lib/data";
+import { useTranslation } from "../lib/i18n";
 
 const resources = [
   {
@@ -90,7 +91,8 @@ const exercises = [
 ];
 
 export default function WellnessPage() {
-  const [activeSection, setActiveSection] = useState<"exercises" | "resources" | "shared" | "milestones" | "hope">("exercises");
+  const { t } = useTranslation();
+  const [activeSection, setActiveSection] = useState<"exercises" | "resources" | "shared" | "inspiration" | "hope">("exercises");
   const [completedExercises, setCompletedExercises] = useState<string[]>([]);
   const [sharedResources, setSharedResources] = useState<any[]>([]);
   const [loadingShared, setLoadingShared] = useState(false);
@@ -126,13 +128,13 @@ export default function WellnessPage() {
           <div className="max-w-2xl mx-auto">
             <span className="inline-flex items-center gap-2 px-4 py-2 bg-secondary-container text-on-secondary-container text-sm font-semibold rounded-full mb-4">
               <span className="material-symbols-outlined text-[16px]">self_improvement</span>
-              Your Wellness Journey
+              {t("wellness.journeyLabel")}
             </span>
             <h1 className="text-3xl md:text-4xl font-bold text-on-surface mb-3">
-              Your Wellness Hub
+              {t("wellness.hubTitle")}
             </h1>
             <p className="text-on-surface-variant leading-relaxed">
-              Tools, exercises, and resources to support your mental wellbeing — at your own pace.
+              {t("wellness.hubSubtitle")}
             </p>
           </div>
         </div>
@@ -140,7 +142,7 @@ export default function WellnessPage() {
         <div className="px-4 md:px-20 py-10 max-w-6xl mx-auto">
           {/* Tabs */}
           <div className="flex flex-wrap gap-2 mb-8 bg-surface-container-low rounded-xl p-1.5 w-fit">
-            {(["exercises", "resources", "shared", "milestones", "hope"] as const).map((tab) => (
+            {(["exercises", "resources", "shared", "inspiration", "hope"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveSection(tab)}
@@ -150,7 +152,7 @@ export default function WellnessPage() {
                     : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
-                {tab === "hope" ? "Hope Gallery" : tab === "shared" ? `Shared (${sharedResources.length})` : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                {tab === "hope" ? "Hope Gallery" : tab === "shared" ? `Shared (${sharedResources.length})` : tab === "inspiration" ? "Inspiration" : tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
             ))}
           </div>
@@ -158,7 +160,7 @@ export default function WellnessPage() {
           {/* Exercises */}
           {activeSection === "exercises" && (
             <div className="animate-fade-in">
-              <h2 className="text-xl font-bold text-on-surface mb-6">Wellness Exercises</h2>
+              <h2 className="text-xl font-bold text-on-surface mb-6">{t("wellness.exercisesTitle")}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {exercises.map((ex) => (
                   <div
@@ -192,7 +194,7 @@ export default function WellnessPage() {
                       <span className="material-symbols-outlined text-[18px]">
                         {completedExercises.includes(ex.id) ? "check_circle" : "play_circle"}
                       </span>
-                      {completedExercises.includes(ex.id) ? "Completed" : "Start Exercise"}
+                      {completedExercises.includes(ex.id) ? t("wellness.completed") : t("wellness.startExercise")}
                     </button>
                   </div>
                 ))}
@@ -215,7 +217,7 @@ export default function WellnessPage() {
           {/* Resources */}
           {activeSection === "resources" && (
             <div className="animate-fade-in">
-              <h2 className="text-xl font-bold text-on-surface mb-6">Wellness Library</h2>
+              <h2 className="text-xl font-bold text-on-surface mb-6">{t("wellness.libraryTitle")}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {resources.map((cat) => (
                   <div key={cat.category} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
@@ -248,8 +250,8 @@ export default function WellnessPage() {
           {/* Shared by Counsellor */}
           {activeSection === "shared" && (
             <div className="animate-fade-in">
-              <h2 className="text-xl font-bold text-on-surface mb-2">Shared by Your Counsellor</h2>
-              <p className="text-on-surface-variant text-sm mb-6">Resources your counsellor has selected specifically for you.</p>
+              <h2 className="text-xl font-bold text-on-surface mb-2">{t("wellness.sharedTitle")}</h2>
+              <p className="text-on-surface-variant text-sm mb-6">{t("wellness.sharedSubtitle")}</p>
 
               {loadingShared ? (
                 <div className="text-center py-12 text-on-surface-variant">
@@ -258,8 +260,8 @@ export default function WellnessPage() {
               ) : sharedResources.length === 0 ? (
                 <div className="text-center py-16 bg-surface-container-lowest border border-outline-variant rounded-xl">
                   <span className="material-symbols-outlined text-[48px] text-on-surface-variant/30 block mb-3">library_books</span>
-                  <p className="text-sm text-on-surface-variant">No resources shared yet.</p>
-                  <p className="text-xs text-on-surface-variant/60 mt-1">Your counsellor will share relevant materials after your screening.</p>
+                  <p className="text-sm text-on-surface-variant">{t("wellness.noShared")}</p>
+                  <p className="text-xs text-on-surface-variant/60 mt-1">{t("wellness.noSharedDesc")}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -304,43 +306,120 @@ export default function WellnessPage() {
             </div>
           )}
 
-          {/* Milestones */}
-          {activeSection === "milestones" && (
+          {/* Inspiration - Videos, Books, Music, Meditation */}
+          {activeSection === "inspiration" && (
             <div className="animate-fade-in">
-              <h2 className="text-xl font-bold text-on-surface mb-2">Wellness Milestones</h2>
-              <p className="text-on-surface-variant text-sm mb-6">Track your progress and earn badges for your wellness journey.</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {[
-                  ...wellnessMilestones,
-                  { id: "5", title: "Crisis Navigator", description: "Used crisis tools during a hard moment", icon: "health_and_safety", earned: false, color: "bg-surface-variant text-on-surface-variant" },
-                  { id: "6", title: "Daily Checker", description: "Completed 7 daily check-ins", icon: "task_alt", earned: true, color: "bg-error-container text-on-error-container" },
-                ].map((m) => (
-                  <div
-                    key={m.id}
-                    className={`bg-surface-container-lowest rounded-xl border p-5 flex items-start gap-4 ${
-                      m.earned ? "border-outline-variant" : "border-dashed border-outline-variant opacity-60"
-                    }`}
-                  >
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${m.color}`}>
-                      <span className="material-symbols-outlined icon-fill text-[22px]">{m.icon}</span>
+              <h2 className="text-xl font-bold text-on-surface mb-2">{t("wellness.inspirationTitle")}</h2>
+              <p className="text-on-surface-variant text-sm mb-6">{t("wellness.inspirationSubtitle")}</p>
+              
+              {/* Meditation Videos */}
+              <div className="mb-8">
+                <h3 className="text-base font-semibold text-on-surface mb-4 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary">self_improvement</span>
+                  Meditation & Relaxation
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {[
+                    { title: "5-Minute Guided Meditation", duration: "5:00", thumbnail: "🧘", desc: "A quick meditation to calm your mind" },
+                    { title: "Deep Sleep Relaxation", duration: "15:00", thumbnail: "🌙", desc: "Ultrasonic sounds to help you fall asleep" },
+                    { title: "Breathing for Anxiety", duration: "8:00", thumbnail: "💨", desc: "4-7-8 breathing technique guided session" },
+                  ].map((video) => (
+                    <div key={video.title} className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden hover:shadow-md transition-shadow">
+                      <div className="aspect-video bg-gradient-to-br from-primary-container to-secondary-container flex items-center justify-center relative">
+                        <span className="text-5xl">{video.thumbnail}</span>
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+                          <span className="material-symbols-outlined icon-fill text-white text-[48px]">play_circle</span>
+                        </div>
+                        <span className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-0.5 rounded">{video.duration}</span>
+                      </div>
+                      <div className="p-3">
+                        <h4 className="text-sm font-semibold text-on-surface">{video.title}</h4>
+                        <p className="text-xs text-on-surface-variant mt-0.5">{video.desc}</p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-on-surface">{m.title}</p>
-                      <p className="text-xs text-on-surface-variant mt-0.5">{m.description}</p>
-                      {m.earned ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-secondary font-medium mt-2">
-                          <span className="material-symbols-outlined icon-fill text-[14px]">check_circle</span>
-                          Earned
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-xs text-on-surface-variant mt-2">
-                          <span className="material-symbols-outlined text-[14px]">lock</span>
-                          Locked
-                        </span>
-                      )}
+                  ))}
+                </div>
+              </div>
+
+              {/* Music & Sounds */}
+              <div className="mb-8">
+                <h3 className="text-base font-semibold text-on-surface mb-4 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-secondary">music_note</span>
+                  Healing Music & Sounds
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {[
+                    { title: "Lo-Fi Study Beats", icon: "headphones", desc: "Calming beats for focus and relaxation" },
+                    { title: "Nature Sounds — Rain", icon: "water_drop", desc: "Gentle rain sounds for sleep" },
+                    { title: "Ultrasonic Brain Healing", icon: "psychology", desc: "Binaural beats for brain health" },
+                    { title: "Piano Ambient", icon: "piano", desc: "Soft piano for emotional release" },
+                  ].map((track) => (
+                    <div key={track.title} className="flex items-center gap-3 p-3 bg-surface-container-lowest border border-outline-variant rounded-xl hover:bg-surface-container-low transition-colors cursor-pointer">
+                      <div className="w-10 h-10 rounded-lg bg-secondary-container flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-on-secondary-container text-[20px]">{track.icon}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-medium text-on-surface truncate">{track.title}</h4>
+                        <p className="text-xs text-on-surface-variant truncate">{track.desc}</p>
+                      </div>
+                      <span className="material-symbols-outlined text-primary text-[24px] shrink-0">play_circle</span>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              </div>
+
+              {/* Books & Reading */}
+              <div className="mb-8">
+                <h3 className="text-base font-semibold text-on-surface mb-4 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary">menu_book</span>
+                  Books & Mental Health Tips
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[
+                    { title: "Feeling Good — David Burns", category: "CBT", desc: "The classic guide to conquering depression" },
+                    { title: "The Anxiety & Phobia Workbook", category: "Anxiety", desc: "Step-by-step strategies for managing anxiety" },
+                    { title: "Why Has Nobody Told Me This Before?", category: "Self-Help", desc: "Practical tools for everyday mental health" },
+                    { title: "Lost Connections — Johann Hari", category: "Depression", desc: "Understanding the real causes of depression" },
+                    { title: "The Body Keeps the Score", category: "Trauma", desc: "How trauma reshapes the body and brain" },
+                    { title: "Mindfulness in Plain English", category: "Meditation", desc: "A practical guide to mindfulness meditation" },
+                  ].map((book) => (
+                    <div key={book.title} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 hover:shadow-md transition-shadow">
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-primary-container text-on-primary-container font-semibold uppercase">{book.category}</span>
+                      <h4 className="text-sm font-semibold text-on-surface mt-2 mb-1">{book.title}</h4>
+                      <p className="text-xs text-on-surface-variant">{book.desc}</p>
+                      <button className="mt-3 flex items-center gap-1 text-xs text-primary font-medium hover:underline">
+                        <span className="material-symbols-outlined text-[14px]">download</span>
+                        Download
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Overcoming Stories */}
+              <div>
+                <h3 className="text-base font-semibold text-on-surface mb-4 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-secondary">auto_stories</span>
+                  Stories of Overcoming
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[
+                    { name: "Sarah K.", story: "I went through severe depression in my 2nd year. Talking to someone and journaling saved me. Today I'm thriving.", avatar: "SK" },
+                    { name: "James M.", story: "Anxiety almost made me drop out. Breathing techniques and counselling helped me graduate with honors.", avatar: "JM" },
+                    { name: "Grace N.", story: "After losing a parent, grief consumed me. The Selfcare Hub community reminded me I'm not alone.", avatar: "GN" },
+                    { name: "David O.", story: "Exam stress led to sleepless nights. Meditation and the wellness exercises here changed my routine.", avatar: "DO" },
+                  ].map((person) => (
+                    <div key={person.name} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 flex gap-4">
+                      <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center shrink-0">
+                        <span className="text-sm font-bold text-on-primary-container">{person.avatar}</span>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-on-surface">{person.name}</h4>
+                        <p className="text-xs text-on-surface-variant mt-1 leading-relaxed italic">&ldquo;{person.story}&rdquo;</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -348,8 +427,8 @@ export default function WellnessPage() {
           {/* Hope Gallery */}
           {activeSection === "hope" && (
             <div className="animate-fade-in">
-              <h2 className="text-xl font-bold text-on-surface mb-2">Messages of Hope</h2>
-              <p className="text-on-surface-variant text-sm mb-6">Reminders that you are valued and resilient.</p>
+              <h2 className="text-xl font-bold text-on-surface mb-2">{t("wellness.hopeTitle")}</h2>
+              <p className="text-on-surface-variant text-sm mb-6">{t("wellness.hopeSubtitle")}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {hopeMessages.map((msg) => (
                   <div
@@ -366,16 +445,16 @@ export default function WellnessPage() {
 
               <div className="mt-8 p-6 bg-primary-container/20 border border-outline-variant/50 rounded-2xl text-center">
                 <span className="material-symbols-outlined icon-fill text-primary text-[40px] mb-3 block">favorite</span>
-                <h3 className="text-lg font-bold text-on-surface mb-2">You matter. You belong here.</h3>
+                <h3 className="text-lg font-bold text-on-surface mb-2">{t("wellness.youMatter")}</h3>
                 <p className="text-on-surface-variant text-sm max-w-md mx-auto mb-4">
-                  Every step you take towards your wellbeing is an act of courage. We're here for you.
+                  {t("wellness.youMatterDesc")}
                 </p>
                 <Link
                   href="/crisis"
                   className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
                 >
                   <span className="material-symbols-outlined icon-fill text-[18px]">emergency</span>
-                  Get Immediate Help
+                  {t("wellness.getHelp")}
                 </Link>
               </div>
             </div>

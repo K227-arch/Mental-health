@@ -188,8 +188,16 @@ export async function POST(request: NextRequest) {
       report.riskIndicators.push(`High negative sentiment in speech (${(report.sentiment.negative * 100).toFixed(0)}%)`);
     }
 
-    // Check transcript for concerning keywords
-    const keywords = ["hopeless", "give up", "no point", "end it", "can't go on", "worthless", "alone", "nobody cares"];
+    // Check transcript for concerning keywords (enhanced with research data from MUST survey)
+    const keywords = [
+      "hopeless", "give up", "no point", "end it", "can't go on", "worthless", "alone", "nobody cares",
+      // Research-derived triggers from MUST student survey (2026)
+      "academic pressure", "tuition", "broke", "poverty", "financial", "heartbreak", "lonely",
+      "isolation", "retake", "failure", "disappointed", "overwhelmed", "stressed", "anxiety",
+      "fear", "judgment", "loss", "death", "grief", "sickness", "drugs", "alcohol",
+      "suicide", "self-harm", "uncertain", "no future", "can't cope", "exhausted",
+      "betrayal", "bullying", "harassment", "neglect", "abandoned"
+    ];
     const foundKeywords = keywords.filter((kw) => transcript.toLowerCase().includes(kw));
     if (foundKeywords.length > 0) {
       report.riskIndicators.push(`Concerning language detected: "${foundKeywords.join('", "')}"`);

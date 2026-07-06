@@ -5,12 +5,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import clsx from "clsx";
 import LanguageSwitcher from "./LanguageSwitcher";
+import { useTranslation } from "../lib/i18n";
 
 interface NavbarProps {
   variant?: "student" | "counsellor";
 }
 
 export default function Navbar({ variant = "student" }: NavbarProps) {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -145,7 +147,7 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
             {notifOpen && (
               <div className="absolute right-0 top-full mt-2 w-80 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg animate-fade-in overflow-hidden z-50">
                 <div className="p-3 border-b border-outline-variant flex items-center justify-between">
-                  <span className="text-sm font-semibold text-on-surface">Notifications</span>
+                  <span className="text-sm font-semibold text-on-surface">{t("navbar.notifications")}</span>
                   {notifications.length > 0 && (
                     <span className="text-xs text-primary font-medium">{notifications.length} new</span>
                   )}
@@ -154,7 +156,7 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
                   {notifications.length === 0 ? (
                     <div className="p-6 text-center text-on-surface-variant text-sm">
                       <span className="material-symbols-outlined text-[28px] opacity-30 block mb-2">notifications_none</span>
-                      No new notifications
+                      {t("navbar.noNotifications")}
                     </div>
                   ) : (
                     notifications.slice(0, 8).map((notif, i) => (
@@ -229,7 +231,7 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
                     className="flex items-center gap-2 px-3 py-2 text-sm text-on-surface hover:bg-surface-container rounded-lg transition-colors"
                   >
                     <span className="material-symbols-outlined text-[18px]">person</span>
-                    Profile
+                    {t("navbar.profile")}
                   </Link>
                   <Link
                     href="/settings"
@@ -237,7 +239,7 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
                     className="flex items-center gap-2 px-3 py-2 text-sm text-on-surface hover:bg-surface-container rounded-lg transition-colors"
                   >
                     <span className="material-symbols-outlined text-[18px]">settings</span>
-                    Settings
+                    {t("navbar.settings")}
                   </Link>
                   <button
                     onClick={handleSignOut}
@@ -245,7 +247,7 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-error hover:bg-error-container/50 rounded-lg transition-colors disabled:opacity-50"
                   >
                     <span className="material-symbols-outlined text-[18px]">logout</span>
-                    {signingOut ? "Signing out..." : "Sign Out"}
+                    {signingOut ? t("navbar.signingOut") : t("navbar.signOut")}
                   </button>
                 </div>
               </div>
@@ -261,16 +263,16 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
             {(
               variant === "student"
                 ? [
-                    { href: "/dashboard", label: "Dashboard", icon: "dashboard" },
-                    { href: "/screening", label: "Screening", icon: "psychology" },
-                    { href: "/wellness", label: "Wellness Journey", icon: "self_improvement" },
-                    { href: "/crisis", label: "Crisis Support", icon: "emergency", red: true },
+                    { href: "/dashboard", label: t("navbar.dashboard"), icon: "dashboard" },
+                    { href: "/screening", label: t("navbar.screening"), icon: "psychology" },
+                    { href: "/wellness", label: t("navbar.wellness"), icon: "self_improvement" },
+                    { href: "/crisis", label: t("navbar.crisis"), icon: "emergency", red: true },
                   ]
                 : [
-                    { href: "/counsellor", label: "Dashboard", icon: "dashboard" },
-                    { href: "/counsellor/analytics", label: "Analytics", icon: "monitoring" },
-                    { href: "/counsellor/chat", label: "Chat", icon: "forum" },
-                    { href: "/counsellor/library", label: "Library", icon: "library_books" },
+                    { href: "/counsellor", label: t("navbar.dashboard"), icon: "dashboard" },
+                    { href: "/counsellor/analytics", label: t("navbar.analytics"), icon: "monitoring" },
+                    { href: "/counsellor/chat", label: t("navbar.chat"), icon: "forum" },
+                    { href: "/counsellor/library", label: t("navbar.library"), icon: "library_books" },
                   ]
             ).map((item) => (
               <Link

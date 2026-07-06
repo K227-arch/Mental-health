@@ -6,6 +6,7 @@ import Navbar from "../../components/Navbar";
 import StudentSidebar from "../../components/StudentSidebar";
 import Footer from "../../components/Footer";
 import { hopeMessages } from "../../lib/data";
+import { useTranslation } from "../../lib/i18n";
 
 const groundingSteps = [
   { num: 5, sense: "see", icon: "visibility", description: "Things you can see right now" },
@@ -16,6 +17,7 @@ const groundingSteps = [
 ];
 
 export default function CrisisPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"breathing" | "grounding" | "distraction">("breathing");
   const [breathPhase, setBreathPhase] = useState<"inhale" | "hold" | "exhale">("inhale");
   const [breathCount, setBreathCount] = useState(0);
@@ -143,13 +145,13 @@ export default function CrisisPage() {
             <div className="relative z-20 text-center max-w-3xl mx-auto">
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-error text-on-error rounded-full text-sm font-semibold mb-4">
                 <span className="material-symbols-outlined icon-fill text-[18px]">emergency</span>
-                Crisis Support — Available 24/7
+                {t("crisis.available247")}
               </div>
               <h1 className="text-3xl md:text-4xl font-black text-primary mb-3 leading-tight">
-                You are not alone.
+                {t("crisis.title")}
               </h1>
               <p className="text-on-surface-variant text-base md:text-lg max-w-xl mx-auto">
-                Help is here right now. Choose what feels right for you.
+                {t("crisis.subtitle")}
               </p>
             </div>
           </header>

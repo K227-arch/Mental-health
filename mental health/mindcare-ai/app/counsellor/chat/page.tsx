@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import clsx from "clsx";
+import { useTranslation } from "../../lib/i18n";
 
 interface ChatMsg {
   id: string;
@@ -19,6 +20,7 @@ interface StudentSession {
 }
 
 export default function CounsellorChat() {
+  const { t } = useTranslation();
   const [sessions, setSessions] = useState<StudentSession[]>([]);
   const [selectedSession, setSelectedSession] = useState<StudentSession | null>(null);
   const [messages, setMessages] = useState<ChatMsg[]>([]);
@@ -272,7 +274,7 @@ export default function CounsellorChat() {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-64px)] text-on-surface-variant">
         <span className="material-symbols-outlined animate-spin text-[24px] mr-2">progress_activity</span>
-        Loading conversations...
+        {t("counsellor.chat.loading")}
       </div>
     );
   }
@@ -282,14 +284,14 @@ export default function CounsellorChat() {
       {/* Sidebar - Student List */}
       <aside className="w-72 border-r border-outline-variant bg-surface-container-low flex flex-col overflow-hidden">
         <div className="p-4 border-b border-outline-variant">
-          <h2 className="text-sm font-bold text-on-surface">Conversations</h2>
-          <p className="text-xs text-on-surface-variant mt-0.5">{sessions.length} active sessions</p>
+          <h2 className="text-sm font-bold text-on-surface">{t("counsellor.chat.conversations")}</h2>
+          <p className="text-xs text-on-surface-variant mt-0.5">{sessions.length} {t("counsellor.chat.activeSessions")}</p>
         </div>
         <div className="flex-1 overflow-y-auto">
           {sessions.length === 0 ? (
             <div className="p-4 text-center text-sm text-on-surface-variant">
               <span className="material-symbols-outlined text-[32px] opacity-40 block mb-2">forum</span>
-              No active sessions yet.
+              {t("counsellor.chat.noSessions")}
             </div>
           ) : (
             sessions.map((session) => (
@@ -335,7 +337,7 @@ export default function CounsellorChat() {
               {messages.length === 0 ? (
                 <div className="text-center text-on-surface-variant text-sm mt-20">
                   <span className="material-symbols-outlined text-[40px] opacity-30 block mb-2">chat</span>
-                  No messages yet. Start the conversation.
+                  {t("counsellor.chat.noMessages")}
                 </div>
               ) : (
                 messages.map((msg, idx) => (
@@ -386,7 +388,7 @@ export default function CounsellorChat() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-                  placeholder={recording ? "Recording..." : "Type a message..."}
+                  placeholder={recording ? t("counsellor.chat.recording") : t("counsellor.chat.typeMessage")}
                   disabled={recording}
                   className="flex-1 px-4 py-3 bg-surface-container border border-outline-variant/50 rounded-xl text-sm text-on-surface focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none placeholder:text-on-surface-variant/50 disabled:opacity-50"
                 />
@@ -404,7 +406,7 @@ export default function CounsellorChat() {
           <div className="flex-1 flex items-center justify-center text-on-surface-variant">
             <div className="text-center">
               <span className="material-symbols-outlined text-[48px] opacity-30 block mb-3">forum</span>
-              <p className="text-sm">Select a conversation to begin</p>
+              <p className="text-sm">{t("counsellor.chat.selectConversation")}</p>
             </div>
           </div>
         )}

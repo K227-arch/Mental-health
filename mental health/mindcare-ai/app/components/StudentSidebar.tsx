@@ -3,24 +3,26 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
-
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: "dashboard" },
-  { href: "/screening", label: "Daily Check-in", icon: "psychology" },
-  { href: "/wellness", label: "Wellness Hub", icon: "self_improvement" },
-  { href: "/dashboard/chat", label: "Chat", icon: "forum" },
-  { href: "/settings", label: "Settings", icon: "settings" },
-  { href: "/dashboard/crisis", label: "Crisis Support", icon: "emergency", red: true },
-];
+import { useTranslation } from "../lib/i18n";
 
 export default function StudentSidebar() {
   const pathname = usePathname();
+  const { t } = useTranslation();
+
+  const navItems = [
+    { href: "/dashboard", label: t("sidebar.student.dashboard"), icon: "dashboard" },
+    { href: "/screening", label: t("sidebar.student.checkin"), icon: "psychology" },
+    { href: "/wellness", label: t("sidebar.student.wellness"), icon: "self_improvement" },
+    { href: "/dashboard/chat", label: t("sidebar.student.chat"), icon: "forum" },
+    { href: "/settings", label: t("sidebar.student.settings"), icon: "settings" },
+    { href: "/dashboard/crisis", label: t("sidebar.student.crisis"), icon: "emergency", red: true },
+  ];
 
   return (
     <aside className="hidden md:flex flex-col h-[calc(100vh-64px)] sticky top-16 w-60 shrink-0 p-3 border-r border-outline-variant bg-surface-container-low overflow-y-auto">
       <div className="mb-4 px-3">
-        <h2 className="text-xs text-on-surface-variant uppercase tracking-wider mb-1 mt-3">Student Portal</h2>
-        <p className="text-sm font-semibold text-on-surface">My Wellness</p>
+        <h2 className="text-xs text-on-surface-variant uppercase tracking-wider mb-1 mt-3">{t("sidebar.student.title")}</h2>
+        <p className="text-sm font-semibold text-on-surface">{t("sidebar.student.subtitle")}</p>
       </div>
       <nav className="flex-1 flex flex-col gap-1">
         {navItems.map((item) => {
@@ -59,7 +61,7 @@ export default function StudentSidebar() {
           className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-on-surface-variant hover:bg-surface-container-high transition-colors"
         >
           <span className="material-symbols-outlined">help_outline</span>
-          Help & Resources
+          {t("sidebar.student.help")}
         </Link>
       </div>
     </aside>

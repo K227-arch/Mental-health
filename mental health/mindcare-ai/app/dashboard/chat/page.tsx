@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Navbar from "../../components/Navbar";
 import StudentSidebar from "../../components/StudentSidebar";
+import { useTranslation } from "../../lib/i18n";
 
 interface ChatMsg {
   id: string;
@@ -12,6 +13,7 @@ interface ChatMsg {
 }
 
 export default function StudentChatPage() {
+  const { t } = useTranslation();
   const [user, setUser] = useState<{ id?: string; name?: string } | null>(null);
   const [session, setSession] = useState<{ id: string } | null>(null);
   const [messages, setMessages] = useState<ChatMsg[]>([]);
@@ -177,7 +179,7 @@ export default function StudentChatPage() {
           <StudentSidebar />
           <div className="flex-1 flex items-center justify-center h-[calc(100vh-64px)] text-on-surface-variant">
             <span className="material-symbols-outlined animate-spin text-[24px] mr-2">progress_activity</span>
-            Loading...
+            {t("chat.loading")}
           </div>
         </div>
       </div>
@@ -194,18 +196,18 @@ export default function StudentChatPage() {
         <div className="px-6 py-4 border-b border-outline-variant">
           <h1 className="text-lg font-bold text-on-surface flex items-center gap-2">
             <span className="material-symbols-outlined text-primary text-[22px]">forum</span>
-            Counsellor Chat
+            {t("chat.title")}
           </h1>
-          <p className="text-xs text-on-surface-variant">Secure, encrypted messaging with your assigned counsellor.</p>
+          <p className="text-xs text-on-surface-variant">{t("chat.subtitle")}</p>
         </div>
 
         {!session ? (
           <div className="flex-1 flex items-center justify-center text-center px-6">
             <div>
               <span className="material-symbols-outlined text-[48px] text-on-surface-variant/30 block mb-3">forum</span>
-              <h2 className="text-lg font-semibold text-on-surface mb-2">No active session yet</h2>
+              <h2 className="text-lg font-semibold text-on-surface mb-2">{t("chat.noSession")}</h2>
               <p className="text-sm text-on-surface-variant max-w-sm mx-auto">
-                Complete a PHQ-9 screening first. You&apos;ll be automatically connected with a counsellor based on your results.
+                {t("chat.noSessionDesc")}
               </p>
             </div>
           </div>
@@ -216,7 +218,7 @@ export default function StudentChatPage() {
               {messages.length === 0 ? (
                 <div className="text-center text-on-surface-variant text-sm mt-16">
                   <span className="material-symbols-outlined text-[40px] opacity-30 block mb-2">chat</span>
-                  <p>No messages yet. Say hello to your counsellor!</p>
+                  <p>{t("chat.noMessages")}</p>
                 </div>
               ) : (
                 messages.map((msg, idx) => (
@@ -265,7 +267,7 @@ export default function StudentChatPage() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-                  placeholder={recording ? "Recording..." : "Type a message..."}
+                  placeholder={recording ? t("chat.recording") : t("chat.typeMessage")}
                   disabled={recording}
                   className="flex-1 px-4 py-3 bg-surface-container-low border border-outline-variant/40 rounded-xl text-sm text-on-surface focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none placeholder:text-on-surface-variant/40 disabled:opacity-50"
                 />

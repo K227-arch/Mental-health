@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslation } from "../../lib/i18n";
 
 interface MediaFile {
   name: string;
@@ -11,6 +12,7 @@ interface MediaFile {
 }
 
 export default function MediaViewerPage() {
+  const { t } = useTranslation();
   const [audioFiles, setAudioFiles] = useState<MediaFile[]>([]);
   const [videoFiles, setVideoFiles] = useState<MediaFile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +33,7 @@ export default function MediaViewerPage() {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-64px)] text-on-surface-variant">
         <span className="material-symbols-outlined animate-spin text-[24px] mr-2">progress_activity</span>
-        Loading media...
+        {t("counsellor.media.loading")}
       </div>
     );
   }
@@ -41,8 +43,8 @@ export default function MediaViewerPage() {
   return (
     <div className="p-4 md:p-8 max-w-[1000px] mx-auto space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-on-surface">Student Media</h1>
-        <p className="text-on-surface-variant mt-1">Audio recordings and video uploads from screening sessions.</p>
+        <h1 className="text-3xl font-bold text-on-surface">{t("counsellor.media.title")}</h1>
+        <p className="text-on-surface-variant mt-1">{t("counsellor.media.subtitle")}</p>
       </div>
 
       {/* Tabs */}
@@ -56,7 +58,7 @@ export default function MediaViewerPage() {
           }`}
         >
           <span className="material-symbols-outlined text-[16px] mr-1 align-middle">mic</span>
-          Audio ({audioFiles.length})
+          {t("counsellor.media.audio")} ({audioFiles.length})
         </button>
         <button
           onClick={() => setActiveTab("video")}
@@ -67,7 +69,7 @@ export default function MediaViewerPage() {
           }`}
         >
           <span className="material-symbols-outlined text-[16px] mr-1 align-middle">videocam</span>
-          Video ({videoFiles.length})
+          {t("counsellor.media.video")} ({videoFiles.length})
         </button>
       </div>
 

@@ -1,0 +1,173 @@
+{
+  "meta": {
+    "source": "AI-Driven Depression Management Student Questionnaire - MUST 2026",
+    "totalResponses": 404,
+    "completedResponses": 213,
+    "collectionPeriod": "March - May 2026",
+    "university": "Mbarara University of Science and Technology (MUST)"
+  },
+  "demographics": {
+    "gender": { "male": 112, "female": 138, "other": 3 },
+    "ageGroups": { "below20": 5, "20-24": 155, "25-29": 45, "30+": 35 },
+    "academicLevel": { "undergraduate": 185, "postgraduate": 48, "diploma": 12 },
+    "faculties": {
+      "Health Sciences": 72,
+      "Computing & Informatics": 58,
+      "Business & Management": 65,
+      "Science": 32,
+      "Applied Sciences & Technology": 18,
+      "Interdisciplinary Studies": 12
+    },
+    "fundingStatus": { "selfSponsored": 145, "government": 28, "scholarship": 25, "other": 15 }
+  },
+  "phq9Data": {
+    "averageScore": 9.8,
+    "medianScore": 8,
+    "severityDistribution": {
+      "minimal": 68,
+      "mild": 52,
+      "moderate": 45,
+      "moderatelySevere": 28,
+      "severe": 20
+    },
+    "scoresOverTime": [
+      { "month": "March", "avg": 10.2, "count": 45 },
+      { "month": "April", "avg": 9.5, "count": 120 },
+      { "month": "May", "avg": 9.8, "count": 48 }
+    ]
+  },
+  "triggers": {
+    "topCauses": [
+      { "cause": "Academic pressure", "percentage": 82, "count": 175 },
+      { "cause": "Financial hardship", "percentage": 74, "count": 158 },
+      { "cause": "Relationship challenges", "percentage": 52, "count": 111 },
+      { "cause": "Fear of judgment", "percentage": 35, "count": 75 },
+      { "cause": "Uncertainty about future", "percentage": 32, "count": 68 },
+      { "cause": "Social isolation", "percentage": 28, "count": 60 },
+      { "cause": "Life change", "percentage": 25, "count": 53 },
+      { "cause": "Resource constraints", "percentage": 22, "count": 47 },
+      { "cause": "Stigma", "percentage": 18, "count": 38 },
+      { "cause": "Inadequate awareness", "percentage": 15, "count": 32 },
+      { "cause": "Lifestyle habits", "percentage": 12, "count": 26 },
+      { "cause": "Technology", "percentage": 5, "count": 11 }
+    ],
+    "keywords": [
+      "academic pressure", "tuition", "financial", "broke", "poverty", "relationship",
+      "heartbreak", "loneliness", "isolation", "retake", "failure", "disappointed",
+      "hopeless", "worthless", "stressed", "anxiety", "fear", "judgment",
+      "family", "loss", "death", "grief", "sickness", "sleep", "overwhelmed",
+      "uncertain", "future", "drugs", "alcohol", "suicide", "self-harm"
+    ]
+  },
+  "barriers": {
+    "reasonsNotSeeking": [
+      { "reason": "Don't know where to go", "percentage": 42 },
+      { "reason": "Fear of being judged", "percentage": 28 },
+      { "reason": "Not aware services exist", "percentage": 22 },
+      { "reason": "Prefer handling alone", "percentage": 18 },
+      { "reason": "Don't trust anyone", "percentage": 15 },
+      { "reason": "Think it won't help", "percentage": 12 },
+      { "reason": "Too busy", "percentage": 8 },
+      { "reason": "Fear of stigma", "percentage": 8 },
+      { "reason": "Not depressed yet", "percentage": 7 }
+    ],
+    "accessChallenges": [
+      "Limited awareness of services",
+      "No dedicated office or location",
+      "Counsellors not easily available",
+      "Confidentiality concerns",
+      "Distance to support facilities",
+      "Fear of being seen seeking help"
+    ]
+  },
+  "aiSystemPreferences": {
+    "featureImportance": [
+      { "feature": "Anonymous login/access", "avgRating": 4.3, "percentVeryImportant": 62 },
+      { "feature": "24/7 availability", "avgRating": 4.4, "percentVeryImportant": 68 },
+      { "feature": "Real-time emotional support chatbot", "avgRating": 4.1, "percentVeryImportant": 55 },
+      { "feature": "Self-assessment tools (PHQ-9)", "avgRating": 4.2, "percentVeryImportant": 58 },
+      { "feature": "Auto-referral to counsellor", "avgRating": 4.3, "percentVeryImportant": 63 },
+      { "feature": "Mood tracking/journaling", "avgRating": 4.0, "percentVeryImportant": 52 },
+      { "feature": "Personalized mental health tips", "avgRating": 4.1, "percentVeryImportant": 55 },
+      { "feature": "Check-in reminders", "avgRating": 3.9, "percentVeryImportant": 48 },
+      { "feature": "Mobile-friendly interface", "avgRating": 4.3, "percentVeryImportant": 61 },
+      { "feature": "Multilingual support", "avgRating": 3.8, "percentVeryImportant": 42 },
+      { "feature": "Integration with university systems", "avgRating": 4.0, "percentVeryImportant": 50 },
+      { "feature": "Data privacy assurance", "avgRating": 4.5, "percentVeryImportant": 72 },
+      { "feature": "Progress tracking dashboard", "avgRating": 4.1, "percentVeryImportant": 54 },
+      { "feature": "Peer support features", "avgRating": 3.9, "percentVeryImportant": 47 }
+    ]
+  },
+  "technologyAcceptance": {
+    "smartphoneOwnership": 92,
+    "comfortWithHealthApps": 68,
+    "willingToUseAIChatbot": 72,
+    "trustAIForMentalHealth": 58,
+    "preferDigitalOverPhysical": 45,
+    "wouldContinueUsingIfUseful": 75
+  },
+  "awareness": {
+    "knowSignsOfDepression": 72,
+    "believeDepressionSerious": 88,
+    "comfortableSeekingHelp": 55,
+    "stigmaIsMajorBarrier": 78,
+    "studentsSufferInSilence": 85,
+    "adequateAwarenessAtMUST": 22
+  },
+  "qualitativeInsights": {
+    "experiences": [
+      "Far from my parents and family whom I can't reach, failure to open up",
+      "Financial constraints and academic stress",
+      "I got heartbroken like over three times",
+      "Cost of living and education pressure",
+      "So much pressure with school and books",
+      "The zeal to balance life at campus",
+      "I lost a brother in 2024 in an accident",
+      "I had a challenge with my financial status and my trusted friends left me alone",
+      "Pressure to please my parents academically while barely having money",
+      "I was attacked and robbed when heading to my place of residence"
+    ],
+    "goals": [
+      "Peace of mind",
+      "Financial stability",
+      "Academic excellence",
+      "Mental health awareness",
+      "Being a better version of myself",
+      "Getting my degree and finding employment",
+      "Being free from depression and anxiety",
+      "Learning to live happily without relying on others"
+    ],
+    "recommendations": [
+      "24/7 accessible AI system for anonymous support",
+      "Mental health awareness campaigns every month",
+      "Peer support programs in every faculty",
+      "Counsellor offices clearly identified and accessible",
+      "Digital tools for self-assessment and tracking",
+      "Integration with university orientation programs",
+      "Reduce academic pressure through flexible scheduling",
+      "Free entertainment and stress-relief activities"
+    ]
+  },
+  "samplePHQ9Records": [
+    { "score": 13, "severity": "Moderate", "trigger": "Life change", "faculty": "Computing", "gender": "Female", "year": 3 },
+    { "score": 16, "severity": "Moderately Severe", "trigger": "Financial", "faculty": "Applied Sciences", "gender": "Female", "year": 4 },
+    { "score": 7, "severity": "Mild", "trigger": "Financial", "faculty": "Health Sciences", "gender": "Male", "year": 4 },
+    { "score": 4, "severity": "Minimal", "trigger": "Academic", "faculty": "Business", "gender": "Female", "year": 2 },
+    { "score": 22, "severity": "Severe", "trigger": "Relationships", "faculty": "Health Sciences", "gender": "Female", "year": 3 },
+    { "score": 27, "severity": "Severe", "trigger": "Financial", "faculty": "Science", "gender": "Male", "year": 3 },
+    { "score": 17, "severity": "Moderately Severe", "trigger": "Life change", "faculty": "Computing", "gender": "Female", "year": 1 },
+    { "score": 8, "severity": "Mild", "trigger": "Academic", "faculty": "Health Sciences", "gender": "Male", "year": 1 },
+    { "score": 15, "severity": "Moderately Severe", "trigger": "Financial", "faculty": "Computing", "gender": "Female", "year": 3 },
+    { "score": 5, "severity": "Mild", "trigger": "Academic", "faculty": "Business", "gender": "Male", "year": 2 },
+    { "score": 21, "severity": "Severe", "trigger": "Relationships", "faculty": "Business", "gender": "Male", "year": 3 },
+    { "score": 9, "severity": "Mild", "trigger": "Grief", "faculty": "Health Sciences", "gender": "Male", "year": 4 },
+    { "score": 18, "severity": "Moderately Severe", "trigger": "Academic", "faculty": "Computing", "gender": "Male", "year": 1 },
+    { "score": 12, "severity": "Moderate", "trigger": "Relationships", "faculty": "Business", "gender": "Female", "year": 2 },
+    { "score": 16, "severity": "Moderately Severe", "trigger": "Financial", "faculty": "Computing", "gender": "Male", "year": 2 },
+    { "score": 3, "severity": "Minimal", "trigger": "Academic", "faculty": "Health Sciences", "gender": "Male", "year": 2 },
+    { "score": 20, "severity": "Severe", "trigger": "Academic", "faculty": "Science", "gender": "Female", "year": 3 },
+    { "score": 11, "severity": "Moderate", "trigger": "Relationships", "faculty": "Health Sciences", "gender": "Female", "year": 1 },
+    { "score": 14, "severity": "Moderate", "trigger": "Financial", "faculty": "Computing", "gender": "Male", "year": 3 },
+    { "score": 6, "severity": "Mild", "trigger": "Academic", "faculty": "Business", "gender": "Female", "year": 3 }
+  ]
+}

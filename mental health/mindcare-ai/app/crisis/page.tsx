@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 import Footer from "../components/Footer";
 import { hopeMessages } from "../lib/data";
+import { useTranslation } from "../lib/i18n";
 
 const groundingSteps = [
   { num: 5, sense: "see", icon: "visibility", description: "Things you can see right now" },
@@ -14,6 +15,7 @@ const groundingSteps = [
 ];
 
 export default function PublicCrisisPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"breathing" | "grounding" | "distraction">("breathing");
   const [breathPhase, setBreathPhase] = useState<"inhale" | "hold" | "exhale">("inhale");
   const [breathCount, setBreathCount] = useState(0);
@@ -85,7 +87,7 @@ export default function PublicCrisisPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingVideo(true);
-    const formData = new FormData();
+    const formData = new FormData
     formData.append("file", file);
     formData.append("userId", "anonymous");
     formData.append("type", "video");
@@ -130,15 +132,15 @@ export default function PublicCrisisPage() {
         <div className="relative z-20 text-center px-6 max-w-4xl mx-auto w-full py-12">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-error text-on-error rounded-full text-sm font-semibold mb-4">
             <span className="material-symbols-outlined icon-fill text-[18px]">emergency</span>
-            Crisis Support — Available 24/7
+            {t("crisis.available247")}
           </div>
           <h1 className="text-3xl md:text-5xl font-black text-primary mb-4 leading-tight">
-            You are not alone.
+            {t("crisis.heroTitle").split(".")[0]}.
             <br className="hidden md:block" />
-            Help is here right now.
+            {t("crisis.heroTitle").split(".").slice(1).join(".")}
           </h1>
           <p className="text-lg text-on-surface-variant max-w-2xl mx-auto">
-            Immediate Mental Health Crisis Resources. Confidential. Available 24/7.
+            {t("crisis.heroSubtitle")}
           </p>
         </div>
       </header>
@@ -154,8 +156,8 @@ export default function PublicCrisisPage() {
                 <span className="material-symbols-outlined icon-fill text-[28px]">phone_in_talk</span>
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-on-error mb-1">Call Crisis Line</h2>
-                <p className="text-on-error/90 text-sm mb-3">Connect immediately with a trained counselor.</p>
+                <h2 className="text-xl font-semibold text-on-error mb-1">{t("crisis.callTitle")}</h2>
+                <p className="text-on-error/90 text-sm mb-3">{t("crisis.callDesc")}</p>
                 <div className="inline-flex items-center gap-1 text-sm text-on-error bg-on-error/20 px-3 py-1 rounded-full">
                   <span>0800-HELP</span>
                   <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
@@ -170,10 +172,10 @@ export default function PublicCrisisPage() {
                 <span className="material-symbols-outlined icon-fill text-[28px]">chat</span>
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-on-primary mb-1">Start Emergency Chat</h2>
-                <p className="text-on-primary/90 text-sm mb-3">Sign in to text confidentially with a support specialist.</p>
+                <h2 className="text-xl font-semibold text-on-primary mb-1">{t("crisis.chatTitle")}</h2>
+                <p className="text-on-primary/90 text-sm mb-3">{t("crisis.chatDesc")}</p>
                 <div className="inline-flex items-center gap-1 text-sm text-on-primary bg-on-primary/20 px-3 py-1 rounded-full">
-                  <span>Sign In to Start</span>
+                  <span>{t("crisis.signInToStart")}</span>
                   <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
                 </div>
               </div>

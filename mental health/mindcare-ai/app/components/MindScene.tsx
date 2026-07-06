@@ -97,7 +97,7 @@ function Particles({ count = 60 }: { count?: number }) {
           args={[positions, 3]}
         />
       </bufferGeometry>
-      <pointsMaterial size={0.035} color="#074469" transparent opacity={0.35} sizeAttenuation />
+      <pointsMaterial size={0.035} color="#e91e8c" transparent opacity={0.3} sizeAttenuation />
     </points>
   );
 }
@@ -138,7 +138,7 @@ export default function MindScene() {
   }, []);
 
   const bubbles = useMemo(() => {
-    const colors = ["#074469", "#006a64", "#9ccbf7", "#9deee5", "#2a5c82", "#84d5cc"];
+    const colors = ["#e91e8c", "#4caf50", "#f06292", "#66bb6a", "#c2185b", "#81c784", "#ff69b4", "#2e7d32"];
     const configs = [];
     for (let i = 0; i < 14; i++) {
       configs.push({

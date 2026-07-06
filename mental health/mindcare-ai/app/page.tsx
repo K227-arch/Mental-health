@@ -5,6 +5,8 @@ import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import Footer from "./components/Footer";
 import LanguageSwitcher from "./components/LanguageSwitcher";
+import LandingChatbot from "./components/LandingChatbot";
+import { useTranslation } from "./lib/i18n";
 
 const MindScene = dynamic(() => import("./components/MindScene"), { ssr: false });
 
@@ -27,7 +29,7 @@ const features = [
     icon: "psychology",
     title: "AI Wellness Screening",
     description:
-      "Clinically validated PHQ-9 assessment enhanced with NLP sentiment analysis for deeper insights.",
+      "Clinically validated assessments enhanced with NLP sentiment analysis for deeper insights.",
     href: "/auth/sign-in",
     color: "bg-primary-container text-on-primary-container",
   },
@@ -84,7 +86,7 @@ const steps = [
   {
     number: "01",
     title: "Check In",
-    description: "Complete a 3-minute conversational PHQ-9 screening. Our NLP model analyzes your responses beyond just the score.",
+    description: "Complete a conversational screening. Our NLP model analyzes your responses beyond just the score.",
     icon: "psychology",
   },
   {
@@ -102,6 +104,8 @@ const steps = [
 ];
 
 export default function LandingPage() {
+  const { t } = useTranslation();
+
   return (
     <div className="min-h-screen flex flex-col bg-surface overflow-x-hidden relative">
       {/* 3D Bubbles Background — covers entire page */}
@@ -116,14 +120,14 @@ export default function LandingPage() {
         transition={{ duration: 0.5 }}
         className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-6 md:px-16 h-16 bg-surface/85 backdrop-blur-xl border-b border-outline-variant/20 shadow-sm"
       >
-        <Link href="/" className="flex items-center gap-2">
-          <img src="/logo.jpeg" alt="Selfcare Hub" className="w-8 h-8 object-contain rounded-lg" />
-          <span className="font-black text-xl text-primary tracking-tight">Selfcare Hub</span>
+        <Link href="/" className="flex items-center gap-3">
+          <img src="/logo.jpeg" alt="Selfcare Hub" className="w-14 h-14 object-contain rounded-xl shadow-sm" />
+          <span className="font-black text-2xl text-primary tracking-tight" style={{ fontFamily: "inherit" }}>Selfcare Hub</span>
         </Link>
         <div className="hidden md:flex items-center gap-6">
-          <a href="#features" className="text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">Features</a>
-          <a href="#how-it-works" className="text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">How It Works</a>
-          <a href="#counsellors" className="text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">Counsellors</a>
+          <a href="#features" className="text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">{t("nav.features")}</a>
+          <a href="#how-it-works" className="text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">{t("howItWorks.label")}</a>
+          <a href="#counsellors" className="text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">{t("nav.counsellors")}</a>
         </div>
         <div className="flex items-center gap-2">
           <LanguageSwitcher variant="light" />
@@ -132,19 +136,19 @@ export default function LandingPage() {
             className="hidden sm:flex items-center gap-1 px-3 py-1.5 text-error text-sm font-medium hover:bg-error-container/50 rounded-lg transition-colors"
           >
             <span className="material-symbols-outlined icon-fill text-[16px]">emergency</span>
-            Crisis
+            {t("nav.crisis")}
           </Link>
           <Link
             href="/auth/sign-in"
             className="hidden sm:inline-flex px-4 py-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors"
           >
-            Sign In
+            {t("nav.signin")}
           </Link>
           <Link
             href="/auth/sign-up"
             className="px-4 py-2 bg-primary text-on-primary text-sm font-semibold rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
           >
-            Get Started
+            {t("nav.signup")}
           </Link>
         </div>
       </motion.nav>
@@ -162,21 +166,19 @@ export default function LandingPage() {
           variants={staggerContainer}
           className="relative z-10 max-w-4xl mx-auto"
         >
-          <motion.div variants={fadeUp} custom={0} className="mb-6">
-            <span className="inline-flex items-center gap-2 px-4 py-2 bg-secondary-container/80 backdrop-blur-sm text-on-secondary-container text-xs font-semibold rounded-full uppercase tracking-wider border border-secondary/10">
-              <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
-              AI-Powered Mental Health Platform
-            </span>
+          {/* Big Logo */}
+          <motion.div variants={fadeUp} custom={0} className="mb-8 flex justify-center">
+            <img src="/logo.jpeg" alt="Selfcare Hub" className="w-36 h-36 md:w-44 md:h-44 object-contain rounded-3xl shadow-lg" />
           </motion.div>
 
           <motion.h1
             variants={fadeUp}
             custom={1}
-            className="text-5xl md:text-7xl font-black text-on-surface leading-[1.05] mb-6 tracking-tight"
+            className="text-4xl md:text-6xl font-black text-on-surface leading-[1.1] mb-6 tracking-tight"
           >
-            Mental health support{" "}
+            {t("landing.title").split("going through matters.")[0]}
             <br className="hidden md:block" />
-            <span className="text-primary">designed for students</span>
+            <span className="text-primary">{t("landing.title").includes("going through") ? "going through matters." : t("landing.title").split(".").pop()}</span>
           </motion.h1>
 
           <motion.p
@@ -184,8 +186,7 @@ export default function LandingPage() {
             custom={2}
             className="text-lg md:text-xl text-on-surface-variant max-w-2xl mx-auto mb-10 leading-relaxed font-light"
           >
-            Confidential AI-powered screening, mood tracking, and crisis intervention — available 24/7. 
-            Built for university students who deserve accessible mental health care.
+            {t("landing.subtitle")}
           </motion.p>
 
           <motion.div variants={fadeUp} custom={3} className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -193,32 +194,36 @@ export default function LandingPage() {
               href="/auth/sign-up"
               className="group px-8 py-4 bg-primary text-on-primary font-semibold rounded-2xl shadow-lg shadow-primary/15 hover:shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all flex items-center gap-2 justify-center"
             >
-              <span className="material-symbols-outlined text-[20px]">psychology</span>
-              Start Free Check-In
+              <span className="material-symbols-outlined text-[20px]">favorite</span>
+              {t("landing.cta")}
               <span className="material-symbols-outlined text-[18px] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
             </Link>
-            <Link
-              href="/crisis"
-              className="px-8 py-4 bg-surface-container-lowest border border-outline-variant/50 text-on-surface font-semibold rounded-2xl hover:bg-surface-container hover:border-outline-variant transition-all flex items-center gap-2 justify-center shadow-sm"
+            <a
+              href="tel:0800-HELP"
+              className="px-8 py-4 bg-error text-on-error font-semibold rounded-2xl hover:opacity-90 transition-all flex items-center gap-2 justify-center shadow-lg"
             >
-              <span className="material-symbols-outlined icon-fill text-error text-[20px]">emergency</span>
-              Crisis Support
-            </Link>
+              <span className="material-symbols-outlined icon-fill text-[20px]">phone_in_talk</span>
+              {t("landing.crisis.btn")}
+            </a>
           </motion.div>
 
           {/* Trust badges */}
           <motion.div variants={fadeUp} custom={4} className="mt-12 flex flex-wrap items-center justify-center gap-6 text-on-surface-variant/60">
             <span className="flex items-center gap-1.5 text-xs font-medium">
               <span className="material-symbols-outlined text-[14px]">lock</span>
-              End-to-End Encrypted
+              {t("landing.trust.confidential")}
             </span>
             <span className="flex items-center gap-1.5 text-xs font-medium">
               <span className="material-symbols-outlined text-[14px]">verified</span>
-              Clinically Validated
+              {t("landing.trust.ai")}
             </span>
             <span className="flex items-center gap-1.5 text-xs font-medium">
               <span className="material-symbols-outlined text-[14px]">language</span>
-              4 Languages
+              {t("landing.trust.languages")}
+            </span>
+            <span className="flex items-center gap-1.5 text-xs font-medium">
+              <span className="material-symbols-outlined text-[14px]">schedule</span>
+              {t("landing.trust.available")}
             </span>
           </motion.div>
         </motion.div>
@@ -269,12 +274,12 @@ export default function LandingPage() {
             transition={{ duration: 0.7 }}
             className="text-center mb-16"
           >
-            <span className="text-xs font-semibold uppercase tracking-widest text-secondary mb-3 block">Platform Features</span>
+            <span className="text-xs font-semibold uppercase tracking-widest text-secondary mb-3 block">{t("nav.features")}</span>
             <h2 className="text-3xl md:text-5xl font-bold text-on-surface mb-4 tracking-tight">
-              Everything you need to thrive
+              {t("landing.features.title")}
             </h2>
             <p className="text-on-surface-variant text-lg max-w-xl mx-auto font-light">
-              Comprehensive mental health tools designed with clinical guidance and student feedback.
+              {t("landing.features.subtitle")}
             </p>
           </motion.div>
 
@@ -323,7 +328,7 @@ export default function LandingPage() {
           >
             <span className="text-xs font-semibold uppercase tracking-widest text-secondary mb-3 block">How It Works</span>
             <h2 className="text-3xl md:text-5xl font-bold text-on-surface mb-4 tracking-tight">
-              Three steps to feeling better
+              {t("landing.howit.title")}
             </h2>
           </motion.div>
 
@@ -461,22 +466,23 @@ export default function LandingPage() {
       >
         <div className="max-w-2xl mx-auto">
           <h2 className="text-3xl md:text-5xl font-bold text-on-surface mb-4 tracking-tight">
-            Ready to prioritize your wellbeing?
+            {t("landing.ready")}
           </h2>
           <p className="text-on-surface-variant text-lg mb-8 font-light">
-            Join thousands of students already using Selfcare Hub. Free, confidential, and available 24/7.
+            {t("landing.ready.sub")}
           </p>
           <Link
             href="/auth/sign-up"
             className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-on-primary font-semibold rounded-2xl shadow-lg shadow-primary/15 hover:shadow-xl hover:-translate-y-1 transition-all text-lg"
           >
             <span className="material-symbols-outlined text-[22px]">rocket_launch</span>
-            Get Started — It&apos;s Free
+            {t("landing.getstarted")}
           </Link>
         </div>
       </motion.section>
 
       <Footer />
+      <LandingChatbot />
     </div>
   );
 }

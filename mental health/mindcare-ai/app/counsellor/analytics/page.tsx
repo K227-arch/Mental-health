@@ -6,8 +6,10 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer,
 } from "recharts";
+import { useTranslation } from "../../lib/i18n";
 
 export default function CounsellorAnalytics() {
+  const { t } = useTranslation();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -22,7 +24,7 @@ export default function CounsellorAnalytics() {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-64px)] text-on-surface-variant">
         <span className="material-symbols-outlined animate-spin text-[24px] mr-2">progress_activity</span>
-        Loading analytics...
+        {t("counsellor.analytics.loading")}
       </div>
     );
   }
@@ -35,12 +37,56 @@ export default function CounsellorAnalytics() {
   const modelComparison = data?.modelComparison || [];
   const modelScoreRanges = data?.modelScoreRanges || [];
 
+  const exportReport = (type: "general" | "individual") => {
+    const reportData = {
+      generatedAt: new Date().toISOString(),
+      type,
+      summary: {
+        totalScreenings: data?.totalScreenings || 0,
+        totalSessions: data?.totalSessions || 0,
+        totalMessages: data?.messageActivity?.total || 0,
+        highRiskAlerts: riskDistribution.find((r: any) => r.name === "Critical")?.value || 0,
+      },
+      riskDistribution,
+      modelComparison,
+      modelScoreRanges,
+    };
+
+    const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `selfcare-hub-${type}-report-${new Date().toISOString().split("T")[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-[1200px] mx-auto space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-on-surface">Analytics & Insights</h1>
-        <p className="text-on-surface-variant mt-1">Real-time data from screening results, sessions, and student engagement.</p>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-on-surface">{t("counsellor.analytics.title")}</h1>
+          <p className="text-on-surface-variant mt-1">{t("counsellor.analytics.subtitle")}</p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => exportReport("general")}
+            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-on-primary rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity shadow-sm"
+          >
+            <span className="material-symbols-outlined text-[18px]">download</span>
+            Export General Report
+          </button>
+          <button
+            onClick={() => exportReport("individual")}
+            className="flex items-center gap-2 px-4 py-2.5 border border-outline-variant bg-surface text-on-surface rounded-lg text-sm font-medium hover:bg-surface-container transition-colors"
+          >
+            <span className="material-symbols-outlined text-[18px]">person</span>
+            Student Report
+          </button>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -80,7 +126,7 @@ export default function CounsellorAnalytics() {
                 <XAxis dataKey="day" tick={{ fontSize: 11 }} stroke="#72787f" />
                 <YAxis tick={{ fontSize: 11 }} stroke="#72787f" />
                 <Tooltip />
-                <Line type="monotone" dataKey="minutes" stroke="#074469" strokeWidth={2} dot={{ r: 4 }} />
+                <Line type="monotone" dataKey="minutes" stroke="#c2185b" strokeWidth={2} dot={{ r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -120,7 +166,7 @@ export default function CounsellorAnalytics() {
                 <YAxis tick={{ fontSize: 11 }} stroke="#72787f" />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="sessions" fill="#074469" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="sessions" fill="#c2185b" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="referrals" fill="#006a64" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -140,7 +186,7 @@ export default function CounsellorAnalytics() {
                 <XAxis dataKey="week" tick={{ fontSize: 11 }} stroke="#72787f" />
                 <YAxis tick={{ fontSize: 11 }} stroke="#72787f" />
                 <Tooltip />
-                <Area type="monotone" dataKey="checkIns" stroke="#074469" fill="#074469" fillOpacity={0.15} strokeWidth={2} />
+                <Area type="monotone" dataKey="checkIns" stroke="#c2185b" fill="#c2185b" fillOpacity={0.15} strokeWidth={2} />
                 <Area type="monotone" dataKey="avgMood" stroke="#006a64" fill="#006a64" fillOpacity={0.1} strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
@@ -193,7 +239,7 @@ export default function CounsellorAnalytics() {
                   <XAxis dataKey="model" tick={{ fontSize: 10 }} stroke="#72787f" />
                   <YAxis tick={{ fontSize: 11 }} stroke="#72787f" unit="%" />
                   <Tooltip formatter={(value: any) => `${value}%`} />
-                  <Bar dataKey="avgPct" fill="#074469" radius={[4, 4, 0, 0]} name="Avg Severity %" />
+                  <Bar dataKey="avgPct" fill="#c2185b" radius={[4, 4, 0, 0]} name="Avg Severity %" />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -299,6 +345,58 @@ export default function CounsellorAnalytics() {
           </div>
         </div>
       )}
+
+      {/* Reports Section */}
+      <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
+        <h3 className="text-sm font-bold text-on-surface mb-4 flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-[18px]">description</span>
+          Reports & Status
+        </h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-outline-variant">
+                <th className="text-left py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase">Report Type</th>
+                <th className="text-center py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase">Status</th>
+                <th className="text-center py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase">Regularity</th>
+                <th className="text-center py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase">Last Generated</th>
+                <th className="text-right py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { type: "General Analytics Report", status: "Active", regularity: "Weekly", last: "July 1, 2026" },
+                { type: "Individual Student Reports", status: "Active", regularity: "On Demand", last: "July 3, 2026" },
+                { type: "Risk Assessment Summary", status: "Active", regularity: "Daily", last: "Today" },
+                { type: "Model Performance Report", status: "Active", regularity: "Monthly", last: "June 30, 2026" },
+                { type: "Engagement & Retention", status: "Scheduled", regularity: "Bi-weekly", last: "June 28, 2026" },
+              ].map((report) => (
+                <tr key={report.type} className="border-b border-outline-variant/30 hover:bg-surface-container-low">
+                  <td className="py-3 px-3 font-medium text-on-surface">{report.type}</td>
+                  <td className="py-3 px-3 text-center">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase ${
+                      report.status === "Active" ? "bg-secondary-container text-on-secondary-container" : "bg-surface-container-high text-on-surface-variant"
+                    }`}>
+                      {report.status}
+                    </span>
+                  </td>
+                  <td className="py-3 px-3 text-center text-on-surface-variant text-xs">{report.regularity}</td>
+                  <td className="py-3 px-3 text-center text-on-surface-variant text-xs">{report.last}</td>
+                  <td className="py-3 px-3 text-right">
+                    <button
+                      onClick={() => exportReport("general")}
+                      className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 ml-auto"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">download</span>
+                      Download
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

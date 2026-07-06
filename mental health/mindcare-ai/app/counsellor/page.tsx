@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { riskColors } from "../lib/data";
 import type { Student } from "../lib/data";
 import clsx from "clsx";
+import Link from "next/link";
 import { useTranslation } from "../lib/i18n";
 
 export default function CounsellorDashboard() {
@@ -71,6 +72,7 @@ export default function CounsellorDashboard() {
   }, []);
 
   const filtered = filter === "All" ? students : students.filter((s) => s.riskLevel === filter);
+  const recentStudents = filtered.slice(0, 3);
 
   const showFeedback = (msg: string) => {
     setActionFeedback(msg);
@@ -190,19 +192,15 @@ export default function CounsellorDashboard() {
           <h1 className="text-3xl font-bold text-on-background">{t("counsellor.dashboard.title")}</h1>
           <p className="text-on-surface-variant mt-1">{t("counsellor.dashboard.monitoring")}</p>
         </div>
-        <button onClick={handleExportReport} className="flex items-center gap-2 px-5 py-2.5 bg-surface-container-highest text-on-surface rounded-lg text-sm font-medium hover:bg-surface-variant transition-colors">
-          <span className="material-symbols-outlined text-[18px]">download</span>
-          {t("counsellor.export")}
-        </button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Total Students", value: String(students.length), icon: "groups", color: "#074469" },
+          { label: "Total Students", value: String(students.length), icon: "groups", color: "#c2185b" },
           { label: "Critical Alerts", value: String(students.filter(s => s.riskLevel === "Critical").length), icon: "warning", color: "#ba1a1a" },
           { label: "Active Sessions", value: String(students.filter(s => s.lastActive !== "Never").length), icon: "pending_actions", color: "#006a64" },
-          { label: "Avg Score", value: students.length > 0 ? String(Math.round(students.reduce((a, s) => a + s.phq9Score, 0) / students.length)) : "0", icon: "analytics", color: "#074469" },
+          { label: "Avg Score", value: students.length > 0 ? String(Math.round(students.reduce((a, s) => a + s.phq9Score, 0) / students.length)) : "0", icon: "analytics", color: "#c2185b" },
         ].map((stat) => (
           <div key={stat.label} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 flex flex-col gap-2 shadow-sm">
             <div className="flex justify-between items-start">
@@ -248,7 +246,7 @@ export default function CounsellorDashboard() {
             </select>
           </div>
           <div className="flex flex-col gap-2 overflow-y-auto max-h-[540px] pr-1">
-            {filtered.map((student, idx) => {
+            {recentStudents.map((student, idx) => {
               const colors = riskColors[student.riskLevel];
               return (
                 <button
@@ -297,6 +295,23 @@ export default function CounsellorDashboard() {
               );
             })}
           </div>
+          {/* View All link */}
+          {filtered.length > 3 && (
+            <Link
+              href="/counsellor/students"
+              className="px-4 py-1 text-sm font-bold text-primary underline-offset-4 decoration-2 hover:underline"
+            >
+              View all ({filtered.length})
+            </Link>
+          )}
+          {filtered.length <= 3 && students.length > 0 && (
+            <Link
+              href="/counsellor/students"
+              className="px-4 py-1 text-xs font-bold text-on-surface-variant underline-offset-4 decoration-2 hover:underline hover:text-primary"
+            >
+              View all
+            </Link>
+          )}
         </div>
 
         {/* Detail Panel */}

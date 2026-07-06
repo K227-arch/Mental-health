@@ -1,15 +1,15 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #074469;
+  --color-primary: #c2185b;
   --color-on-primary: #ffffff;
-  --color-primary-container: #2a5c82;
-  --color-on-primary-container: #a5d4ff;
-  --color-primary-fixed: #cde5ff;
-  --color-primary-fixed-dim: #9ccbf7;
-  --color-on-primary-fixed: #001d32;
-  --color-on-primary-fixed-variant: #124a6f;
-  --color-inverse-primary: #9ccbf7;
+  --color-primary-container: #e91e8c;
+  --color-on-primary-container: #ffd6e8;
+  --color-primary-fixed: #ffd6e8;
+  --color-primary-fixed-dim: #f48fb1;
+  --color-on-primary-fixed: #3e001f;
+  --color-on-primary-fixed-variant: #880e4f;
+  --color-inverse-primary: #f48fb1;
 
   --color-secondary: #006a64;
   --color-on-secondary: #ffffff;
@@ -49,7 +49,7 @@
 
   --color-outline: #72787f;
   --color-outline-variant: #c1c7cf;
-  --color-surface-tint: #316289;
+  --color-surface-tint: #c2185b;
 
   --color-background: #f8f9fd;
   --color-on-background: #191c1f;
@@ -132,8 +132,8 @@ body {
 }
 
 ::selection {
-  background-color: #cde5ff;
-  color: #001d32;
+  background-color: #ffd6e8;
+  color: #3e001f;
 }
 
 .scrollbar-hide {

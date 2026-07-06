@@ -6,7 +6,7 @@ import StudentSidebar from "../components/StudentSidebar";
 import { useTranslation, languages } from "../lib/i18n";
 
 export default function SettingsPage() {
-  const { lang, setLang } = useTranslation();
+  const { lang, setLang, t } = useTranslation();
   const [user, setUser] = useState<{ id?: string; name?: string; email?: string } | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [name, setName] = useState("");
@@ -63,20 +63,20 @@ export default function SettingsPage() {
       <div className="flex flex-1 pt-16">
         <StudentSidebar />
         <main className="flex-1 overflow-y-auto px-6 md:px-16 max-w-2xl py-10">
-        <h1 className="text-3xl font-bold text-on-surface mb-2">Settings</h1>
-        <p className="text-on-surface-variant text-sm mb-8">Manage your profile and preferences.</p>
+        <h1 className="text-3xl font-bold text-on-surface mb-2">{t("settings.title")}</h1>
+        <p className="text-on-surface-variant text-sm mb-8">{t("settings.subtitle")}</p>
 
         <div className="space-y-6">
           {/* Profile Section */}
           <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-2xl p-6">
             <h2 className="text-lg font-semibold text-on-surface mb-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-[20px]">person</span>
-              Profile
+              {t("settings.profile")}
             </h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">Full Name</label>
+                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">{t("settings.fullName")}</label>
                 <input
                   type="text"
                   value={name}
@@ -86,19 +86,19 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">Email</label>
+                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">{t("settings.email")}</label>
                 <input
                   type="email"
                   value={user?.email || ""}
                   disabled
                   className="w-full px-4 py-2.5 bg-surface-container border border-outline-variant/20 rounded-xl text-sm text-on-surface-variant cursor-not-allowed"
                 />
-                <p className="text-xs text-on-surface-variant/60 mt-1">Email cannot be changed.</p>
+                <p className="text-xs text-on-surface-variant/60 mt-1">{t("settings.emailCannotChange")}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">Faculty</label>
+                  <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">{t("settings.faculty")}</label>
                   <input
                     type="text"
                     value={faculty}
@@ -108,7 +108,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">Year of Study</label>
+                  <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">{t("settings.yearOfStudy")}</label>
                   <select
                     value={year}
                     onChange={(e) => setYear(Number(e.target.value))}
@@ -127,7 +127,7 @@ export default function SettingsPage() {
           <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-2xl p-6">
             <h2 className="text-lg font-semibold text-on-surface mb-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-[20px]">language</span>
-              Language
+              {t("settings.language")}
             </h2>
             <div className="grid grid-cols-2 gap-3">
               {languages.map((l) => (
@@ -159,12 +159,12 @@ export default function SettingsPage() {
               ) : (
                 <span className="material-symbols-outlined text-[18px]">save</span>
               )}
-              {saving ? "Saving..." : "Save Changes"}
+              {saving ? "Saving..." : t("settings.saveChanges")}
             </button>
             {saved && (
               <span className="text-sm text-secondary font-medium animate-fade-in flex items-center gap-1">
                 <span className="material-symbols-outlined text-[16px]">check_circle</span>
-                Saved successfully
+                {t("settings.savedSuccess")}
               </span>
             )}
           </div>
