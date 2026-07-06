@@ -98,11 +98,13 @@ export default function ScreeningPage() {
 
   const getAIResponse = async (userMsg: string) => {
     try {
+      // Pass the full message history so the AI has context
+      const allMessages = [...messages, { id: "temp", role: "user" as const, content: userMsg, time: "" }];
       const res = await fetch("/api/chat-ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: messages.map((m) => ({ role: m.role, content: m.content })),
+          messages: allMessages.map((m) => ({ role: m.role, content: m.content })),
           userMessage: userMsg,
         }),
       });
@@ -110,14 +112,16 @@ export default function ScreeningPage() {
         const data = await res.json();
         addMessage("ai", data.response);
       } else {
-        // Fallback to PHQ-9 questions
+        // Fallback to next PHQ-9 question
         const questions = selectedModel.questions;
         if (currentQuestion < questions.length) {
-          addMessage("ai", `${selectedModel.intro}\n\n${questions[currentQuestion].text}`);
+          addMessage("ai", questions[currentQuestion].text);
+        } else {
+          addMessage("ai", "Thank you for sharing. How has this been affecting your daily routine?");
         }
       }
     } catch {
-      addMessage("ai", "I'm here for you. How have you been feeling lately? 💚");
+      addMessage("ai", "I hear you. Can you tell me more about how this has been affecting you day to day?");
     }
   };
 
@@ -664,23 +668,6 @@ export default function ScreeningPage() {
               </div>
             ))}
 
-            {/* Options (current question) */}
-            {started && !done && currentQuestion < selectedModel.questions.length && (
-              <div className="self-start max-w-[85%] ml-11 animate-fade-in">
-                <div className="flex flex-col gap-2">
-                  {selectedModel.questions[currentQuestion].options.map((opt, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handleOptionSelect(i)}
-                      className="text-left px-4 py-2.5 bg-surface-container-low hover:bg-secondary-container hover:text-on-secondary-container border border-outline-variant/50 rounded-xl text-sm font-medium transition-all hover:-translate-y-0.5"
-                    >
-                      {opt}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Result - no scores shown to student */}
             {done && severity && (
               <div className="self-center my-4 animate-fade-in">
@@ -770,21 +757,20 @@ export default function ScreeningPage() {
 
           {/* Input area */}
           <div className="p-4 bg-surface-container-lowest border-t border-outline-variant/20 flex flex-col gap-3">
-            {/* Emoji picker */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-              <span className="text-xs text-on-surface-variant whitespace-nowrap mr-1">Quick feel:</span>
-              {["😔", "😐", "🙂", "😰", "😤", "😢", "😊"].map((emoji) => (
-                <button
-                  key={emoji}
-                  onClick={() => {
-                    setInput((prev) => prev + emoji);
-                  }}
-                  className="px-2.5 py-1.5 bg-surface-container-low hover:bg-secondary-container rounded-full text-lg transition-colors shrink-0"
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
+            {/* Answer options - shown as a horizontal row above the input when a question is active */}
+            {!done && currentQuestion < selectedModel.questions.length && (
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                {selectedModel.questions[currentQuestion].options.map((opt, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleOptionSelect(i)}
+                    className="px-3.5 py-2 bg-surface-container-low hover:bg-secondary-container hover:text-on-secondary-container border border-outline-variant/50 rounded-full text-xs font-medium transition-all whitespace-nowrap shrink-0"
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Text input */}
             <div className="flex items-end gap-2">
