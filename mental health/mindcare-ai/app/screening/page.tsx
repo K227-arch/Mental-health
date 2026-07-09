@@ -37,16 +37,15 @@ export default function ScreeningPage() {
   const { t } = useTranslation();
   const [selectedModel, setSelectedModel] = useState<AssessmentModel>(assessmentModels[0]);
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
-  const [started, setStarted] = useState(false);
+  const [started, setStarted] = useState(true);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
       role: "ai",
-      content:
-        "Hello! I'm here to support you. Type anything to start a conversation about how you're feeling.",
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      content: "Over the last 2 weeks, how often have you been bothered by the following problems?\n\nLittle interest or pleasure in doing things?",
+      time: "",
     },
   ]);
   const [input, setInput] = useState("");
@@ -62,6 +61,8 @@ export default function ScreeningPage() {
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [cameraRecording, setCameraRecording] = useState(false);
   const [cameraRecorder, setCameraRecorder] = useState<MediaRecorder | null>(null);
+  // Phase: "phq9" = answering questions, "chat" = free AI conversation
+  const [phase, setPhase] = useState<"phq9" | "chat">("phq9");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const cameraPreviewRef = useRef<HTMLVideoElement>(null);
@@ -69,6 +70,11 @@ export default function ScreeningPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Set initial message time on client only (avoids hydration mismatch)
+  useEffect(() => {
+    setMessages((prev) => prev.map((m) => m.id === "1" && !m.time ? { ...m, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) } : m));
+  }, []);
 
   useEffect(() => {
     if (cameraPreviewRef.current && cameraStream) {
@@ -78,27 +84,27 @@ export default function ScreeningPage() {
 
   const startAssessment = () => {
     setStarted(true);
+    setPhase("phq9");
     setCurrentQuestion(0);
     setAnswers([]);
     setDone(false);
     setTotalScore(0);
     setNlpAnalysis(null);
+    const questions = selectedModel.questions;
 
-    // If user typed something, show it and get AI response
+    // If user typed something, show it first
     if (input.trim()) {
       addMessage("user", input.trim());
       setFreeTextInputs((prev) => [...prev, input.trim()]);
-      getAIResponse(input.trim());
       setInput("");
-    } else {
-      // Default greeting
-      getAIResponse("Hi, I want to check in about how I'm feeling");
     }
+
+    // Start PHQ-9 assessment
+    addMessage("ai", `${selectedModel.intro}\n\n${questions[0].text}`);
   };
 
   const getAIResponse = async (userMsg: string) => {
     try {
-      // Pass the full message history so the AI has context
       const allMessages = [...messages, { id: "temp", role: "user" as const, content: userMsg, time: "" }];
       const res = await fetch("/api/chat-ai", {
         method: "POST",
@@ -112,16 +118,10 @@ export default function ScreeningPage() {
         const data = await res.json();
         addMessage("ai", data.response);
       } else {
-        // Fallback to next PHQ-9 question
-        const questions = selectedModel.questions;
-        if (currentQuestion < questions.length) {
-          addMessage("ai", questions[currentQuestion].text);
-        } else {
-          addMessage("ai", "Thank you for sharing. How has this been affecting your daily routine?");
-        }
+        addMessage("ai", "I hear you. Can you tell me more about how this has been affecting you?");
       }
     } catch {
-      addMessage("ai", "I hear you. Can you tell me more about how this has been affecting you day to day?");
+      addMessage("ai", "Thank you for sharing. How has this been impacting your daily life?");
     }
   };
 
@@ -287,7 +287,13 @@ export default function ScreeningPage() {
           }\n\nRunning AI-powered NLP analysis on your responses... 🔍`
         );
         saveScreeningResult(newAnswers, score, severity.label);
-        runNlpAnalysis(newAnswers, score);
+        runNlpAnalysis(newAnswers, score).then(() => {
+          // After analysis, transition to AI chat phase
+          setTimeout(() => {
+            setPhase("chat");
+            addMessage("ai", "Your check-in is complete. I'm now here to chat freely — tell me more about what's on your mind, ask questions, or just talk. I'm listening. 💚");
+          }, 1500);
+        });
       }
     }, 500);
   };
@@ -299,9 +305,52 @@ export default function ScreeningPage() {
     const userMsg = input;
     setInput("");
 
-    if (started) {
+    if (phase === "chat") {
+      // In chat phase, get AI response
       getAIResponse(userMsg);
+    } else if (phase === "phq9") {
+      // During PHQ-9, acknowledge and re-show current question
+      setTimeout(() => {
+        if (!done && currentQuestion < selectedModel.questions.length) {
+          addMessage("ai", `Thank you for sharing that. Let's continue.\n\n${selectedModel.questions[currentQuestion].text}`);
+        }
+      }, 500);
     }
+  };
+
+  // Generate dynamic suggestion chips based on last AI message
+  const getAIChatSuggestions = (): string[] => {
+    const lastAiMsg = [...messages].reverse().find((m) => m.role === "ai")?.content?.toLowerCase() || "";
+
+    if (lastAiMsg.includes("sleep")) {
+      return ["I can't sleep", "I sleep too much", "Sleep is fine", "It varies"];
+    }
+    if (lastAiMsg.includes("energy") || lastAiMsg.includes("tired")) {
+      return ["Always tired", "Low energy", "It comes and goes", "I feel okay"];
+    }
+    if (lastAiMsg.includes("appetite") || lastAiMsg.includes("eating")) {
+      return ["Not eating much", "Eating too much", "No change", "I skip meals"];
+    }
+    if (lastAiMsg.includes("concentrat") || lastAiMsg.includes("focus")) {
+      return ["Can't focus at all", "Sometimes", "Only in class", "It's fine"];
+    }
+    if (lastAiMsg.includes("interest") || lastAiMsg.includes("enjoy") || lastAiMsg.includes("pleasure")) {
+      return ["Lost all interest", "Some things", "Not really", "I still enjoy things"];
+    }
+    if (lastAiMsg.includes("worth") || lastAiMsg.includes("failure") || lastAiMsg.includes("letting")) {
+      return ["I feel worthless", "Sometimes", "Not really", "I'm working on it"];
+    }
+    if (lastAiMsg.includes("counsellor") || lastAiMsg.includes("professional") || lastAiMsg.includes("connect")) {
+      return ["Yes please", "Maybe later", "Tell me more", "I'll think about it"];
+    }
+    if (lastAiMsg.includes("how long") || lastAiMsg.includes("how often")) {
+      return ["A few days", "About a week", "More than 2 weeks", "A long time"];
+    }
+    if (lastAiMsg.includes("what") || lastAiMsg.includes("tell me")) {
+      return ["Academic stress", "Money problems", "Relationships", "Everything at once"];
+    }
+    // Default suggestions
+    return ["I need help", "Tell me more", "I feel stressed", "I'm okay for now"];
   };
 
   const startRecording = async () => {
@@ -544,100 +593,18 @@ export default function ScreeningPage() {
 
         {/* Main Content */}
         <main className="flex-1 flex flex-col relative z-10 overflow-hidden" style={{ height: "calc(100vh - 64px)" }}>
-          <div className="flex-1 w-full max-w-3xl mx-auto flex flex-col px-4 md:px-6 overflow-hidden">
+          <div className="flex-1 w-full max-w-3xl mx-auto flex flex-col px-4 md:px-6 min-h-0">
 
-            {/* Clean centered layout when not started */}
-            {!started && (
-              <div className="flex-1 flex flex-col items-center justify-center">
-                {/* Logo */}
-                <img src="/logo.jpeg" alt="Selfcare Hub" className="w-28 h-28 md:w-36 md:h-36 object-contain rounded-3xl shadow-md mb-6" />
-                
-                {/* Title */}
-                <h1 className="text-xl md:text-2xl font-bold text-on-surface text-center mb-2">
-                  {t("screening.checkinTitle")}
-                </h1>
-                <p className="text-on-surface-variant text-sm text-center max-w-md mb-8">
-                  {t("screening.checkinSubtitle")}
-                </p>
-
-                {/* Input area */}
-                <form className="w-full max-w-3xl" onSubmit={(e) => { e.preventDefault(); if (input.trim()) { startAssessment(); } }}>
-                  <div className="w-full flex items-center gap-2 px-5 py-3 bg-surface-container-lowest border border-outline-variant/50 rounded-2xl text-sm transition-colors focus-within:border-primary/50 shadow-sm">
-                    <input
-                      type="text"
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      placeholder="Ask me anything..."
-                      className="flex-1 bg-transparent outline-none text-on-surface placeholder:text-on-surface-variant"
-                    />
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (recording) {
-                          if (mediaRecorder) { mediaRecorder.stop(); setRecording(false); setMediaRecorder(null); }
-                        } else {
-                          try {
-                            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                            const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
-                            const chunks: BlobPart[] = [];
-                            recorder.ondataavailable = (ev) => chunks.push(ev.data);
-                            recorder.onstop = async () => {
-                              stream.getTracks().forEach((t) => t.stop());
-                              const blob = new Blob(chunks, { type: "audio/webm" });
-                              const formData = new FormData();
-                              formData.append("file", blob, "checkin-audio.webm");
-                              formData.append("userId", "anonymous");
-                              formData.append("type", "audio");
-                              fetch("/api/upload", { method: "POST", body: formData }).catch(() => {});
-                              const transForm = new FormData();
-                              transForm.append("file", blob, "recording.webm");
-                              try {
-                                const res = await fetch("/api/transcribe", { method: "POST", body: transForm });
-                                if (res.ok) { const { text } = await res.json(); if (text) { setInput(text); } }
-                              } catch {}
-                              if (!started) startAssessment();
-                            };
-                            recorder.start();
-                            setMediaRecorder(recorder);
-                            setRecording(true);
-                          } catch { alert("Microphone access denied."); }
-                        }
-                      }}
-                      className={`p-2 rounded-full transition-colors ${recording ? "bg-error text-on-error animate-pulse" : "text-on-surface-variant hover:text-primary hover:bg-surface-container-high"}`}
-                    >
-                      <span className="material-symbols-outlined text-[20px]">{recording ? "stop" : "mic"}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowVideoModal(true)}
-                      className="p-2 rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">videocam</span>
-                    </button>
-                    <button type="submit" disabled={!input.trim()} className="p-2 rounded-full bg-primary text-on-primary disabled:opacity-30 transition-opacity">
-                      <span className="material-symbols-outlined text-[18px]">send</span>
-                    </button>
-                  </div>
-                </form>
-
-                {/* Disclaimer */}
-                <p className="text-[11px] text-on-surface-variant/60 text-center mt-6 max-w-md leading-relaxed">
-                  Selfcare Hub&apos;s responses are based on validated mental health assessments. AI analysis may provide general insights. For urgent concerns, contact a professional counsellor.
-                </p>
-              </div>
-            )}
-
-            {/* Chat interface when assessment is started */}
+            {/* Chat interface - PHQ-9 then AI chat */}
             {started && (
               <>
                 {/* Chat Area */}
-                {/* Chat Area */}
-        <div className="flex-1 flex flex-col bg-surface-container-lowest/80 backdrop-blur-md rounded-2xl border border-outline-variant/30 shadow-sm overflow-hidden" style={{ minHeight: 0 }}>
+        <div className="flex-1 flex flex-col bg-surface-container-lowest/80 backdrop-blur-md rounded-2xl border border-outline-variant/30 shadow-sm overflow-hidden min-h-0">
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-4">
             <div className="flex justify-center">
               <span className="text-xs text-on-surface-variant bg-surface-container px-3 py-1 rounded-full">
-                Today, {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                Daily Check-in
               </span>
             </div>
 
@@ -661,9 +628,11 @@ export default function ScreeningPage() {
                   }`}
                 >
                   {msg.content}
-                  <div className={`text-xs mt-1 opacity-60 ${msg.role === "user" ? "text-right" : ""}`}>
-                    {msg.time}
-                  </div>
+                  {msg.time && (
+                    <div className={`text-xs mt-1 opacity-60 ${msg.role === "user" ? "text-right" : ""}`}>
+                      {msg.time}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -757,8 +726,8 @@ export default function ScreeningPage() {
 
           {/* Input area */}
           <div className="p-4 bg-surface-container-lowest border-t border-outline-variant/20 flex flex-col gap-3">
-            {/* Answer options - shown as a horizontal row above the input when a question is active */}
-            {!done && currentQuestion < selectedModel.questions.length && (
+            {/* Answer options - dynamic per phase */}
+            {phase === "phq9" && !done && currentQuestion < selectedModel.questions.length && (
               <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
                 {selectedModel.questions[currentQuestion].options.map((opt, i) => (
                   <button
@@ -767,6 +736,23 @@ export default function ScreeningPage() {
                     className="px-3.5 py-2 bg-surface-container-low hover:bg-secondary-container hover:text-on-secondary-container border border-outline-variant/50 rounded-full text-xs font-medium transition-all whitespace-nowrap shrink-0"
                   >
                     {opt}
+                  </button>
+                ))}
+              </div>
+            )}
+            {phase === "chat" && (
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                {getAIChatSuggestions().map((sug, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      addMessage("user", sug);
+                      setFreeTextInputs((prev) => [...prev, sug]);
+                      getAIResponse(sug);
+                    }}
+                    className="px-3.5 py-2 bg-surface-container-low hover:bg-primary-container hover:text-on-primary-container border border-outline-variant/50 rounded-full text-xs font-medium transition-all whitespace-nowrap shrink-0"
+                  >
+                    {sug}
                   </button>
                 ))}
               </div>
