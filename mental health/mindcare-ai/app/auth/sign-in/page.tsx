@@ -67,20 +67,30 @@ export default function SignInPage() {
     const redirectTarget = role === "counsellor" ? "/counsellor" : "/dashboard";
 
     try {
-      const res = await fetch("/api/auth/sign-in", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, redirect: redirectTarget }),
-      });
-      const data = await res.json();
+      const { data, error: signInError } = await insforge.auth.signInWithPassword({ email, password });
 
-      if (!res.ok) {
-        setError(data.error || "Sign in failed");
+      if (signInError) {
+        setError(signInError.message || "Invalid email or password");
         setLoading(false);
         return;
       }
 
-      router.push(data.redirect || redirectTarget);
+      if (data?.accessToken) {
+        // Set httpOnly cookies via server route for security
+        await fetch("/api/auth/sign-in", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            accessToken: data.accessToken,
+            refreshToken: (data as any).refreshToken,
+            redirect: redirectTarget,
+          }),
+        }).catch(() => {});
+        // Also set non-httpOnly as fallback for /api/auth/me JWT decode
+        document.cookie = `insforge_access_token=${data.accessToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+      }
+
+      router.push(redirectTarget);
     } catch {
       setError("Network error. Please try again.");
       setLoading(false);

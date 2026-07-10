@@ -43,20 +43,40 @@ export default function SignUpPage() {
     const redirectTarget = role === "counsellor" ? "/counsellor" : "/dashboard";
 
     try {
-      const res = await fetch("/api/auth/sign-up", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, name, redirect: redirectTarget }),
+      const { data, error: signUpError } = await insforge.auth.signUp({
+        email,
+        password,
+        name,
+        redirectTo: `${window.location.origin}/auth/sign-in`,
       });
-      const data = await res.json();
 
-      if (!res.ok) {
-        setError(data.error || "Sign up failed");
+      if (signUpError) {
+        setError(signUpError.message || "Sign up failed");
         setLoading(false);
         return;
       }
 
-      router.push(data.redirect || redirectTarget);
+      if (data?.requireEmailVerification) {
+        setError(null);
+        router.push(`/auth/sign-in?message=Check your email to verify your account`);
+        return;
+      }
+
+      // Save token to cookie
+      if (data?.accessToken) {
+        document.cookie = `insforge_access_token=${data.accessToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+      }
+
+      // Create student profile in DB
+      if (data?.user?.id) {
+        await fetch("/api/auth/sign-up", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: data.user.id, name, email, role: redirectTarget === "/counsellor" ? "counsellor" : "student" }),
+        }).catch(() => {});
+      }
+
+      router.push(redirectTarget);
     } catch {
       setError("Network error. Please try again.");
       setLoading(false);
