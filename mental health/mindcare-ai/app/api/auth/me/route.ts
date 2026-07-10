@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
         email: userEmail || "",
         role: "student",
         anonymous_id: userId.slice(0, 8),
-      }]).catch(() => {});
+      }]);
     } else {
       if (profiles[0]?.role) role = profiles[0].role;
       if (profiles[0]?.name) userName = profiles[0].name;

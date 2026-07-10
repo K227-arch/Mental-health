@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       email: email || "",
       role: role || "student",
       anonymous_id: userId.slice(0, 8),
-    }]).catch(() => {});
+    }]);
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
