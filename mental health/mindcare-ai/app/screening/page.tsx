@@ -63,6 +63,8 @@ export default function ScreeningPage() {
   const [cameraRecorder, setCameraRecorder] = useState<MediaRecorder | null>(null);
   // Phase: "phq9" = answering questions, "chat" = free AI conversation
   const [phase, setPhase] = useState<"phq9" | "chat">("phq9");
+  const [conversationStage, setConversationStage] = useState<"rapport" | "exploration" | "stressors" | "risk" | "intervention">("rapport");
+  const [nlpContextRef, setNlpContextRef] = useState<object | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const cameraPreviewRef = useRef<HTMLVideoElement>(null);
@@ -112,11 +114,21 @@ export default function ScreeningPage() {
         body: JSON.stringify({
           messages: allMessages.map((m) => ({ role: m.role, content: m.content })),
           userMessage: userMsg,
+          stage: conversationStage,
+          nlpContext: nlpContextRef,
         }),
       });
       if (res.ok) {
         const data = await res.json();
         addMessage("ai", data.response);
+        // Update stage if server detected a transition
+        if (data.stage && data.stage !== conversationStage) {
+          setConversationStage(data.stage);
+        }
+        // Show crisis banner if flagged
+        if (data.crisis) {
+          addMessage("ai", "🆘 If you are in immediate danger, please call emergency services or go to the nearest emergency room.");
+        }
       } else {
         addMessage("ai", "I hear you. Can you tell me more about how this has been affecting you?");
       }
@@ -232,6 +244,16 @@ export default function ScreeningPage() {
       if (response.ok) {
         const analysis: NlpAnalysis = await response.json();
         setNlpAnalysis(analysis);
+        // Store NLP context so chat-ai can use it for stage-aware prompting
+        setNlpContextRef({
+          nlpSeverity: analysis.nlpSeverity,
+          confidence: analysis.confidence,
+          riskIndicators: analysis.riskIndicators,
+          sentimentBreakdown: analysis.sentimentBreakdown,
+          recommendation: analysis.recommendation,
+          phq9Score: score,
+          assessmentType: selectedModel.id,
+        });
         addMessage(
           "ai",
           `🧠 **AI Analysis Complete**\n\nOur NLP model has analyzed your responses:\n\n` +
@@ -289,9 +311,11 @@ export default function ScreeningPage() {
         saveScreeningResult(newAnswers, score, severity.label);
         runNlpAnalysis(newAnswers, score).then(() => {
           // After analysis, transition to AI chat phase
+          // Start at Stage 2 (exploration) since rapport was built during PHQ-9
           setTimeout(() => {
             setPhase("chat");
-            addMessage("ai", "Your check-in is complete. I'm now here to chat freely — tell me more about what's on your mind, ask questions, or just talk. I'm listening. 💚");
+            setConversationStage("exploration");
+            addMessage("ai", "Your check-in is complete. I'm now here to chat — tell me more about what's on your mind, or let's explore what you've been experiencing. What emotions have been most present for you recently? 💚");
           }, 1500);
         });
       }
@@ -309,12 +333,13 @@ export default function ScreeningPage() {
       // In chat phase, get AI response
       getAIResponse(userMsg);
     } else if (phase === "phq9") {
-      // During PHQ-9, acknowledge and re-show current question
+      // During PHQ-9, get AI response AND re-show current question
+      getAIResponse(userMsg);
       setTimeout(() => {
         if (!done && currentQuestion < selectedModel.questions.length) {
-          addMessage("ai", `Thank you for sharing that. Let's continue.\n\n${selectedModel.questions[currentQuestion].text}`);
+          addMessage("ai", `Let's continue with the assessment.\n\n${selectedModel.questions[currentQuestion].text}`);
         }
-      }, 500);
+      }, 1200);
     }
   };
 
@@ -607,6 +632,33 @@ export default function ScreeningPage() {
                 Daily Check-in
               </span>
             </div>
+            {/* Stage indicator — shown during AI chat phase */}
+            {phase === "chat" && (
+              <div className="flex justify-center">
+                <span className={`text-xs px-3 py-1 rounded-full font-medium flex items-center gap-1.5 ${
+                  conversationStage === "risk"
+                    ? "bg-error-container text-on-error-container"
+                    : conversationStage === "intervention"
+                    ? "bg-secondary-container text-on-secondary-container"
+                    : "bg-primary-container/50 text-on-primary-container"
+                }`}>
+                  <span className="material-symbols-outlined text-[14px]">
+                    {conversationStage === "rapport" ? "waving_hand"
+                      : conversationStage === "exploration" ? "explore"
+                      : conversationStage === "stressors" ? "search"
+                      : conversationStage === "risk" ? "warning"
+                      : "volunteer_activism"}
+                  </span>
+                  {{
+                    rapport: "Building rapport",
+                    exploration: "Exploring your feelings",
+                    stressors: "Understanding stressors",
+                    risk: "Safety check-in",
+                    intervention: "Planning next steps",
+                  }[conversationStage]}
+                </span>
+              </div>
+            )}
 
             {messages.map((msg, idx) => (
               <div
