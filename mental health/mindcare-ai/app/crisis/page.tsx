@@ -26,6 +26,7 @@ export default function PublicCrisisPage() {
   const [uploadingAudio, setUploadingAudio] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
   const startBreathing = () => {
@@ -107,39 +108,81 @@ export default function PublicCrisisPage() {
         <img src="/logo.jpeg" alt="" className="w-[500px] h-[500px] object-contain opacity-[0.06]" />
       </div>
 
-      {/* Simple Top Bar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-6 md:px-16 h-16 bg-surface/90 backdrop-blur-xl border-b border-outline-variant/20 shadow-sm">
+      {/* Navbar — shared style with landing page */}
+      <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-4 md:px-16 h-16 bg-surface/90 backdrop-blur-xl border-b border-outline-variant/20 shadow-sm">
         <Link href="/" className="flex items-center gap-2">
           <img src="/logo.jpeg" alt="Selfcare Hub" className="w-8 h-8 object-contain rounded-lg" />
           <span className="hidden sm:block font-black text-xl text-primary tracking-tight">Selfcare Hub</span>
         </Link>
         <div className="flex items-center gap-2">
-          <Link href="/auth/sign-in" className="px-4 py-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">
+          <Link href="/auth/sign-in" className="hidden sm:inline-flex px-4 py-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">
             Sign In
           </Link>
-          <Link href="/auth/sign-up" className="px-4 py-2 bg-primary text-on-primary text-sm font-semibold rounded-lg shadow-sm hover:opacity-90 transition-opacity">
+          <Link href="/auth/sign-up" className="hidden sm:inline-flex px-4 py-2 bg-primary text-on-primary text-sm font-semibold rounded-lg shadow-sm hover:opacity-90 transition-opacity">
             Get Started
           </Link>
+          {/* Hamburger — mobile only */}
+          <button
+            className="sm:hidden p-2 text-on-surface-variant hover:bg-surface-container rounded-lg transition-colors"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            <span className="material-symbols-outlined text-[24px]">
+              {mobileMenuOpen ? "close" : "menu"}
+            </span>
+          </button>
         </div>
       </nav>
 
-      {/* Full Hero */}
-      <header className="relative w-full min-h-[280px] md:h-[35vh] flex items-center justify-center overflow-hidden pt-16">
+      {/* Mobile menu drawer */}
+      {mobileMenuOpen && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm sm:hidden" onClick={() => setMobileMenuOpen(false)} />
+          <div className="fixed top-0 right-0 bottom-0 z-50 w-72 bg-surface-container-lowest border-l border-outline-variant shadow-xl sm:hidden flex flex-col animate-slide-in">
+            <div className="flex items-center justify-between px-5 h-16 border-b border-outline-variant">
+              <div className="flex items-center gap-2">
+                <img src="/logo.jpeg" alt="" className="w-8 h-8 object-contain rounded-lg" />
+                <span className="font-black text-lg text-primary">Selfcare Hub</span>
+              </div>
+              <button onClick={() => setMobileMenuOpen(false)} className="p-1.5 text-on-surface-variant hover:bg-surface-container rounded-lg transition-colors">
+                <span className="material-symbols-outlined text-[22px]">close</span>
+              </button>
+            </div>
+            <nav className="flex-1 px-3 py-4 space-y-1">
+              <Link href="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-on-surface hover:bg-surface-container transition-colors">
+                <span className="material-symbols-outlined text-[20px] text-on-surface-variant">home</span>
+                Home
+              </Link>
+              <Link href="/auth/sign-in" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-on-surface hover:bg-surface-container transition-colors">
+                <span className="material-symbols-outlined text-[20px] text-on-surface-variant">login</span>
+                Sign In
+              </Link>
+            </nav>
+            <div className="px-4 py-5 border-t border-outline-variant">
+              <Link href="/auth/sign-up" onClick={() => setMobileMenuOpen(false)} className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-primary text-on-primary font-semibold rounded-xl shadow-md text-sm">
+                <span className="material-symbols-outlined text-[18px]">rocket_launch</span>
+                Get Started
+              </Link>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Full Hero — with proper top spacing */}
+      <header className="relative w-full min-h-[300px] md:h-[38vh] flex items-center justify-center overflow-hidden pt-16">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/15 via-secondary/10 to-surface" />
           <div className="absolute inset-0 bg-gradient-to-br from-primary-fixed/20 to-secondary-container/15" />
         </div>
-        <div className="relative z-20 text-center px-6 max-w-4xl mx-auto w-full py-12">
+        <div className="relative z-20 text-center px-6 max-w-4xl mx-auto w-full py-10 md:py-14">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-error text-on-error rounded-full text-sm font-semibold mb-4">
             <span className="material-symbols-outlined icon-fill text-[18px]">emergency</span>
             {t("crisis.available247")}
           </div>
-          <h1 className="text-3xl md:text-5xl font-black text-primary mb-4 leading-tight">
-            {t("crisis.heroTitle").split(".")[0]}.
-            <br className="hidden md:block" />
-            {t("crisis.heroTitle").split(".").slice(1).join(".")}
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-black text-primary mb-4 leading-tight">
+            {t("crisis.heroTitle")}
           </h1>
-          <p className="text-lg text-on-surface-variant max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg text-on-surface-variant max-w-2xl mx-auto">
             {t("crisis.heroSubtitle")}
           </p>
         </div>
