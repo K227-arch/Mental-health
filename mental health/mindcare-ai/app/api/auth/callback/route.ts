@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAuthActions } from "@insforge/sdk/ssr";
+import { insforgeAdmin } from "@/lib/insforge";
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("insforge_code");
@@ -14,22 +14,44 @@ export async function GET(request: NextRequest) {
   const verifier = request.cookies.get("insforge_code_verifier")?.value;
   const redirectTo = request.cookies.get("insforge_redirect")?.value || "/dashboard";
 
-  const response = NextResponse.redirect(new URL(redirectTo, request.url));
+  try {
+    // Exchange OAuth code for session
+    const { data, error } = await (insforgeAdmin.auth as any).exchangeOAuthCode(code, verifier);
 
-  const auth = createAuthActions({
-    requestCookies: request.cookies,
-    responseCookies: response.cookies,
-  });
+    if (error) {
+      const url = new URL("/auth/sign-in", request.url);
+      url.searchParams.set("error", error.message);
+      return NextResponse.redirect(url);
+    }
 
-  const { error } = await auth.exchangeOAuthCode(code, verifier);
+    const response = NextResponse.redirect(new URL(redirectTo, request.url));
 
-  if (error) {
+    // Set session cookies
+    if (data?.accessToken) {
+      response.cookies.set("insforge_access_token", data.accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7,
+      });
+    }
+    if (data?.refreshToken) {
+      response.cookies.set("insforge_refresh_token", data.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 30,
+      });
+    }
+
+    response.cookies.set("insforge_code_verifier", "", { path: "/", maxAge: 0 });
+    response.cookies.set("insforge_redirect", "", { path: "/", maxAge: 0 });
+    return response;
+  } catch {
     const url = new URL("/auth/sign-in", request.url);
-    url.searchParams.set("error", error.message);
+    url.searchParams.set("error", "Authentication failed. Please try again.");
     return NextResponse.redirect(url);
   }
-
-  response.cookies.delete("insforge_code_verifier");
-  response.cookies.delete("insforge_redirect");
-  return response;
 }
