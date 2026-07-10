@@ -198,13 +198,13 @@ export default function LandingPage() {
               {t("landing.cta")}
               <span className="material-symbols-outlined text-[18px] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
             </Link>
-            <a
-              href="tel:0800-HELP"
+            <Link
+              href="/crisis"
               className="px-8 py-4 bg-error text-on-error font-semibold rounded-2xl hover:opacity-90 transition-all flex items-center gap-2 justify-center shadow-lg"
             >
               <span className="material-symbols-outlined icon-fill text-[20px]">phone_in_talk</span>
               {t("landing.crisis.btn")}
-            </a>
+            </Link>
           </motion.div>
 
           {/* Trust badges */}

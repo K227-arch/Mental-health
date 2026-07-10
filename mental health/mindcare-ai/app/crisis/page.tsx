@@ -111,7 +111,7 @@ export default function PublicCrisisPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-6 md:px-16 h-16 bg-surface/90 backdrop-blur-xl border-b border-outline-variant/20 shadow-sm">
         <Link href="/" className="flex items-center gap-2">
           <img src="/logo.jpeg" alt="Selfcare Hub" className="w-8 h-8 object-contain rounded-lg" />
-          <span className="font-black text-xl text-primary tracking-tight">Selfcare Hub</span>
+          <span className="hidden sm:block font-black text-xl text-primary tracking-tight">Selfcare Hub</span>
         </Link>
         <div className="flex items-center gap-2">
           <Link href="/auth/sign-in" className="px-4 py-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">

@@ -40,7 +40,7 @@ export default function PrivacyPolicy() {
       <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-6 md:px-20 h-16 bg-surface/95 backdrop-blur-sm border-b border-outline-variant/30 shadow-sm">
         <Link href="/" className="flex items-center gap-2">
           <img src="/logo.jpeg" alt="Selfcare Hub" className="w-8 h-8 object-contain rounded-lg" />
-          <span className="font-black text-2xl text-primary">Selfcare Hub</span>
+          <span className="hidden sm:block font-black text-2xl text-primary">Selfcare Hub</span>
         </Link>
         <Link
           href="/"
