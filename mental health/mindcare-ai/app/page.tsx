@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
 import Footer from "./components/Footer";
 import LanguageSwitcher from "./components/LanguageSwitcher";
 import LandingChatbot from "./components/LandingChatbot";
@@ -105,6 +106,7 @@ const steps = [
 
 export default function LandingPage() {
   const { t } = useTranslation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col bg-surface overflow-x-hidden relative">
@@ -118,7 +120,7 @@ export default function LandingPage() {
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-6 md:px-16 h-16 bg-surface/85 backdrop-blur-xl border-b border-outline-variant/20 shadow-sm"
+        className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-4 md:px-16 h-16 bg-surface/85 backdrop-blur-xl border-b border-outline-variant/20 shadow-sm"
       >
         <Link href="/" className="flex items-center gap-3">
           <img src="/logo.jpeg" alt="Selfcare Hub" className="w-14 h-14 object-contain rounded-xl shadow-sm" />
@@ -131,27 +133,107 @@ export default function LandingPage() {
         </div>
         <div className="flex items-center gap-2">
           <LanguageSwitcher variant="light" />
-          <Link
-            href="/crisis"
-            className="hidden sm:flex items-center gap-1 px-3 py-1.5 text-error text-sm font-medium hover:bg-error-container/50 rounded-lg transition-colors"
-          >
+          <Link href="/crisis" className="hidden sm:flex items-center gap-1 px-3 py-1.5 text-error text-sm font-medium hover:bg-error-container/50 rounded-lg transition-colors">
             <span className="material-symbols-outlined icon-fill text-[16px]">emergency</span>
             {t("nav.crisis")}
           </Link>
-          <Link
-            href="/auth/sign-in"
-            className="hidden sm:inline-flex px-4 py-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors"
-          >
+          <Link href="/auth/sign-in" className="hidden sm:inline-flex px-4 py-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">
             {t("nav.signin")}
           </Link>
-          <Link
-            href="/auth/sign-up"
-            className="px-4 py-2 bg-primary text-on-primary text-sm font-semibold rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
-          >
+          <Link href="/auth/sign-up" className="hidden sm:inline-flex px-4 py-2 bg-primary text-on-primary text-sm font-semibold rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
             {t("nav.signup")}
           </Link>
+          {/* Hamburger — mobile only */}
+          <button
+            className="md:hidden p-2 text-on-surface-variant hover:bg-surface-container rounded-lg transition-colors"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            <span className="material-symbols-outlined text-[24px]">
+              {mobileMenuOpen ? "close" : "menu"}
+            </span>
+          </button>
         </div>
       </motion.nav>
+
+      {/* Mobile menu drawer */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            {/* Drawer */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="fixed top-0 right-0 bottom-0 z-50 w-72 bg-surface-container-lowest border-l border-outline-variant shadow-xl md:hidden flex flex-col"
+            >
+              {/* Drawer header */}
+              <div className="flex items-center justify-between px-5 h-16 border-b border-outline-variant">
+                <div className="flex items-center gap-2">
+                  <img src="/logo.jpeg" alt="" className="w-8 h-8 object-contain rounded-lg" />
+                  <span className="font-black text-lg text-primary">Selfcare Hub</span>
+                </div>
+                <button onClick={() => setMobileMenuOpen(false)} className="p-1.5 text-on-surface-variant hover:bg-surface-container rounded-lg transition-colors">
+                  <span className="material-symbols-outlined text-[22px]">close</span>
+                </button>
+              </div>
+
+              {/* Nav links */}
+              <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+                {[
+                  { href: "#features", label: t("nav.features"), icon: "star" },
+                  { href: "#how-it-works", label: t("howItWorks.label"), icon: "help_outline" },
+                  { href: "#counsellors", label: t("nav.counsellors"), icon: "person" },
+                ].map((item) => (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-on-surface hover:bg-surface-container transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[20px] text-on-surface-variant">{item.icon}</span>
+                    {item.label}
+                  </a>
+                ))}
+
+                <div className="my-3 border-t border-outline-variant" />
+
+                <Link href="/auth/sign-in" onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-on-surface hover:bg-surface-container transition-colors">
+                  <span className="material-symbols-outlined text-[20px] text-on-surface-variant">login</span>
+                  {t("nav.signin")}
+                </Link>
+                <Link href="/crisis" onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-error hover:bg-error-container/30 transition-colors">
+                  <span className="material-symbols-outlined icon-fill text-[20px]">emergency</span>
+                  {t("nav.crisis")}
+                </Link>
+              </nav>
+
+              {/* CTA at bottom */}
+              <div className="px-4 py-5 border-t border-outline-variant">
+                <Link
+                  href="/auth/sign-up"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-primary text-on-primary font-semibold rounded-xl shadow-md text-sm"
+                >
+                  <span className="material-symbols-outlined text-[18px]">rocket_launch</span>
+                  {t("nav.signup")}
+                </Link>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Hero with 3D Background */}
       <section className="relative flex flex-col items-center justify-center min-h-screen px-6 pt-16 text-center overflow-hidden">
