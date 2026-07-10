@@ -1,8 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
-// Uses OpenRouter (GPT-4o-mini) for reliable NLP analysis
-// Falls back to rule-based scoring if OpenRouter is unavailable
+// ── AI client — Groq primary (free & fast), OpenRouter fallback ──────────────
+
+function getAIClient(): { client: OpenAI; model: string } | null {
+  if (process.env.GROQ_API_KEY) {
+    return {
+      client: new OpenAI({
+        baseURL: "https://api.groq.com/openai/v1",
+        apiKey: process.env.GROQ_API_KEY,
+      }),
+      model: "llama-3.1-8b-instant",
+    };
+  }
+  if (process.env.OPENROUTER_API_KEY) {
+    return {
+      client: new OpenAI({
+        baseURL: "https://openrouter.ai/api/v1",
+        apiKey: process.env.OPENROUTER_API_KEY,
+        defaultHeaders: {
+          "HTTP-Referer": "https://mindcare-ai-mu.vercel.app",
+          "X-Title": "MindCare AI",
+        },
+      }),
+      model: "openai/gpt-4o-mini",
+    };
+  }
+  return null;
+}
 
 interface AnalysisResult {
   nlpSeverity: string;
@@ -17,16 +42,7 @@ interface AnalysisResult {
 }
 
 function getOpenAI() {
-  const key = process.env.OPENROUTER_API_KEY;
-  if (!key) return null;
-  return new OpenAI({
-    baseURL: "https://openrouter.ai/api/v1",
-    apiKey: key,
-    defaultHeaders: {
-      "HTTP-Referer": "https://mindcare-ai-mu.vercel.app",
-      "X-Title": "MindCare AI",
-    },
-  });
+  return getAIClient();
 }
 
 function buildContextText(
@@ -157,11 +173,10 @@ export async function POST(request: NextRequest) {
     const contextText = buildContextText(answers, freeText);
     const riskIndicators = identifyRiskIndicators(answers, assessmentType);
 
-    const openai = getOpenAI();
+    const ai = getOpenAI();
 
-    if (openai) {
+    if (ai) {
       try {
-        // Use GPT-4o-mini to classify mental health state and analyze sentiment
         const prompt = `You are a clinical mental health NLP system. Analyze these ${assessmentType?.toUpperCase() || "PHQ-9"} screening responses and return a JSON object.
 
 Responses:
@@ -178,11 +193,11 @@ Return ONLY valid JSON with this exact structure:
     "neutral": 0.0-1.0,
     "positive": 0.0-1.0
   },
-  "additionalRiskIndicators": ["array of any additional risk factors you detect from the text, empty array if none"]
+  "additionalRiskIndicators": []
 }`;
 
-        const completion = await openai.chat.completions.create({
-          model: "openai/gpt-4o-mini",
+        const completion = await ai.client.chat.completions.create({
+          model: ai.model,
           messages: [{ role: "user", content: prompt }],
           max_tokens: 300,
           temperature: 0.1,
