@@ -174,7 +174,7 @@ export default function LandingPage() {
           <motion.h1
             variants={fadeUp}
             custom={1}
-            className="text-4xl md:text-6xl font-black text-on-surface leading-[1.1] mb-6 tracking-tight"
+            className="text-3xl sm:text-4xl md:text-6xl font-black text-on-surface leading-[1.1] mb-6 tracking-tight"
           >
             {t("landing.title").split("going through matters.")[0]}
             <br className="hidden md:block" />
@@ -184,7 +184,7 @@ export default function LandingPage() {
           <motion.p
             variants={fadeUp}
             custom={2}
-            className="text-lg md:text-xl text-on-surface-variant max-w-2xl mx-auto mb-10 leading-relaxed font-light"
+            className="text-on-surface-variant text-sm sm:text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed font-light"
           >
             {t("landing.subtitle")}
           </motion.p>
@@ -288,7 +288,7 @@ export default function LandingPage() {
             whileInView="visible"
             viewport={{ once: true, margin: "-80px" }}
             variants={staggerContainer}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
           >
             {features.map((f, i) => (
               <motion.div key={f.title} variants={fadeUp} custom={i}>
@@ -337,7 +337,7 @@ export default function LandingPage() {
             whileInView="visible"
             viewport={{ once: true, margin: "-80px" }}
             variants={staggerContainer}
-            className="grid grid-cols-1 md:grid-cols-3 gap-8"
+            className="grid grid-cols-1 sm:grid-cols-3 gap-8"
           >
             {steps.map((step, i) => (
               <motion.div

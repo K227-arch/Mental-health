@@ -11,7 +11,7 @@ export default function CounsellorLayout({ children }: { children: React.ReactNo
       <Navbar variant="counsellor" />
       <div className="flex flex-1 pt-16 h-full overflow-hidden relative z-10">
         <CounsellorSidebar />
-        <main className="flex-1 overflow-y-auto bg-surface/95">
+        <main className="flex-1 overflow-y-auto bg-surface/95 pb-16 md:pb-0">
           {children}
         </main>
       </div>

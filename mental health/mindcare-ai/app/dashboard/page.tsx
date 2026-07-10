@@ -257,7 +257,7 @@ export default function DashboardPage() {
         )}
         <StudentSidebar />
 
-        <main className="flex-1 overflow-y-auto bg-surface p-4 md:p-8">
+        <main className="flex-1 overflow-y-auto bg-surface p-4 md:p-8 pb-20 md:pb-8">
           <div className="max-w-4xl mx-auto space-y-6">
             
             {/* Welcome Header */}

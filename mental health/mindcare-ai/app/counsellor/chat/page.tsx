@@ -280,9 +280,9 @@ export default function CounsellorChat() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-64px)] bg-surface">
+    <div className="flex h-[calc(100svh-64px)] bg-surface">
       {/* Sidebar - Student List */}
-      <aside className="w-72 border-r border-outline-variant bg-surface-container-low flex flex-col overflow-hidden">
+      <aside className="hidden sm:flex w-72 border-r border-outline-variant bg-surface-container-low flex-col overflow-hidden shrink-0">
         <div className="p-4 border-b border-outline-variant">
           <h2 className="text-sm font-bold text-on-surface">{t("counsellor.chat.conversations")}</h2>
           <p className="text-xs text-on-surface-variant mt-0.5">{sessions.length} {t("counsellor.chat.activeSessions")}</p>

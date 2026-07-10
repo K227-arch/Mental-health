@@ -617,8 +617,8 @@ export default function ScreeningPage() {
         <StudentSidebar />
 
         {/* Main Content */}
-        <main className="flex-1 flex flex-col relative z-10 overflow-hidden" style={{ height: "calc(100vh - 64px)" }}>
-          <div className="flex-1 w-full max-w-3xl mx-auto flex flex-col px-4 md:px-6 min-h-0">
+        <main className="flex-1 flex flex-col relative z-10 overflow-hidden pb-16 md:pb-0" style={{ height: "calc(100svh - 64px)" }}>
+          <div className="flex-1 w-full max-w-3xl mx-auto flex flex-col px-3 md:px-6 min-h-0">
 
             {/* Chat interface - PHQ-9 then AI chat */}
             {started && (

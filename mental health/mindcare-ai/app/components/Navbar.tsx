@@ -145,7 +145,7 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
             </button>
 
             {notifOpen && (
-              <div className="absolute right-0 top-full mt-2 w-80 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg animate-fade-in overflow-hidden z-50">
+              <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg animate-fade-in overflow-hidden z-50 max-w-[calc(100vw-1.5rem)]">
                 <div className="p-3 border-b border-outline-variant flex items-center justify-between">
                   <span className="text-sm font-semibold text-on-surface">{t("navbar.notifications")}</span>
                   {notifications.length > 0 && (
