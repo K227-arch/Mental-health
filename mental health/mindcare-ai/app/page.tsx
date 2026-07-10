@@ -122,7 +122,7 @@ export default function LandingPage() {
       >
         <Link href="/" className="flex items-center gap-3">
           <img src="/logo.jpeg" alt="Selfcare Hub" className="w-14 h-14 object-contain rounded-xl shadow-sm" />
-          <span className="font-black text-2xl text-primary tracking-tight" style={{ fontFamily: "inherit" }}>Selfcare Hub</span>
+          <span className="hidden sm:block font-black text-2xl text-primary tracking-tight" style={{ fontFamily: "inherit" }}>Selfcare Hub</span>
         </Link>
         <div className="hidden md:flex items-center gap-6">
           <a href="#features" className="text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">{t("nav.features")}</a>

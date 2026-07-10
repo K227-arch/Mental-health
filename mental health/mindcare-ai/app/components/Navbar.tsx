@@ -113,7 +113,7 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
           </button>
           <Link href="/" className="flex items-center gap-2">
             <img src="/logo.jpeg" alt="Selfcare Hub" className="w-8 h-8 object-contain rounded-lg" />
-            <span className="font-bold text-2xl text-primary tracking-tight">Selfcare Hub</span>
+            <span className="hidden sm:block font-bold text-2xl text-primary tracking-tight">Selfcare Hub</span>
           </Link>
         </div>
 
