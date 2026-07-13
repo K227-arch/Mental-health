@@ -329,7 +329,7 @@ export const hopeMessages: HopeMessage[] = [
   {
     id: "1",
     text: "Emotions are not problems to be solved. They are signals to be interpreted.",
-    image: "/hope-1.jpg",
+    image: "/hope-1.jpeg",
     colorClass: "bg-surface-container-low",
     gradientClass: "from-primary to-secondary",
     textClass: "text-on-primary",
@@ -337,7 +337,7 @@ export const hopeMessages: HopeMessage[] = [
   {
     id: "2",
     text: "Self-love first means respecting, accepting, forgiving, and valuing yourself.",
-    image: "/hope-2.jpg",
+    image: "/hope-2.jpeg",
     colorClass: "bg-surface-container-low",
     gradientClass: "from-secondary to-primary",
     textClass: "text-on-secondary-container",
@@ -345,7 +345,7 @@ export const hopeMessages: HopeMessage[] = [
   {
     id: "3",
     text: "Not all wounds are visible. Remember to check on people.",
-    image: "/hope-3.jpg",
+    image: "/hope-3.jpeg",
     colorClass: "bg-surface-container-low",
     gradientClass: "from-outline to-surface-variant",
     textClass: "text-on-surface",
@@ -353,7 +353,7 @@ export const hopeMessages: HopeMessage[] = [
   {
     id: "4",
     text: "Mental health is just health. We don't shame a broken bone; we shouldn't shame a heavy heart.",
-    image: "/hope-4.jpg",
+    image: "/hope-4.jpeg",
     colorClass: "bg-surface-container-low",
     gradientClass: "from-primary-fixed-dim to-primary",
     textClass: "text-on-primary",
@@ -361,7 +361,7 @@ export const hopeMessages: HopeMessage[] = [
   {
     id: "5",
     text: "Men need to know it's okay to feel, to cry, to ask for help, to be vulnerable.",
-    image: "/hope-5.jpg",
+    image: "/hope-5.jpeg",
     colorClass: "bg-surface-container-low",
     gradientClass: "from-secondary-fixed-dim to-secondary",
     textClass: "text-on-secondary",
@@ -369,7 +369,7 @@ export const hopeMessages: HopeMessage[] = [
   {
     id: "6",
     text: "Overthinking is the thief of happiness. Take a deep breath — it's just a bad day, not a bad life.",
-    image: "/hope-6.jpg",
+    image: "/hope-6.jpeg",
     colorClass: "bg-surface-container-low",
     gradientClass: "from-tertiary-fixed-dim to-tertiary-fixed",
     textClass: "text-on-tertiary-fixed",
@@ -377,7 +377,7 @@ export const hopeMessages: HopeMessage[] = [
   {
     id: "7",
     text: "You're not alone in feeling judged. Fear, worry, and self-doubt are common — but they don't define you.",
-    image: "/hope-7.jpg",
+    image: "/hope-7.jpeg",
     colorClass: "bg-surface-container-low",
     gradientClass: "from-primary to-secondary",
     textClass: "text-on-primary",
@@ -385,7 +385,7 @@ export const hopeMessages: HopeMessage[] = [
   {
     id: "8",
     text: "Behind every smile may be a silent battle. Be kind. Start a conversation. You're not alone.",
-    image: "/hope-8.jpg",
+    image: "/hope-8.jpeg",
     colorClass: "bg-surface-container-low",
     gradientClass: "from-secondary to-primary",
     textClass: "text-on-secondary-container",
@@ -393,7 +393,7 @@ export const hopeMessages: HopeMessage[] = [
   {
     id: "9",
     text: "Even if you have only the strength to beg for food, it is the blessing of the Lord.",
-    image: "/hope-9.jpg",
+    image: "/hope-9.jpeg",
     colorClass: "bg-surface-container-low",
     gradientClass: "from-outline to-surface-variant",
     textClass: "text-on-surface",
@@ -401,7 +401,7 @@ export const hopeMessages: HopeMessage[] = [
   {
     id: "10",
     text: "Movement heals. Take care of your body and your mind will follow.",
-    image: "/hope-10.jpg",
+    image: "/hope-10.jpeg",
     colorClass: "bg-surface-container-low",
     gradientClass: "from-primary-fixed-dim to-primary",
     textClass: "text-on-primary",
