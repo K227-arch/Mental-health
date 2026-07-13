@@ -68,6 +68,8 @@ export default function ScreeningPage() {
   const [nlpContextRef, setNlpContextRef] = useState<object | null>(null);
   const [checkingLastScreening, setCheckingLastScreening] = useState(true);
   const [daysUntilNextScreening, setDaysUntilNextScreening] = useState<number | null>(null);
+  const [chatHistory, setChatHistory] = useState<{ id: string; title: string; date: string; messages: Message[] }[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const cameraPreviewRef = useRef<HTMLVideoElement>(null);
@@ -80,6 +82,57 @@ export default function ScreeningPage() {
   useEffect(() => {
     setMessages((prev) => prev.map((m) => m.id === "1" && !m.time ? { ...m, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) } : m));
   }, []);
+
+  // Load chat history from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("mindcare_chat_history");
+      if (saved) setChatHistory(JSON.parse(saved));
+    } catch {}
+  }, []);
+
+  // Save current conversation to history when it has enough messages
+  const saveToHistory = () => {
+    if (messages.length < 3 || phase !== "chat") return;
+    const firstUserMsg = messages.find((m) => m.role === "user")?.content || "New conversation";
+    const title = firstUserMsg.slice(0, 40) + (firstUserMsg.length > 40 ? "..." : "");
+    const id = `chat-${Date.now()}`;
+    const newEntry = { id, title, date: new Date().toISOString(), messages: messages.slice(-30) };
+
+    setChatHistory((prev) => {
+      const updated = [newEntry, ...prev.filter((h) => h.id !== id)].slice(0, 20);
+      localStorage.setItem("mindcare_chat_history", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  // Auto-save to history periodically
+  useEffect(() => {
+    if (phase !== "chat" || messages.length < 4) return;
+    const timeout = setTimeout(saveToHistory, 5000);
+    return () => clearTimeout(timeout);
+  }, [messages, phase]);
+
+  const loadHistorySession = (session: { id: string; title: string; date: string; messages: Message[] }) => {
+    setMessages(session.messages);
+    setPhase("chat");
+    setConversationStage("exploration");
+    setHistoryOpen(false);
+  };
+
+  const startNewChat = () => {
+    // Save current conversation first
+    saveToHistory();
+    setMessages([{
+      id: `new-${Date.now()}`,
+      role: "ai",
+      content: "Starting a new conversation. How are you feeling today?",
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    }]);
+    setPhase("chat");
+    setConversationStage("rapport");
+    setHistoryOpen(false);
+  };
 
   useEffect(() => {
     if (cameraPreviewRef.current && cameraStream) {
@@ -799,8 +852,67 @@ export default function ScreeningPage() {
         {/* Sidebar */}
         <StudentSidebar />
 
+        {/* Chat History Sidebar — like ChatGPT */}
+        {historyOpen && (
+          <>
+            <div className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm md:hidden" onClick={() => setHistoryOpen(false)} />
+            <aside className="fixed md:relative left-0 top-16 bottom-0 z-40 w-72 bg-surface-container-lowest border-r border-outline-variant flex flex-col shadow-xl md:shadow-none animate-slide-in">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-outline-variant">
+                <h3 className="text-sm font-semibold text-on-surface">Chat History</h3>
+                <div className="flex items-center gap-1">
+                  <button onClick={startNewChat} className="p-1.5 rounded-lg hover:bg-surface-container transition-colors" title="New chat">
+                    <span className="material-symbols-outlined text-[18px] text-primary">add</span>
+                  </button>
+                  <button onClick={() => setHistoryOpen(false)} className="p-1.5 rounded-lg hover:bg-surface-container transition-colors md:hidden">
+                    <span className="material-symbols-outlined text-[18px] text-on-surface-variant">close</span>
+                  </button>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                {chatHistory.length === 0 ? (
+                  <div className="text-center py-10 text-on-surface-variant/50">
+                    <span className="material-symbols-outlined text-[32px] block mb-2 opacity-30">chat_bubble_outline</span>
+                    <p className="text-xs">No previous chats yet</p>
+                  </div>
+                ) : (
+                  chatHistory.map((session) => (
+                    <button
+                      key={session.id}
+                      onClick={() => loadHistorySession(session)}
+                      className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-surface-container transition-colors group"
+                    >
+                      <p className="text-sm text-on-surface truncate font-medium">{session.title}</p>
+                      <p className="text-[10px] text-on-surface-variant mt-0.5">
+                        {new Date(session.date).toLocaleDateString()} · {session.messages.length} messages
+                      </p>
+                    </button>
+                  ))
+                )}
+              </div>
+            </aside>
+          </>
+        )}
+
         {/* Main Content */}
         <main className="flex-1 flex flex-col relative z-10 overflow-hidden pb-16 md:pb-0" style={{ height: "calc(100svh - 64px)" }}>
+          {/* History toggle button */}
+          <div className="flex items-center gap-2 px-3 md:px-6 py-2 border-b border-outline-variant/30 shrink-0">
+            <button
+              onClick={() => setHistoryOpen(!historyOpen)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">history</span>
+              History
+            </button>
+            <button
+              onClick={startNewChat}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">add</span>
+              New Chat
+            </button>
+          </div>
+
           <div className="flex-1 w-full max-w-3xl mx-auto flex flex-col px-3 md:px-6 min-h-0">
 
             {/* Chat interface - PHQ-9 then AI chat */}
