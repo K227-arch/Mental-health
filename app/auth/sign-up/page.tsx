@@ -11,9 +11,7 @@ export default function SignUpPage() {
   const { t } = useTranslation();
   const [role, setRole] = useState<"student" | "counsellor">("student");
   const [name, setName] = useState("");
-  const [studentId, setStudentId] = useState("");
   const [faculty, setFaculty] = useState("");
-  const [yearOfStudy, setYearOfStudy] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -86,9 +84,7 @@ export default function SignUpPage() {
             name,
             email,
             role: redirectTarget === "/counsellor" ? "counsellor" : "student",
-            studentId: role === "student" ? studentId : undefined,
             faculty: role === "student" ? faculty : undefined,
-            yearOfStudy: role === "student" ? parseInt(yearOfStudy) : undefined,
           }),
         }).catch(() => {});
       }
@@ -273,78 +269,32 @@ export default function SignUpPage() {
               {role === "student" && (
                 <>
                   <div>
-                    <label htmlFor="studentId" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
-                      Student ID
+                    <label htmlFor="faculty" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
+                      Faculty
                     </label>
                     <div className="relative">
                       <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
-                        <span className="material-symbols-outlined text-[18px]">badge</span>
+                        <span className="material-symbols-outlined text-[18px]">school</span>
                       </span>
-                      <input
-                        id="studentId"
-                        type="text"
-                        value={studentId}
-                        onChange={(e) => setStudentId(e.target.value)}
-                        placeholder="e.g. 2100701234"
+                      <select
+                        id="faculty"
+                        value={faculty}
+                        onChange={(e) => setFaculty(e.target.value)}
                         required
-                        className="w-full pl-10 pr-4 py-2.5 bg-surface-container-low border border-outline-variant/40 text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all placeholder:text-on-surface-variant/40"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label htmlFor="faculty" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
-                        Faculty
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
-                          <span className="material-symbols-outlined text-[18px]">school</span>
-                        </span>
-                        <select
-                          id="faculty"
-                          value={faculty}
-                          onChange={(e) => setFaculty(e.target.value)}
-                          required
-                          className="w-full pl-10 pr-4 py-2.5 bg-surface-container-low border border-outline-variant/40 text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-none"
-                        >
-                          <option value="">Select</option>
-                          <option value="Computing & IT">Computing & IT</option>
-                          <option value="Engineering">Engineering</option>
-                          <option value="Science">Science</option>
-                          <option value="Business">Business</option>
-                          <option value="Arts & Humanities">Arts & Humanities</option>
-                          <option value="Education">Education</option>
-                          <option value="Law">Law</option>
-                          <option value="Medicine">Medicine</option>
-                          <option value="Social Sciences">Social Sciences</option>
-                          <option value="Other">Other</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div>
-                      <label htmlFor="yearOfStudy" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
-                        Year
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
-                          <span className="material-symbols-outlined text-[18px]">calendar_month</span>
-                        </span>
-                        <select
-                          id="yearOfStudy"
-                          value={yearOfStudy}
-                          onChange={(e) => setYearOfStudy(e.target.value)}
-                          required
-                          className="w-full pl-10 pr-4 py-2.5 bg-surface-container-low border border-outline-variant/40 text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-none"
-                        >
-                          <option value="">Select</option>
-                          <option value="1">Year 1</option>
-                          <option value="2">Year 2</option>
-                          <option value="3">Year 3</option>
-                          <option value="4">Year 4</option>
-                          <option value="5">Year 5+</option>
-                        </select>
-                      </div>
+                        className="w-full pl-10 pr-4 py-2.5 bg-surface-container-low border border-outline-variant/40 text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-none"
+                      >
+                        <option value="">Select</option>
+                        <option value="Computing & IT">Computing & IT</option>
+                        <option value="Engineering">Engineering</option>
+                        <option value="Science">Science</option>
+                        <option value="Business">Business</option>
+                        <option value="Arts & Humanities">Arts & Humanities</option>
+                        <option value="Education">Education</option>
+                        <option value="Law">Law</option>
+                        <option value="Medicine">Medicine</option>
+                        <option value="Social Sciences">Social Sciences</option>
+                        <option value="Other">Other</option>
+                      </select>
                     </div>
                   </div>
                 </>
