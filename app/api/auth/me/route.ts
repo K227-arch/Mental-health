@@ -56,13 +56,14 @@ export async function GET(request: NextRequest) {
       .limit(1);
 
     if (!profiles || profiles.length === 0) {
+      // @ts-ignore - InsForge SDK type issue on Vercel
       await insforgeAdmin.database.from("student_profiles").insert([{
         id: userId,
         name: userName || userEmail?.split("@")[0] || "Student",
         email: userEmail || "",
         role: "student",
         anonymous_id: userId.slice(0, 8),
-      }]).select();
+      }]);
     } else {
       if (profiles[0]?.role) role = profiles[0].role;
       if (profiles[0]?.name) userName = profiles[0].name;
