@@ -11,11 +11,15 @@ export default function SignUpPage() {
   const { t } = useTranslation();
   const [role, setRole] = useState<"student" | "counsellor">("student");
   const [name, setName] = useState("");
+  const [studentId, setStudentId] = useState("");
+  const [faculty, setFaculty] = useState("");
+  const [yearOfStudy, setYearOfStudy] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [consent, setConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
@@ -36,6 +40,11 @@ export default function SignUpPage() {
 
     if (password.length < 6) {
       setError("Password must be at least 6 characters.");
+      return;
+    }
+
+    if (role === "student" && !consent) {
+      setError("You must consent to participate before continuing.");
       return;
     }
 
@@ -72,7 +81,15 @@ export default function SignUpPage() {
         await fetch("/api/auth/sign-up", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: data.user.id, name, email, role: redirectTarget === "/counsellor" ? "counsellor" : "student" }),
+          body: JSON.stringify({
+            userId: data.user.id,
+            name,
+            email,
+            role: redirectTarget === "/counsellor" ? "counsellor" : "student",
+            studentId: role === "student" ? studentId : undefined,
+            faculty: role === "student" ? faculty : undefined,
+            yearOfStudy: role === "student" ? parseInt(yearOfStudy) : undefined,
+          }),
         }).catch(() => {});
       }
 
@@ -252,6 +269,87 @@ export default function SignUpPage() {
                 </div>
               </div>
 
+              {/* Student ID & Faculty/Year — only for students */}
+              {role === "student" && (
+                <>
+                  <div>
+                    <label htmlFor="studentId" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
+                      Student ID
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
+                        <span className="material-symbols-outlined text-[18px]">badge</span>
+                      </span>
+                      <input
+                        id="studentId"
+                        type="text"
+                        value={studentId}
+                        onChange={(e) => setStudentId(e.target.value)}
+                        placeholder="e.g. 2100701234"
+                        required
+                        className="w-full pl-10 pr-4 py-2.5 bg-surface-container-low border border-outline-variant/40 text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all placeholder:text-on-surface-variant/40"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="faculty" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
+                        Faculty
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
+                          <span className="material-symbols-outlined text-[18px]">school</span>
+                        </span>
+                        <select
+                          id="faculty"
+                          value={faculty}
+                          onChange={(e) => setFaculty(e.target.value)}
+                          required
+                          className="w-full pl-10 pr-4 py-2.5 bg-surface-container-low border border-outline-variant/40 text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-none"
+                        >
+                          <option value="">Select</option>
+                          <option value="Computing & IT">Computing & IT</option>
+                          <option value="Engineering">Engineering</option>
+                          <option value="Science">Science</option>
+                          <option value="Business">Business</option>
+                          <option value="Arts & Humanities">Arts & Humanities</option>
+                          <option value="Education">Education</option>
+                          <option value="Law">Law</option>
+                          <option value="Medicine">Medicine</option>
+                          <option value="Social Sciences">Social Sciences</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label htmlFor="yearOfStudy" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
+                        Year
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
+                          <span className="material-symbols-outlined text-[18px]">calendar_month</span>
+                        </span>
+                        <select
+                          id="yearOfStudy"
+                          value={yearOfStudy}
+                          onChange={(e) => setYearOfStudy(e.target.value)}
+                          required
+                          className="w-full pl-10 pr-4 py-2.5 bg-surface-container-low border border-outline-variant/40 text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-none"
+                        >
+                          <option value="">Select</option>
+                          <option value="1">Year 1</option>
+                          <option value="2">Year 2</option>
+                          <option value="3">Year 3</option>
+                          <option value="4">Year 4</option>
+                          <option value="5">Year 5+</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
               <div>
                 <label htmlFor="email" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
                   {t("auth.signin.email")}
@@ -349,6 +447,27 @@ export default function SignUpPage() {
                 )}
               </div>
 
+              {/* Consent — only for students */}
+              {role === "student" && (
+                <div className="bg-surface-container-low border border-outline-variant/40 rounded-xl p-4 space-y-2.5">
+                  <p className="text-xs text-on-surface-variant leading-relaxed">
+                    The following information will be kept strictly confidential and used solely for research classification purposes. You are free to withdraw at any point if not comfortable continuing.
+                  </p>
+                  <div className="flex items-start gap-2.5">
+                    <input
+                      id="consent"
+                      type="checkbox"
+                      checked={consent}
+                      onChange={(e) => setConsent(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30 accent-primary"
+                    />
+                    <label htmlFor="consent" className="text-sm font-medium text-on-surface cursor-pointer leading-snug">
+                      I consent to participate in this interview.
+                    </label>
+                  </div>
+                </div>
+              )}
+
               {error && (
                 <div className="flex items-start gap-2 p-3 bg-error-container/80 text-on-error-container text-sm rounded-xl animate-fade-in">
                   <span className="material-symbols-outlined text-[18px] shrink-0 mt-0.5">error</span>
@@ -358,7 +477,7 @@ export default function SignUpPage() {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || (role === "student" && !consent)}
                 className="w-full py-3 bg-primary text-on-primary font-semibold rounded-xl shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all flex items-center justify-center gap-2 mt-2"
               >
                 {loading ? (

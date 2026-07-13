@@ -31,6 +31,7 @@ export interface WellnessMilestone {
 export interface HopeMessage {
   id: string;
   text: string;
+  image?: string;
   colorClass: string;
   gradientClass: string;
   textClass: string;
@@ -327,45 +328,83 @@ export const assessmentModels: AssessmentModel[] = [
 export const hopeMessages: HopeMessage[] = [
   {
     id: "1",
-    text: "You have survived 100% of your hardest days.",
-    colorClass: "bg-primary-container",
+    text: "Emotions are not problems to be solved. They are signals to be interpreted.",
+    image: "/hope/hope-1.jpg",
+    colorClass: "bg-surface-container-low",
     gradientClass: "from-primary to-secondary",
     textClass: "text-on-primary",
   },
   {
     id: "2",
-    text: "This feeling is temporary, but your strength is permanent.",
-    colorClass: "bg-secondary-container",
+    text: "Self-love first means respecting, accepting, forgiving, and valuing yourself.",
+    image: "/hope/hope-2.jpg",
+    colorClass: "bg-surface-container-low",
     gradientClass: "from-secondary to-primary",
     textClass: "text-on-secondary-container",
   },
   {
     id: "3",
-    text: "It's okay to not be okay. Healing is not linear.",
-    colorClass: "bg-surface-container-high",
+    text: "Not all wounds are visible. Remember to check on people.",
+    image: "/hope/hope-3.jpg",
+    colorClass: "bg-surface-container-low",
     gradientClass: "from-outline to-surface-variant",
     textClass: "text-on-surface",
   },
   {
     id: "4",
-    text: "You are more than your current struggle.",
-    colorClass: "bg-primary",
+    text: "Mental health is just health. We don't shame a broken bone; we shouldn't shame a heavy heart.",
+    image: "/hope/hope-4.jpg",
+    colorClass: "bg-surface-container-low",
     gradientClass: "from-primary-fixed-dim to-primary",
     textClass: "text-on-primary",
   },
   {
     id: "5",
-    text: "One step at a time. You don't have to have it all figured out.",
-    colorClass: "bg-secondary",
+    text: "Men need to know it's okay to feel, to cry, to ask for help, to be vulnerable.",
+    image: "/hope/hope-5.jpg",
+    colorClass: "bg-surface-container-low",
     gradientClass: "from-secondary-fixed-dim to-secondary",
     textClass: "text-on-secondary",
   },
   {
     id: "6",
-    text: "Asking for help is a sign of incredible strength.",
-    colorClass: "bg-tertiary-fixed",
+    text: "Overthinking is the thief of happiness. Take a deep breath — it's just a bad day, not a bad life.",
+    image: "/hope/hope-6.jpg",
+    colorClass: "bg-surface-container-low",
     gradientClass: "from-tertiary-fixed-dim to-tertiary-fixed",
     textClass: "text-on-tertiary-fixed",
+  },
+  {
+    id: "7",
+    text: "You're not alone in feeling judged. Fear, worry, and self-doubt are common — but they don't define you.",
+    image: "/hope/hope-7.jpg",
+    colorClass: "bg-surface-container-low",
+    gradientClass: "from-primary to-secondary",
+    textClass: "text-on-primary",
+  },
+  {
+    id: "8",
+    text: "Behind every smile may be a silent battle. Be kind. Start a conversation. You're not alone.",
+    image: "/hope/hope-8.jpg",
+    colorClass: "bg-surface-container-low",
+    gradientClass: "from-secondary to-primary",
+    textClass: "text-on-secondary-container",
+  },
+  {
+    id: "9",
+    text: "Even if you have only the strength to beg for food, it is the blessing of the Lord.",
+    image: "/hope/hope-9.jpg",
+    colorClass: "bg-surface-container-low",
+    gradientClass: "from-outline to-surface-variant",
+    textClass: "text-on-surface",
+  },
+  {
+    id: "10",
+    text: "Movement heals. Take care of your body and your mind will follow.",
+    image: "/hope/hope-10.jpg",
+    colorClass: "bg-surface-container-low",
+    gradientClass: "from-primary-fixed-dim to-primary",
+    textClass: "text-on-primary",
   },
 ];
 

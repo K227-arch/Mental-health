@@ -403,22 +403,20 @@ export default function DashboardPage() {
             </div>
 
             {/* Messages of Hope - Animated/Flashing */}
-            <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-5 shadow-sm overflow-hidden">
+            <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-5 overflow-hidden">
               <h3 className="text-sm font-semibold text-on-surface mb-4 flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-[20px]">favorite</span>
                 {t("dashboard.hope.title")}
               </h3>
-              <div className="relative h-24 flex items-center justify-center">
+              <div className="relative h-72 rounded-xl overflow-hidden">
                 {hopeMessages.map((msg, idx) => (
                   <div
                     key={msg.id}
-                    className={`absolute inset-0 flex items-center justify-center transition-all duration-1000 ${
+                    className={`absolute inset-0 transition-all duration-1000 ${
                       idx === hopeIndex ? "opacity-100 scale-100" : "opacity-0 scale-95"
                     }`}
                   >
-                    <p className="text-center text-lg md:text-xl font-semibold text-primary px-4 animate-pulse">
-                      &ldquo;{msg.text}&rdquo;
-                    </p>
+                    <img src={msg.image} alt={msg.text} className="w-full h-full object-contain rounded-xl" />
                   </div>
                 ))}
               </div>

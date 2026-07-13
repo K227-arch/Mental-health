@@ -429,16 +429,17 @@ export default function WellnessPage() {
             <div className="animate-fade-in">
               <h2 className="text-xl font-bold text-on-surface mb-2">{t("wellness.hopeTitle")}</h2>
               <p className="text-on-surface-variant text-sm mb-6">{t("wellness.hopeSubtitle")}</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 {hopeMessages.map((msg) => (
                   <div
                     key={msg.id}
-                    className={`relative overflow-hidden rounded-xl aspect-video flex items-center justify-center p-6 text-center ${msg.colorClass}`}
+                    className="relative overflow-hidden rounded-xl shadow-sm"
                   >
-                    <div className={`absolute inset-0 opacity-40 bg-gradient-to-br ${msg.gradientClass}`} />
-                    <p className={`relative z-10 text-sm font-semibold leading-relaxed ${msg.textClass}`}>
-                      "{msg.text}"
-                    </p>
+                    <img
+                      src={msg.image}
+                      alt={msg.text}
+                      className="w-full h-auto rounded-xl"
+                    />
                   </div>
                 ))}
               </div>

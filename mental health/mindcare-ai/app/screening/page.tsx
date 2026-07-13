@@ -44,7 +44,7 @@ export default function ScreeningPage() {
     {
       id: "1",
       role: "ai",
-      content: "Over the last 2 weeks, how often have you been bothered by the following problems?\n\nLittle interest or pleasure in doing things?",
+      content: "Hello, welcome. I\u2019m here to support you \u2014 this is a safe, confidential space.\n\nHow have you been feeling emotionally over the last two weeks?",
       time: "",
     },
   ]);
@@ -61,10 +61,13 @@ export default function ScreeningPage() {
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [cameraRecording, setCameraRecording] = useState(false);
   const [cameraRecorder, setCameraRecorder] = useState<MediaRecorder | null>(null);
-  // Phase: "phq9" = answering questions, "chat" = free AI conversation
-  const [phase, setPhase] = useState<"phq9" | "chat">("phq9");
+  // Phase: "rapport" = initial greeting, "phq9" = answering questions, "functional" = Q10 impairment, "chat" = free AI conversation
+  const [phase, setPhase] = useState<"rapport" | "phq9" | "functional" | "chat">("rapport");
   const [conversationStage, setConversationStage] = useState<"rapport" | "exploration" | "stressors" | "risk" | "intervention">("rapport");
+  const [functionalImpairment, setFunctionalImpairment] = useState<number | null>(null);
   const [nlpContextRef, setNlpContextRef] = useState<object | null>(null);
+  const [checkingLastScreening, setCheckingLastScreening] = useState(true);
+  const [daysUntilNextScreening, setDaysUntilNextScreening] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const cameraPreviewRef = useRef<HTMLVideoElement>(null);
@@ -83,6 +86,57 @@ export default function ScreeningPage() {
       cameraPreviewRef.current.srcObject = cameraStream;
     }
   }, [cameraStream]);
+
+  // Check if student completed a screening in the last 2 weeks
+  // If yes → go directly to chat phase; if no → show rapport + PHQ-9
+  useEffect(() => {
+    (async () => {
+      try {
+        const meRes = await fetch("/api/auth/me");
+        if (!meRes.ok) { setCheckingLastScreening(false); return; }
+        const meData = await meRes.json();
+        const userId = meData?.user?.id;
+        if (!userId) { setCheckingLastScreening(false); return; }
+
+        // Check localStorage for last screening timestamp (fast check)
+        const lastScreeningStr = localStorage.getItem(`mindcare_last_screening_${userId}`);
+        if (lastScreeningStr) {
+          const lastDate = new Date(lastScreeningStr);
+          const now = new Date();
+          const daysDiff = Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+
+          if (daysDiff < 14) {
+            // Less than 2 weeks — go straight to chat
+            setDaysUntilNextScreening(14 - daysDiff);
+            setPhase("chat");
+            setConversationStage("rapport");
+            setMessages([{
+              id: "1",
+              role: "ai",
+              content: `Welcome back! Your last check-in was ${daysDiff === 0 ? "today" : daysDiff === 1 ? "yesterday" : `${daysDiff} days ago`}. Your next assessment will be available in ${14 - daysDiff} days.\n\nIn the meantime, I'm here to chat. How are you feeling today?`,
+              time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            }]);
+            setCheckingLastScreening(false);
+            return;
+          }
+        }
+      } catch {
+        // If anything fails, default to normal flow
+      }
+      setCheckingLastScreening(false);
+    })();
+  }, []);
+
+  const transitionToPhq9 = () => {
+    setPhase("phq9");
+    setCurrentQuestion(0);
+    setAnswers([]);
+    setDone(false);
+    setTotalScore(0);
+    setNlpAnalysis(null);
+    const questions = selectedModel.questions;
+    addMessage("ai", `Thank you for sharing. Let\u2019s check in a bit more closely.\n\nOver the last two weeks, how often have you been bothered by:\n\n**${questions[0].text}**\n\nPlease select how often below.`);
+  };
 
   const startAssessment = () => {
     setStarted(true);
@@ -254,16 +308,32 @@ export default function ScreeningPage() {
           phq9Score: score,
           assessmentType: selectedModel.id,
         });
+        // Only show the recommendation to the student (not full analysis)
         addMessage(
           "ai",
-          `🧠 **AI Analysis Complete**\n\nOur NLP model has analyzed your responses:\n\n` +
-            `**Classification:** ${analysis.nlpSeverity} (${(analysis.confidence * 100).toFixed(1)}% confidence)\n\n` +
-            `**Sentiment:** ${(analysis.sentimentBreakdown.negative * 100).toFixed(0)}% distress · ${(analysis.sentimentBreakdown.neutral * 100).toFixed(0)}% neutral · ${(analysis.sentimentBreakdown.positive * 100).toFixed(0)}% positive\n\n` +
-            (analysis.riskIndicators.length > 0
-              ? `**Risk Indicators:**\n${analysis.riskIndicators.map((r) => `• ${r}`).join("\n")}\n\n`
-              : "") +
-            `**Recommendation:** ${analysis.recommendation}`
+          analysis.recommendation
         );
+
+        // Send full AI analysis to counsellor via notification
+        const analysisDetails = [
+          `🧠 AI Analysis Complete`,
+          `Classification: ${analysis.nlpSeverity} (${(analysis.confidence * 100).toFixed(1)}% confidence)`,
+          `Sentiment: ${(analysis.sentimentBreakdown.negative * 100).toFixed(0)}% distress · ${(analysis.sentimentBreakdown.neutral * 100).toFixed(0)}% neutral · ${(analysis.sentimentBreakdown.positive * 100).toFixed(0)}% positive`,
+          analysis.riskIndicators.length > 0 ? `Risk Indicators: ${analysis.riskIndicators.join("; ")}` : null,
+          `Recommendation: ${analysis.recommendation}`,
+        ].filter(Boolean).join("\n");
+
+        fetch("/api/notifications", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: "counsellor-system",
+            title: "🧠 AI Analysis Result",
+            body: analysisDetails,
+            type: analysis.riskIndicators.length > 0 ? "alert" : "info",
+            link: "/counsellor",
+          }),
+        }).catch(() => {});
       }
     } catch (error) {
       console.error("NLP analysis failed:", error);
@@ -290,35 +360,98 @@ export default function ScreeningPage() {
         const nextQ = questions[currentQuestion + 1];
         addMessage(
           "ai",
-          `Thank you for sharing that.\n\n${nextQ.text}`
+          `Thank you for sharing that.\n\nOver the last two weeks, how often have you been bothered by:\n\n**${nextQ.text}**`
         );
         setCurrentQuestion((prev) => prev + 1);
       } else {
-        const score = newAnswers.reduce((a, b) => a + b, 0);
-        setTotalScore(score);
-        setDone(true);
-        const severity = selectedModel.getSeverity(score);
-        addMessage(
-          "ai",
-          `Thank you for completing the assessment.\n\nYou're doing great by checking in. Based on your responses, here's what I noticed: **${severity.label}**.\n\n${
-            score >= selectedModel.maxScore * 0.7
-              ? "I want you to know that help is available. Your counselor will be notified securely. Please consider reaching out to crisis support if you need immediate help."
-              : score >= selectedModel.maxScore * 0.5
-              ? "Your wellbeing matters. I recommend scheduling a session with a counselor to discuss what you're experiencing."
-              : "You're doing okay, but keep checking in. Small steps make a big difference."
-          }\n\nRunning AI-powered NLP analysis on your responses... 🔍`
-        );
-        saveScreeningResult(newAnswers, score, severity.label);
-        runNlpAnalysis(newAnswers, score).then(() => {
-          // After analysis, transition to AI chat phase
-          // Start at Stage 2 (exploration) since rapport was built during PHQ-9
-          setTimeout(() => {
-            setPhase("chat");
-            setConversationStage("exploration");
-            addMessage("ai", "Your check-in is complete. I'm now here to chat — tell me more about what's on your mind, or let's explore what you've been experiencing. What emotions have been most present for you recently? 💚");
-          }, 1500);
-        });
+        // All scored questions done — check if PHQ-9 to show Q10 (functional impairment)
+        if (selectedModel.id === "phq9") {
+          // Check Q9 (index 8) for self-harm flag
+          const q9Score = newAnswers[8] ?? 0;
+          if (q9Score >= 1) {
+            // Auto-flag for immediate follow-up
+            fetch("/api/notifications", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                userId: "counsellor-system",
+                title: "⚠️ Question 9 Flagged — Immediate Follow-up Required",
+                body: `A student answered Question 9 (thoughts of self-harm) with score ${q9Score}/3. Immediate review is required.`,
+                type: "critical",
+                link: "/counsellor",
+              }),
+            }).catch(() => {});
+          }
+
+          // Show Question 10: Functional Impairment
+          setPhase("functional");
+          addMessage(
+            "ai",
+            `Thank you for sharing that.\n\nOne more question — if you checked off any problems above, how difficult have these problems made it for you to do your work, take care of things at home, or get along with other people?`
+          );
+        } else {
+          // Non-PHQ-9: complete immediately
+          completeAssessment(newAnswers);
+        }
       }
+    }, 500);
+  };
+
+  const completeAssessment = (finalAnswers: number[]) => {
+    const score = finalAnswers.reduce((a, b) => a + b, 0);
+    setTotalScore(score);
+    setDone(true);
+    const severity = selectedModel.getSeverity(score);
+    addMessage(
+      "ai",
+      `Thank you for completing the assessment.\n\nYou're doing great by checking in. Based on your responses, here's what I noticed: **${severity.label}**.\n\n${
+        score >= selectedModel.maxScore * 0.7
+          ? "I want you to know that help is available. Your counselor will be notified securely. Please consider reaching out to crisis support if you need immediate help."
+          : score >= selectedModel.maxScore * 0.5
+          ? "Your wellbeing matters. I recommend scheduling a session with a counselor to discuss what you're experiencing."
+          : "You're doing okay, but keep checking in. Small steps make a big difference."
+      }`
+    );
+    saveScreeningResult(finalAnswers, score, severity.label);
+
+    // Save screening completion date so next visit goes to chat directly
+    try {
+      fetch("/api/auth/me").then((r) => r.ok ? r.json() : null).then((d) => {
+        const uid = d?.user?.id;
+        if (uid) localStorage.setItem(`mindcare_last_screening_${uid}`, new Date().toISOString());
+      });
+    } catch {}
+
+    runNlpAnalysis(finalAnswers, score).then(() => {
+      setTimeout(() => {
+        setPhase("chat");
+        setConversationStage("exploration");
+        addMessage("ai", "Your check-in is complete. I'm now here to chat — tell me more about what's on your mind, or let's explore what you've been experiencing. What emotions have been most present for you recently? 💚");
+      }, 1500);
+    });
+  };
+
+  const handleFunctionalSelect = (optionIndex: number) => {
+    const options = ["Not difficult at all", "Somewhat difficult", "Very difficult", "Extremely difficult"];
+    addMessage("user", options[optionIndex]);
+    setFunctionalImpairment(optionIndex);
+
+    // Send functional impairment to counsellor
+    fetch("/api/notifications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: "counsellor-system",
+        title: "📋 Functional Impairment (Q10)",
+        body: `Student reported: "${options[optionIndex]}" for functional impairment.`,
+        type: optionIndex >= 2 ? "alert" : "info",
+        link: "/counsellor",
+      }),
+    }).catch(() => {});
+
+    // Now complete the assessment
+    setTimeout(() => {
+      completeAssessment(answers);
     }, 500);
   };
 
@@ -329,17 +462,23 @@ export default function ScreeningPage() {
     const userMsg = input;
     setInput("");
 
-    if (phase === "chat") {
+    if (phase === "rapport") {
+      // Stage 1 complete — student has responded to rapport question
+      // Transition to PHQ-9 after a brief acknowledgment
+      setTimeout(() => {
+        transitionToPhq9();
+      }, 600);
+    } else if (phase === "chat") {
       // In chat phase, get AI response
       getAIResponse(userMsg);
     } else if (phase === "phq9") {
-      // During PHQ-9, get AI response AND re-show current question
-      getAIResponse(userMsg);
+      // During PHQ-9, free text is treated as additional context.
+      // Acknowledge it and gently remind them to select an option.
       setTimeout(() => {
         if (!done && currentQuestion < selectedModel.questions.length) {
-          addMessage("ai", `Let's continue with the assessment.\n\n${selectedModel.questions[currentQuestion].text}`);
+          addMessage("ai", `Thank you for sharing that — I hear you. Please select one of the options below to indicate how often you've experienced this over the last two weeks.`);
         }
-      }, 1200);
+      }, 500);
     }
   };
 
@@ -621,8 +760,24 @@ export default function ScreeningPage() {
           <div className="flex-1 w-full max-w-3xl mx-auto flex flex-col px-3 md:px-6 min-h-0">
 
             {/* Chat interface - PHQ-9 then AI chat */}
-            {started && (
+            {checkingLastScreening ? (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="flex items-center gap-2 text-on-surface-variant">
+                  <span className="material-symbols-outlined animate-spin text-primary">progress_activity</span>
+                  <span className="text-sm">Loading your check-in...</span>
+                </div>
+              </div>
+            ) : started && (
               <>
+                {/* Next screening indicator */}
+                {daysUntilNextScreening !== null && phase === "chat" && (
+                  <div className="flex justify-center py-2">
+                    <span className="text-xs bg-surface-container-low border border-outline-variant/40 px-3 py-1.5 rounded-full text-on-surface-variant flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-[14px]">event_repeat</span>
+                      Next assessment in {daysUntilNextScreening} day{daysUntilNextScreening !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                )}
                 {/* Chat Area */}
         <div className="flex-1 flex flex-col bg-surface-container-lowest/80 backdrop-blur-md rounded-2xl border border-outline-variant/30 shadow-sm overflow-hidden min-h-0">
           {/* Messages */}
@@ -633,7 +788,7 @@ export default function ScreeningPage() {
               </span>
             </div>
             {/* Stage indicator — shown during AI chat phase */}
-            {phase === "chat" && (
+            {(phase === "chat" || phase === "rapport") && (
               <div className="flex justify-center">
                 <span className={`text-xs px-3 py-1 rounded-full font-medium flex items-center gap-1.5 ${
                   conversationStage === "risk"
@@ -698,61 +853,7 @@ export default function ScreeningPage() {
                   <div className="text-xs text-on-surface-variant mt-1">Assessment Complete</div>
                 </div>
 
-                {/* NLP Analysis Results */}
-                {analyzing && (
-                  <div className="mt-4 px-6 py-4 rounded-2xl border border-outline-variant/30 bg-surface-container-low text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="material-symbols-outlined text-primary animate-spin text-[20px]">progress_activity</span>
-                      <span className="text-sm text-on-surface-variant">Running NLP analysis...</span>
-                    </div>
-                  </div>
-                )}
-
-                {nlpAnalysis && (
-                  <div className="mt-4 px-5 py-4 rounded-2xl border border-outline-variant/30 bg-surface-container-lowest text-left space-y-3">
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-primary text-[20px]">neurology</span>
-                      <span className="text-sm font-bold text-on-surface">AI-Powered Analysis</span>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-surface-container-low rounded-xl p-3">
-                        <div className="text-xs text-on-surface-variant">NLP Classification</div>
-                        <div className="text-sm font-semibold text-on-surface mt-0.5">{nlpAnalysis.nlpSeverity}</div>
-                        <div className="text-xs text-on-surface-variant">{(nlpAnalysis.confidence * 100).toFixed(1)}% confidence</div>
-                      </div>
-                      <div className="bg-surface-container-low rounded-xl p-3">
-                        <div className="text-xs text-on-surface-variant">Sentiment</div>
-                        <div className="flex gap-1 mt-1">
-                          <div className="flex-1 bg-error/20 rounded h-2" style={{ flex: nlpAnalysis.sentimentBreakdown.negative }} />
-                          <div className="flex-1 bg-outline/20 rounded h-2" style={{ flex: nlpAnalysis.sentimentBreakdown.neutral }} />
-                          <div className="flex-1 bg-secondary/20 rounded h-2" style={{ flex: nlpAnalysis.sentimentBreakdown.positive }} />
-                        </div>
-                        <div className="flex justify-between text-[10px] text-on-surface-variant mt-1">
-                          <span>Distress</span>
-                          <span>Positive</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {nlpAnalysis.riskIndicators.length > 0 && (
-                      <div className="bg-error-container/50 rounded-xl p-3">
-                        <div className="text-xs font-semibold text-error mb-1">Risk Indicators</div>
-                        {nlpAnalysis.riskIndicators.map((indicator, i) => (
-                          <div key={i} className="text-xs text-on-error-container flex items-start gap-1">
-                            <span className="text-error mt-0.5">•</span>
-                            {indicator}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="bg-primary-container/30 rounded-xl p-3">
-                      <div className="text-xs font-semibold text-primary mb-1">AI Recommendation</div>
-                      <div className="text-xs text-on-surface leading-relaxed">{nlpAnalysis.recommendation}</div>
-                    </div>
-                  </div>
-                )}
+                {/* NLP analysis results are sent to counsellor only — not shown to student */}
 
                 <div className="flex flex-col sm:flex-row gap-3 mt-4 justify-center">
                   <Link
@@ -779,12 +880,42 @@ export default function ScreeningPage() {
           {/* Input area */}
           <div className="p-4 bg-surface-container-lowest border-t border-outline-variant/20 flex flex-col gap-3">
             {/* Answer options - dynamic per phase */}
+            {phase === "rapport" && (
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                {["I've been struggling", "Feeling okay", "Not great lately", "I need someone to talk to"].map((sug, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      addMessage("user", sug);
+                      setFreeTextInputs((prev) => [...prev, sug]);
+                      setTimeout(() => transitionToPhq9(), 600);
+                    }}
+                    className="px-3.5 py-2 bg-surface-container-low hover:bg-primary-container hover:text-on-primary-container border border-outline-variant/50 rounded-full text-xs font-medium transition-all whitespace-nowrap shrink-0"
+                  >
+                    {sug}
+                  </button>
+                ))}
+              </div>
+            )}
             {phase === "phq9" && !done && currentQuestion < selectedModel.questions.length && (
               <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
                 {selectedModel.questions[currentQuestion].options.map((opt, i) => (
                   <button
                     key={i}
                     onClick={() => handleOptionSelect(i)}
+                    className="px-3.5 py-2 bg-surface-container-low hover:bg-secondary-container hover:text-on-secondary-container border border-outline-variant/50 rounded-full text-xs font-medium transition-all whitespace-nowrap shrink-0"
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            )}
+            {phase === "functional" && (
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                {["Not difficult at all", "Somewhat difficult", "Very difficult", "Extremely difficult"].map((opt, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleFunctionalSelect(i)}
                     className="px-3.5 py-2 bg-surface-container-low hover:bg-secondary-container hover:text-on-secondary-container border border-outline-variant/50 rounded-full text-xs font-medium transition-all whitespace-nowrap shrink-0"
                   >
                     {opt}

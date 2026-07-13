@@ -126,26 +126,24 @@ export default function LandingPage() {
           <img src="/logo.jpeg" alt="Selfcare Hub" className="w-14 h-14 object-contain rounded-xl shadow-sm" />
           <span className="hidden sm:block font-black text-2xl text-primary tracking-tight" style={{ fontFamily: "inherit" }}>Selfcare Hub</span>
         </Link>
-        <div className="hidden md:flex items-center gap-6">
-          <a href="#features" className="text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">{t("nav.features")}</a>
-          <a href="#how-it-works" className="text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">{t("howItWorks.label")}</a>
-          <a href="#counsellors" className="text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">{t("nav.counsellors")}</a>
-        </div>
-        <div className="flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-2">
+          <a href="#" className="text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors px-2">Home</a>
+          <a href="#features" className="text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors px-2">{t("nav.features")}</a>
+          <a href="#how-it-works" className="text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors px-2">{t("howItWorks.label")}</a>
+          <a href="#counsellors" className="text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors px-2">{t("nav.counsellors")}</a>
           <LanguageSwitcher variant="light" />
-          <Link href="/crisis" className="hidden sm:flex items-center gap-1 px-3 py-1.5 text-error text-sm font-medium hover:bg-error-container/50 rounded-lg transition-colors">
-            <span className="material-symbols-outlined icon-fill text-[16px]">emergency</span>
-            {t("nav.crisis")}
-          </Link>
-          <Link href="/auth/sign-in" className="hidden sm:inline-flex px-4 py-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">
+          <Link href="/auth/sign-in" className="px-2 py-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">
             {t("nav.signin")}
           </Link>
-          <Link href="/auth/sign-up" className="hidden sm:inline-flex px-4 py-2 bg-primary text-on-primary text-sm font-semibold rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+          <Link href="/auth/sign-up" className="px-3 py-2 bg-primary text-on-primary text-sm font-semibold rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
             {t("nav.signup")}
           </Link>
+        </div>
+        <div className="flex md:hidden items-center gap-2">
+          <LanguageSwitcher variant="light" />
           {/* Hamburger — mobile only */}
           <button
-            className="md:hidden p-2 text-on-surface-variant hover:bg-surface-container rounded-lg transition-colors"
+            className="p-2 text-on-surface-variant hover:bg-surface-container rounded-lg transition-colors"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle menu"
           >
@@ -211,11 +209,6 @@ export default function LandingPage() {
                   className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-on-surface hover:bg-surface-container transition-colors">
                   <span className="material-symbols-outlined text-[20px] text-on-surface-variant">login</span>
                   {t("nav.signin")}
-                </Link>
-                <Link href="/crisis" onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-error hover:bg-error-container/30 transition-colors">
-                  <span className="material-symbols-outlined icon-fill text-[20px]">emergency</span>
-                  {t("nav.crisis")}
                 </Link>
               </nav>
 

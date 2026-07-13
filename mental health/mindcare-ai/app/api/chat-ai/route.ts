@@ -72,13 +72,14 @@ function detectStageFromHistory(
   const crisisKeywords = ["suicide", "kill myself", "end it all", "better off dead", "self harm", "hurt myself", "cut myself", "no reason to live"];
   if (crisisKeywords.some((kw) => allText.includes(kw))) return "risk";
 
-  if (currentStage === "rapport" && msgCount >= 2) return "exploration";
-  if (currentStage === "exploration" && msgCount >= 4) return "stressors";
-  if (currentStage === "stressors" && msgCount >= 7) {
-    if (nlpContext?.phq9Score && nlpContext.phq9Score >= 15) return "risk";
-    return "intervention";
+  // Progressive stage advancement based on conversation depth
+  if (currentStage === "rapport" && msgCount >= 1) return "exploration";
+  if (currentStage === "exploration" && msgCount >= 3) return "stressors";
+  if (currentStage === "stressors" && msgCount >= 5) {
+    if (nlpContext?.phq9Score && nlpContext.phq9Score >= 10) return "risk";
+    return "risk";
   }
-  if (currentStage === "risk") return "intervention";
+  if (currentStage === "risk" && msgCount >= 7) return "intervention";
 
   return currentStage;
 }
@@ -160,26 +161,79 @@ function extractKeywords(messages: ChatMessage[]): string[] {
 
 function fallbackResponse(stage: ConversationStage, history: string[]): string {
   const all = history.join(" ").toLowerCase();
+
+  // Use exact 5-stage framework prompts
+  if (stage === "rapport") return "Hello, welcome. How have you been feeling emotionally over the last two weeks?";
+  if (stage === "exploration") return "What emotions have been most dominant recently?";
+  if (stage === "stressors") return "What factors do you think have contributed to these feelings?";
+  if (stage === "risk") return "Have you had thoughts of harming yourself or feeling that life is not worth living? If so, please know help is available — call 0800-HELP (24/7, free, confidential).";
+  if (stage === "intervention") return "Would you like assistance from a counsellor or mental health professional? I can help connect you.";
+
+  // Topical follow-ups for deeper exploration
   const askedSleep = all.includes("sleep");
   const askedEnergy = all.includes("energy") || all.includes("tired");
   const askedAppetite = all.includes("appetite") || all.includes("eating");
   const askedConcentration = all.includes("concentrat") || all.includes("focus");
   const askedInterest = all.includes("interest") || all.includes("enjoy");
-  const askedWorth = all.includes("worth") || all.includes("failure");
-
-  if (stage === "rapport") return "Hello, welcome. This is a safe, confidential space. How have you been feeling emotionally over the last two weeks?";
-  if (stage === "exploration") return "What emotions have been most dominant recently — anxiety, sadness, stress, or something else?";
-  if (stage === "stressors") return "What factors do you think have contributed to these feelings?";
-  if (stage === "risk") return "Some people when they feel this way have thoughts of harming themselves. Have you had any thoughts like that? If so, please call 0800-HELP (24/7, free).";
-  if (stage === "intervention") return "Would you like assistance from a counsellor or mental health professional? I can help connect you.";
 
   if (!askedSleep) return "Thank you for sharing. How has your sleep been lately — any trouble falling or staying asleep?";
   if (!askedEnergy) return "How are your energy levels — do you often feel drained or tired throughout the day?";
   if (!askedAppetite) return "Has any of this affected your appetite or eating habits?";
   if (!askedConcentration) return "Have you noticed any changes in your ability to concentrate — like on studying or daily tasks?";
   if (!askedInterest) return "Have you lost interest in things that usually bring you joy?";
-  if (!askedWorth) return "Have you been having any negative thoughts about yourself, like feeling worthless or like a failure?";
-  return "You've shared a lot today and your feelings are completely valid. I'd encourage speaking with a professional counsellor. Would you be open to that? 💚";
+  return "You've shared a lot today and your feelings are completely valid. Would you like assistance from a counsellor or mental health professional? 💚";
+}
+
+// ── Counsellor reporting helpers ──────────────────────────────────────────────
+
+interface CounsellorReport {
+  title: string;
+  body: string;
+  type: "info" | "alert" | "critical";
+  module: string;
+  stage: string;
+  keywords: string[];
+}
+
+function buildCounsellorSummary(
+  userMessage: string,
+  stage: ConversationStage,
+  keywords: string[],
+  nlpContext?: NlpContext
+): string {
+  const parts: string[] = [];
+
+  parts.push(`Stage: ${stage}`);
+  if (keywords.length > 0) parts.push(`Detected emotions: ${keywords.join(", ")}`);
+  if (nlpContext?.nlpSeverity) parts.push(`NLP Severity: ${nlpContext.nlpSeverity}`);
+  if (nlpContext?.phq9Score !== undefined) parts.push(`PHQ-9 Score: ${nlpContext.phq9Score}`);
+  if (nlpContext?.riskIndicators?.length) parts.push(`Risk: ${nlpContext.riskIndicators.join("; ")}`);
+  parts.push(`Latest message: "${userMessage.slice(0, 120)}${userMessage.length > 120 ? "..." : ""}"`);
+
+  return parts.join(" | ");
+}
+
+async function sendToCounsellor(report: CounsellorReport) {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_INSFORGE_URL;
+    const anonKey = process.env.INSFORGE_API_KEY || process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY;
+    if (!baseUrl || !anonKey) return;
+
+    // Use internal fetch to notifications API
+    await fetch(`${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/notifications`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: "counsellor-system",
+        title: report.title,
+        body: `[${report.module}] ${report.body}`,
+        type: report.type,
+        link: "/counsellor",
+      }),
+    });
+  } catch {
+    // Non-blocking — don't fail the chat response if notification fails
+  }
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────────
@@ -192,10 +246,20 @@ export async function POST(request: NextRequest) {
       userMessage = "",
       stage: clientStage = "rapport",
       nlpContext,
+      userId,
     } = body;
 
     // Crisis check always first
     if (detectCrisis(userMessage)) {
+      // Send crisis alert to counsellor with the user's message
+      sendToCounsellor({
+        title: "🚨 Crisis Detected in AI Chat",
+        body: `Student message: "${userMessage.slice(0, 150)}". Immediate follow-up required.`,
+        type: "critical",
+        module: "Suicide Detection Engine",
+        stage: "risk",
+        keywords: [],
+      });
       return NextResponse.json({ response: crisisResponse(), stage: "risk", crisis: true });
     }
 
@@ -205,15 +269,26 @@ export async function POST(request: NextRequest) {
     }));
 
     const detectedStage = detectStageFromHistory(typedMessages, clientStage as ConversationStage, nlpContext);
+    const keywords = extractKeywords(typedMessages);
     const ai = getAIClient();
 
     if (!ai) {
       const response = fallbackResponse(detectedStage, typedMessages.map((m) => m.content));
+
+      // Send analysis to counsellor
+      sendToCounsellor({
+        title: "📊 AI Chat Session Analysis",
+        body: buildCounsellorSummary(userMessage, detectedStage, keywords, nlpContext),
+        type: keywords.length >= 3 ? "alert" : "info",
+        module: "Prompt Engineering Engine",
+        stage: detectedStage,
+        keywords,
+      });
+
       return NextResponse.json({ response, stage: detectedStage, crisis: false, usingFallback: true });
     }
 
     const systemPrompt = buildSystemPrompt(detectedStage, nlpContext);
-    const keywords = extractKeywords(typedMessages);
     const contextNote = keywords.length ? `[Detected emotions in conversation: ${keywords.join(", ")}]` : "";
 
     const llmMessages: ChatMessage[] = [
@@ -232,6 +307,26 @@ export async function POST(request: NextRequest) {
 
     const response = completion.choices[0]?.message?.content?.trim() ||
       fallbackResponse(detectedStage, typedMessages.map((m) => m.content));
+
+    // Send analysis to counsellor on stage transitions or when risk indicators present
+    const stageChanged = detectedStage !== clientStage;
+    const hasRisk = (nlpContext?.riskIndicators?.length ?? 0) > 0;
+    const highEmotionCount = keywords.length >= 3;
+
+    if (stageChanged || hasRisk || highEmotionCount) {
+      sendToCounsellor({
+        title: stageChanged
+          ? `📋 Stage Transition: ${clientStage} → ${detectedStage}`
+          : hasRisk
+          ? "⚠️ Risk Indicators Active in Chat"
+          : "📊 Elevated Emotional Keywords Detected",
+        body: buildCounsellorSummary(userMessage, detectedStage, keywords, nlpContext),
+        type: hasRisk ? "alert" : "info",
+        module: stageChanged ? "Prompt Engineering Engine" : hasRisk ? "Suicide Detection Engine" : "NLP Module",
+        stage: detectedStage,
+        keywords,
+      });
+    }
 
     return NextResponse.json({
       response,
