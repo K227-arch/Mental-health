@@ -78,6 +78,35 @@ export default function ScreeningPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Persist in-progress assessment state so student can resume after navigating away
+  useEffect(() => {
+    // Don't save if still checking or in chat phase (chat is saved separately)
+    if (checkingLastScreening || phase === "chat") return;
+    try {
+      const state = { phase, currentQuestion, answers, messages, conversationStage, done, totalScore, freeTextInputs };
+      sessionStorage.setItem("selfcare_assessment_progress", JSON.stringify(state));
+    } catch {}
+  }, [phase, currentQuestion, answers, messages, conversationStage, done, totalScore, freeTextInputs, checkingLastScreening]);
+
+  // Restore in-progress assessment on mount
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem("selfcare_assessment_progress");
+      if (!saved) return;
+      const state = JSON.parse(saved);
+      // Only restore if assessment was in progress (not chat, not completed)
+      if (state.phase && state.phase !== "chat" && !state.done && state.messages?.length > 1) {
+        setPhase(state.phase);
+        setCurrentQuestion(state.currentQuestion || 0);
+        setAnswers(state.answers || []);
+        setMessages(state.messages);
+        setConversationStage(state.conversationStage || "rapport");
+        setFreeTextInputs(state.freeTextInputs || []);
+        setCheckingLastScreening(false);
+      }
+    } catch {}
+  }, []);
+
   // Set initial message time on client only (avoids hydration mismatch)
   useEffect(() => {
     setMessages((prev) => prev.map((m) => m.id === "1" && !m.time ? { ...m, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) } : m));
@@ -489,6 +518,8 @@ export default function ScreeningPage() {
   };
 
   const completeAssessment = (finalAnswers: number[]) => {
+    // Clear assessment progress since it's complete
+    try { sessionStorage.removeItem("selfcare_assessment_progress"); } catch {}
     const score = finalAnswers.reduce((a, b) => a + b, 0);
     setTotalScore(score);
     setDone(true);
