@@ -918,14 +918,9 @@ export default function ScreeningPage() {
             <aside className="fixed md:relative left-0 top-16 bottom-0 z-40 w-72 bg-surface-container-lowest border-r border-outline-variant flex flex-col shadow-xl md:shadow-none animate-slide-in">
               <div className="flex items-center justify-between px-4 py-3 border-b border-outline-variant">
                 <h3 className="text-sm font-semibold text-on-surface">Chat History</h3>
-                <div className="flex items-center gap-1">
-                  <button onClick={startNewChat} className="p-1.5 rounded-lg hover:bg-surface-container transition-colors" title="New chat">
-                    <span className="material-symbols-outlined text-[18px] text-primary">add</span>
-                  </button>
-                  <button onClick={() => setHistoryOpen(false)} className="p-1.5 rounded-lg hover:bg-surface-container transition-colors md:hidden">
-                    <span className="material-symbols-outlined text-[18px] text-on-surface-variant">close</span>
-                  </button>
-                </div>
+                <button onClick={() => setHistoryOpen(false)} className="p-1.5 rounded-lg hover:bg-surface-container transition-colors">
+                  <span className="material-symbols-outlined text-[18px] text-on-surface-variant">close</span>
+                </button>
               </div>
               <div className="flex-1 overflow-y-auto p-2 space-y-1">
                 {chatHistory.length === 0 ? (
@@ -962,13 +957,6 @@ export default function ScreeningPage() {
             >
               <span className="material-symbols-outlined text-[18px]">history</span>
               History
-            </button>
-            <button
-              onClick={startNewChat}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
-            >
-              <span className="material-symbols-outlined text-[18px]">add</span>
-              New Chat
             </button>
           </div>
 
