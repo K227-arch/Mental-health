@@ -121,45 +121,51 @@ export default function ScreeningPage() {
   }, []);
 
   // Save current conversation to history when it has enough messages
+  // Track how many user messages have been saved to detect new ones
+  const [lastSavedMsgCount, setLastSavedMsgCount] = useState(0);
+
   const saveToHistory = () => {
-    if (messages.length < 3 || phase !== "chat") return;
-    const firstUserMsg = messages.find((m) => m.role === "user")?.content || "New conversation";
-    const title = firstUserMsg.slice(0, 40) + (firstUserMsg.length > 40 ? "..." : "");
-    const id = `chat-${Date.now()}`;
-    const newEntry = { id, title, date: new Date().toISOString(), messages: messages.slice(-30) };
+    if (phase !== "chat") return;
+    // Find user messages that haven't been saved yet
+    const userMessages = messages.filter((m) => m.role === "user");
+    if (userMessages.length === 0 || userMessages.length <= lastSavedMsgCount) return;
+
+    // Save latest user message + AI response as a new history entry
+    const latestUserMsg = userMessages[userMessages.length - 1];
+    const title = latestUserMsg.content.slice(0, 40) + (latestUserMsg.content.length > 40 ? "..." : "");
+    const id = `chat-${latestUserMsg.id}`;
+
+    // Get the messages around this question (user msg + AI response after it)
+    const msgIndex = messages.findIndex((m) => m.id === latestUserMsg.id);
+    const contextMessages = messages.slice(Math.max(0, msgIndex - 1), msgIndex + 2);
+
+    const newEntry = { id, title, date: new Date().toISOString(), messages: contextMessages };
 
     setChatHistory((prev) => {
-      const updated = [newEntry, ...prev.filter((h) => h.id !== id)].slice(0, 20);
+      const withoutDuplicate = prev.filter((h) => h.id !== id);
+      const updated = [newEntry, ...withoutDuplicate].slice(0, 30);
       localStorage.setItem("Selfcare_chat_history", JSON.stringify(updated));
       return updated;
     });
+
+    setLastSavedMsgCount(userMessages.length);
   };
 
-  // Auto-save to history periodically
+  // Save each time a new user message is sent in chat phase
   useEffect(() => {
-    if (phase !== "chat" || messages.length < 4) return;
-    const timeout = setTimeout(saveToHistory, 5000);
-    return () => clearTimeout(timeout);
+    if (phase !== "chat") return;
+    const userMsgCount = messages.filter((m) => m.role === "user").length;
+    if (userMsgCount > lastSavedMsgCount) {
+      // Small delay to ensure AI response is included
+      const timeout = setTimeout(saveToHistory, 1500);
+      return () => clearTimeout(timeout);
+    }
   }, [messages, phase]);
 
   const loadHistorySession = (session: { id: string; title: string; date: string; messages: Message[] }) => {
     setMessages(session.messages);
     setPhase("chat");
     setConversationStage("exploration");
-    setHistoryOpen(false);
-  };
-
-  const startNewChat = () => {
-    // Save current conversation first
-    saveToHistory();
-    setMessages([{
-      id: `new-${Date.now()}`,
-      role: "ai",
-      content: "Starting a new conversation. How are you feeling today?",
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    }]);
-    setPhase("chat");
-    setConversationStage("rapport");
     setHistoryOpen(false);
   };
 
