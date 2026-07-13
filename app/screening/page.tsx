@@ -1093,9 +1093,13 @@ export default function ScreeningPage() {
                   <button
                     key={i}
                     onClick={() => {
-                      addMessage("user", sug);
-                      setFreeTextInputs((prev) => [...prev, sug]);
-                      setTimeout(() => transitionToPhq9(), 600);
+                      setInput(sug);
+                      setTimeout(() => {
+                        setInput("");
+                        addMessage("user", sug);
+                        setFreeTextInputs((prev) => [...prev, sug]);
+                        setTimeout(() => transitionToPhq9(), 600);
+                      }, 400);
                     }}
                     className="px-3.5 py-2 bg-surface-container-low hover:bg-primary-container hover:text-on-primary-container border border-outline-variant/50 rounded-full text-xs font-medium transition-all whitespace-nowrap shrink-0"
                   >
@@ -1109,7 +1113,10 @@ export default function ScreeningPage() {
                 {selectedModel.questions[currentQuestion].options.map((opt, i) => (
                   <button
                     key={i}
-                    onClick={() => handleOptionSelect(i)}
+                    onClick={() => {
+                      setInput(opt);
+                      setTimeout(() => { setInput(""); handleOptionSelect(i); }, 400);
+                    }}
                     className="px-3.5 py-2 bg-surface-container-low hover:bg-secondary-container hover:text-on-secondary-container border border-outline-variant/50 rounded-full text-xs font-medium transition-all whitespace-nowrap shrink-0"
                   >
                     {opt}
@@ -1122,7 +1129,10 @@ export default function ScreeningPage() {
                 {["Not difficult at all", "Somewhat difficult", "Very difficult", "Extremely difficult"].map((opt, i) => (
                   <button
                     key={i}
-                    onClick={() => handleFunctionalSelect(i)}
+                    onClick={() => {
+                      setInput(opt);
+                      setTimeout(() => { setInput(""); handleFunctionalSelect(i); }, 400);
+                    }}
                     className="px-3.5 py-2 bg-surface-container-low hover:bg-secondary-container hover:text-on-secondary-container border border-outline-variant/50 rounded-full text-xs font-medium transition-all whitespace-nowrap shrink-0"
                   >
                     {opt}
@@ -1153,16 +1163,17 @@ export default function ScreeningPage() {
               <div className="flex-1">
                 <textarea
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={(e) => { if (phase === "chat") setInput(e.target.value); }}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
+                    if (e.key === "Enter" && !e.shiftKey && phase === "chat") {
                       e.preventDefault();
                       handleTextSubmit();
                     }
                   }}
-                  placeholder="Type your response or select an option above..."
+                  placeholder={phase === "chat" ? "Type your message..." : "Select an option above..."}
                   rows={1}
-                  className="w-full bg-surface-container-low border-none focus:outline-none focus:ring-2 focus:ring-primary rounded-xl py-3 px-4 text-on-surface text-sm resize-none min-h-[48px] max-h-[120px]"
+                  disabled={phase !== "chat"}
+                  className={`w-full border-none focus:outline-none focus:ring-2 focus:ring-primary rounded-xl py-3 px-4 text-on-surface text-sm resize-none min-h-[48px] max-h-[120px] ${phase !== "chat" ? "bg-surface-container opacity-60 cursor-not-allowed" : "bg-surface-container-low"}`}
                   style={{ fieldSizing: "content" } as React.CSSProperties}
                 />
               </div>
