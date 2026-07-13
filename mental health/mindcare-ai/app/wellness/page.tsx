@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import StudentSidebar from "../components/StudentSidebar";
-import Footer from "../components/Footer";
 import { wellnessMilestones, hopeMessages } from "../lib/data";
 import { useTranslation } from "../lib/i18n";
 
@@ -96,6 +95,16 @@ export default function WellnessPage() {
   const [completedExercises, setCompletedExercises] = useState<string[]>([]);
   const [sharedResources, setSharedResources] = useState<any[]>([]);
   const [loadingShared, setLoadingShared] = useState(false);
+  const [hopeIndex, setHopeIndex] = useState(0);
+
+  // Auto-rotate hope images
+  useEffect(() => {
+    if (activeSection !== "hope") return;
+    const interval = setInterval(() => {
+      setHopeIndex((prev) => (prev + 1) % hopeMessages.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [activeSection]);
 
   useEffect(() => {
     // Fetch shared resources for this student
@@ -429,19 +438,46 @@ export default function WellnessPage() {
             <div className="animate-fade-in">
               <h2 className="text-xl font-bold text-on-surface mb-2">{t("wellness.hopeTitle")}</h2>
               <p className="text-on-surface-variant text-sm mb-6">{t("wellness.hopeSubtitle")}</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {hopeMessages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className="relative overflow-hidden rounded-xl shadow-sm"
-                  >
-                    <img
-                      src={msg.image}
-                      alt={msg.text}
-                      className="w-full h-auto rounded-xl"
+
+              {/* Slideshow */}
+              <div className="relative w-full max-w-lg mx-auto">
+                <div className="relative h-80 rounded-xl overflow-hidden">
+                  {hopeMessages.map((msg, idx) => (
+                    <div
+                      key={msg.id}
+                      className={`absolute inset-0 transition-all duration-700 ${
+                        idx === hopeIndex ? "opacity-100 scale-100" : "opacity-0 scale-95"
+                      }`}
+                    >
+                      <img src={msg.image} alt={msg.text} className="w-full h-full object-contain rounded-xl" />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Navigation arrows */}
+                <button
+                  onClick={() => setHopeIndex((prev) => (prev - 1 + hopeMessages.length) % hopeMessages.length)}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-surface/80 backdrop-blur-sm border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+                </button>
+                <button
+                  onClick={() => setHopeIndex((prev) => (prev + 1) % hopeMessages.length)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-surface/80 backdrop-blur-sm border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+                </button>
+
+                {/* Dots */}
+                <div className="flex justify-center gap-1.5 mt-4">
+                  {hopeMessages.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setHopeIndex(idx)}
+                      className={`w-2 h-2 rounded-full transition-colors ${idx === hopeIndex ? "bg-primary" : "bg-outline-variant"}`}
                     />
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
 
               <div className="mt-8 p-6 bg-primary-container/20 border border-outline-variant/50 rounded-2xl text-center">
@@ -463,8 +499,6 @@ export default function WellnessPage() {
         </div>
         </main>
       </div>
-
-      <Footer />
     </div>
   );
 }

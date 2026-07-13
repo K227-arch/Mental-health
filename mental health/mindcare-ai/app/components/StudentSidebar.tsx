@@ -20,9 +20,9 @@ export default function StudentSidebar() {
     { href: "/dashboard/crisis", label: t("sidebar.student.crisis"), icon: "emergency", red: true },
   ];
 
-  // Bottom nav shows first 4 + "More"
-  const bottomItems = navItems.slice(0, 4);
-  const moreItems = navItems.slice(4);
+  // Bottom nav shows first 5 + "More"
+  const bottomItems = navItems.slice(0, 5);
+  const moreItems = navItems.slice(5);
 
   return (
     <>
@@ -51,7 +51,7 @@ export default function StudentSidebar() {
           })}
         </nav>
         <div className="mt-auto pt-4 border-t border-outline-variant">
-          <Link href="/crisis" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-on-surface-variant hover:bg-surface-container-high transition-colors">
+          <Link href="/dashboard/crisis" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-on-surface-variant hover:bg-surface-container-high transition-colors">
             <span className="material-symbols-outlined">help_outline</span>
             {t("sidebar.student.help")}
           </Link>
@@ -116,7 +116,7 @@ export default function StudentSidebar() {
                     </Link>
                   );
                 })}
-                <Link href="/crisis" onClick={() => setDrawerOpen(false)}
+                <Link href="/dashboard/crisis" onClick={() => setDrawerOpen(false)}
                   className="flex items-center gap-4 px-4 py-3.5 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container transition-colors"
                 >
                   <span className="material-symbols-outlined text-[22px]">help_outline</span>

@@ -66,6 +66,11 @@ export default function SignInPage() {
 
     const redirectTarget = role === "counsellor" ? "/counsellor" : "/dashboard";
 
+    // Check if there's a redirect param from middleware
+    const params = new URLSearchParams(window.location.search);
+    const redirectParam = params.get("redirect");
+    const finalRedirect = redirectParam || redirectTarget;
+
     try {
       const { data, error: signInError } = await insforge.auth.signInWithPassword({ email, password });
 
@@ -83,14 +88,14 @@ export default function SignInPage() {
           body: JSON.stringify({
             accessToken: data.accessToken,
             refreshToken: (data as any).refreshToken,
-            redirect: redirectTarget,
+            redirect: finalRedirect,
           }),
         }).catch(() => {});
         // Also set non-httpOnly as fallback for /api/auth/me JWT decode
         document.cookie = `insforge_access_token=${data.accessToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
       }
 
-      router.push(redirectTarget);
+      router.push(finalRedirect);
     } catch {
       setError("Network error. Please try again.");
       setLoading(false);
@@ -170,10 +175,6 @@ export default function SignInPage() {
             ) : (
               <>
                 <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
-                  <span className="material-symbols-outlined text-secondary-container text-[22px]">psychology</span>
-                  <span className="text-white/90 text-sm">PHQ-9 screening with NLP analysis</span>
-                </div>
-                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
                   <span className="material-symbols-outlined text-secondary-container text-[22px]">mood</span>
                   <span className="text-white/90 text-sm">Daily mood tracking and insights</span>
                 </div>
@@ -200,8 +201,7 @@ export default function SignInPage() {
             <Link href="/" className="inline-block">
               <img src="/logo.jpeg" alt="Selfcare Hub" className="w-14 h-14 object-contain rounded-xl mx-auto mb-3" />
             </Link>
-            <h2 className="font-black text-xl text-primary">Selfcare Hub</h2>
-            <p className="text-on-surface-variant text-xs font-medium uppercase tracking-widest mt-1.5">
+            <h2 className="font-black text-xl text-primary">Selfcare Hub</h2>            <p className="text-on-surface-variant text-xs font-medium uppercase tracking-widest mt-1.5">
               {role === "counsellor" ? t("auth.portal.counsellor") : t("auth.portal.student")}
             </p>
           </div>

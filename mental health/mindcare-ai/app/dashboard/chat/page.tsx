@@ -189,9 +189,9 @@ export default function StudentChatPage() {
   return (
     <div className="min-h-screen bg-surface flex flex-col">
       <Navbar variant="student" />
-      <div className="flex flex-1 pt-16">
+      <div className="flex flex-1 pt-16 pb-16 md:pb-0">
         <StudentSidebar />
-        <div className="flex-1 flex flex-col max-w-3xl w-full mx-auto">
+        <div className="flex-1 flex flex-col max-w-3xl w-full mx-auto" style={{ height: "calc(100svh - 64px - 56px)", maxHeight: "calc(100svh - 64px)" }}>
         {/* Header */}
         <div className="px-6 py-4 border-b border-outline-variant">
           <h1 className="text-lg font-bold text-on-surface flex items-center gap-2">
@@ -206,9 +206,33 @@ export default function StudentChatPage() {
             <div>
               <span className="material-symbols-outlined text-[48px] text-on-surface-variant/30 block mb-3">forum</span>
               <h2 className="text-lg font-semibold text-on-surface mb-2">{t("chat.noSession")}</h2>
-              <p className="text-sm text-on-surface-variant max-w-sm mx-auto">
+              <p className="text-sm text-on-surface-variant max-w-sm mx-auto mb-5">
                 {t("chat.noSessionDesc")}
               </p>
+              <button
+                onClick={async () => {
+                  if (!user?.id) return;
+                  const res = await fetch("/api/sessions", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      studentId: user.id,
+                      counsellorId: "counsellor-system",
+                      riskLevel: "Minimal",
+                      studentName: user.name || "Student",
+                    }),
+                  });
+                  if (res.ok) {
+                    const data = await res.json();
+                    if (data.session) setSession(data.session);
+                    else if (data.data) setSession(data.data);
+                  }
+                }}
+                className="px-6 py-3 bg-primary text-on-primary font-semibold rounded-xl shadow-md hover:opacity-90 transition-opacity flex items-center gap-2 mx-auto"
+              >
+                <span className="material-symbols-outlined text-[20px]">chat</span>
+                Start Session
+              </button>
             </div>
           </div>
         ) : (
@@ -243,7 +267,7 @@ export default function StudentChatPage() {
             </div>
 
             {/* Input */}
-            <div className="px-6 py-4 border-t border-outline-variant">
+            <div className="px-3 md:px-6 py-3 md:py-4 border-t border-outline-variant shrink-0">
               {micError && (
                 <div className="mb-3 p-3 bg-error-container/80 text-on-error-container text-xs rounded-xl flex items-center gap-2 animate-fade-in">
                   <span className="material-symbols-outlined text-[16px]">mic_off</span>

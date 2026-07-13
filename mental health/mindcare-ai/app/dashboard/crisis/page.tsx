@@ -4,8 +4,6 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 import Navbar from "../../components/Navbar";
 import StudentSidebar from "../../components/StudentSidebar";
-import Footer from "../../components/Footer";
-import { hopeMessages } from "../../lib/data";
 import { useTranslation } from "../../lib/i18n";
 
 const groundingSteps = [
@@ -184,7 +182,7 @@ export default function CrisisPage() {
 
           {/* Chat */}
           <Link
-            href="/auth/sign-in"
+            href="/dashboard/chat"
             className="group block w-full bg-primary rounded-xl p-6 shadow-sm transition-transform active:scale-95 hover:-translate-y-1 relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-primary-fixed"
           >
             <div className="absolute -right-8 -bottom-8 bg-on-primary/10 w-32 h-32 rounded-full blur-xl group-hover:bg-on-primary/20 transition-colors" />
@@ -481,33 +479,9 @@ export default function CrisisPage() {
           </section>
         </div>
 
-        {/* Hope Gallery */}
-        <section className="bg-surface-container-lowest rounded-xl border border-outline-variant p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-2 text-primary">
-            <span className="material-symbols-outlined">favorite</span>
-            <h3 className="text-xl font-semibold">Messages of Hope</h3>
-          </div>
-          <p className="text-on-surface-variant text-sm mb-5">Small reminders that you are valued and resilient.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {hopeMessages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`relative overflow-hidden rounded-xl aspect-video flex items-center justify-center p-5 text-center ${msg.colorClass}`}
-              >
-                <div className={`absolute inset-0 opacity-40 bg-gradient-to-br ${msg.gradientClass}`} />
-                <p className={`relative z-10 text-sm font-semibold leading-relaxed ${msg.textClass}`}>
-                  {msg.text}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-
           </div>
         </main>
       </div>
-
-      <Footer />
     </div>
   );
 }

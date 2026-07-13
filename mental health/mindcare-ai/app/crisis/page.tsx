@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Footer from "../components/Footer";
 import { hopeMessages } from "../lib/data";
@@ -27,7 +27,16 @@ export default function PublicCrisisPage() {
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [hopeIndex, setHopeIndex] = useState(0);
   const videoInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-rotate hope images
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHopeIndex((prev) => (prev + 1) % hopeMessages.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const startBreathing = () => {
     setIsBreathing(true);
@@ -169,27 +178,27 @@ export default function PublicCrisisPage() {
       )}
 
       {/* Full Hero — with proper top spacing */}
-      <header className="relative w-full min-h-[300px] md:h-[38vh] flex items-center justify-center overflow-hidden pt-16">
+      <header className="relative w-full flex items-center justify-center pt-20">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/15 via-secondary/10 to-surface" />
           <div className="absolute inset-0 bg-gradient-to-br from-primary-fixed/20 to-secondary-container/15" />
         </div>
-        <div className="relative z-20 text-center px-6 max-w-4xl mx-auto w-full py-10 md:py-14">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-error text-on-error rounded-full text-sm font-semibold mb-4">
+        <div className="relative z-20 text-center px-6 max-w-4xl mx-auto w-full py-10">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-error text-on-error rounded-full text-sm font-semibold mb-5">
             <span className="material-symbols-outlined icon-fill text-[18px]">emergency</span>
             {t("crisis.available247")}
           </div>
           <h1 className="text-2xl sm:text-3xl md:text-5xl font-black text-primary mb-4 leading-tight">
             {t("crisis.heroTitle")}
           </h1>
-          <p className="text-base sm:text-lg text-on-surface-variant max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg text-on-surface-variant max-w-2xl mx-auto leading-relaxed">
             {t("crisis.heroSubtitle")}
           </p>
         </div>
       </header>
 
       {/* Content */}
-      <main className="flex-grow relative z-10 px-4 md:px-20 pb-20 w-full max-w-6xl mx-auto -mt-8">
+      <main className="flex-grow relative z-10 px-4 md:px-20 pb-20 w-full max-w-6xl mx-auto mt-6">
         {/* Urgent Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full mb-8">
           <a href="tel:0800-HELP" className="group block w-full bg-error rounded-xl p-6 shadow-sm transition-transform active:scale-95 hover:-translate-y-1 relative overflow-hidden">
@@ -350,20 +359,55 @@ export default function PublicCrisisPage() {
           </section>
         </div>
 
-        {/* Hope Gallery */}
+        {/* Hope Gallery — Slideshow */}
         <section className="bg-surface-container-lowest rounded-xl border border-outline-variant p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-2 text-primary">
             <span className="material-symbols-outlined">favorite</span>
             <h3 className="text-xl font-semibold">Messages of Hope</h3>
           </div>
           <p className="text-on-surface-variant text-sm mb-5">Small reminders that you are valued and resilient.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {hopeMessages.map((msg) => (
-              <div key={msg.id} className={`relative overflow-hidden rounded-xl aspect-video flex items-center justify-center p-5 text-center ${msg.colorClass}`}>
-                <div className={`absolute inset-0 opacity-40 bg-gradient-to-br ${msg.gradientClass}`} />
-                <p className={`relative z-10 text-sm font-semibold leading-relaxed ${msg.textClass}`}>{msg.text}</p>
-              </div>
-            ))}
+
+          {/* Slideshow — text based */}
+          <div className="relative w-full max-w-lg mx-auto">
+            <div className="relative h-32 flex items-center justify-center">
+              {hopeMessages.map((msg, idx) => (
+                <div
+                  key={msg.id}
+                  className={`absolute inset-0 flex items-center justify-center transition-all duration-700 ${
+                    idx === hopeIndex ? "opacity-100 scale-100" : "opacity-0 scale-95"
+                  }`}
+                >
+                  <p className="text-center text-lg md:text-xl font-semibold text-primary px-6 leading-relaxed">
+                    &ldquo;{msg.text}&rdquo;
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Navigation arrows */}
+            <button
+              onClick={() => setHopeIndex((prev) => (prev - 1 + hopeMessages.length) % hopeMessages.length)}
+              className="absolute left-0 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-surface/80 backdrop-blur-sm border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors"
+            >
+              <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+            </button>
+            <button
+              onClick={() => setHopeIndex((prev) => (prev + 1) % hopeMessages.length)}
+              className="absolute right-0 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-surface/80 backdrop-blur-sm border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors"
+            >
+              <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+            </button>
+
+            {/* Dots */}
+            <div className="flex justify-center gap-1.5 mt-4">
+              {hopeMessages.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setHopeIndex(idx)}
+                  className={`w-2 h-2 rounded-full transition-colors ${idx === hopeIndex ? "bg-primary" : "bg-outline-variant"}`}
+                />
+              ))}
+            </div>
           </div>
         </section>
       </main>

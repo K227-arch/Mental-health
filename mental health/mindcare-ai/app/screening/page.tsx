@@ -98,6 +98,11 @@ export default function ScreeningPage() {
         const userId = meData?.user?.id;
         if (!userId) { setCheckingLastScreening(false); return; }
 
+        // Load saved chat messages from localStorage
+        const savedMessages = localStorage.getItem(`mindcare_chat_messages_${userId}`);
+        const savedPhase = localStorage.getItem(`mindcare_chat_phase_${userId}`);
+        const savedStage = localStorage.getItem(`mindcare_chat_stage_${userId}`);
+
         // Check localStorage for last screening timestamp (fast check)
         const lastScreeningStr = localStorage.getItem(`mindcare_last_screening_${userId}`);
         if (lastScreeningStr) {
@@ -109,7 +114,21 @@ export default function ScreeningPage() {
             // Less than 2 weeks — go straight to chat
             setDaysUntilNextScreening(14 - daysDiff);
             setPhase("chat");
-            setConversationStage("rapport");
+            setConversationStage((savedStage as any) || "rapport");
+
+            // Restore previous chat messages if available
+            if (savedMessages) {
+              try {
+                const parsed = JSON.parse(savedMessages) as Message[];
+                if (parsed.length > 0) {
+                  setMessages(parsed);
+                  setCheckingLastScreening(false);
+                  return;
+                }
+              } catch {}
+            }
+
+            // No saved messages — show welcome back message
             setMessages([{
               id: "1",
               role: "ai",
@@ -126,6 +145,25 @@ export default function ScreeningPage() {
       setCheckingLastScreening(false);
     })();
   }, []);
+
+  // Persist chat messages to localStorage whenever they change (only in chat phase)
+  useEffect(() => {
+    if (phase !== "chat") return;
+    (async () => {
+      try {
+        const meRes = await fetch("/api/auth/me");
+        if (!meRes.ok) return;
+        const meData = await meRes.json();
+        const userId = meData?.user?.id;
+        if (!userId) return;
+        // Save only last 50 messages to avoid localStorage bloat
+        const toSave = messages.slice(-50);
+        localStorage.setItem(`mindcare_chat_messages_${userId}`, JSON.stringify(toSave));
+        localStorage.setItem(`mindcare_chat_phase_${userId}`, phase);
+        localStorage.setItem(`mindcare_chat_stage_${userId}`, conversationStage);
+      } catch {}
+    })();
+  }, [messages, phase, conversationStage]);
 
   const transitionToPhq9 = () => {
     setPhase("phq9");
@@ -424,10 +462,16 @@ export default function ScreeningPage() {
 
     runNlpAnalysis(finalAnswers, score).then(() => {
       setTimeout(() => {
+        // Clear assessment messages and start fresh chat
+        setMessages([{
+          id: `chat-start-${Date.now()}`,
+          role: "ai",
+          content: "Your check-in is complete. I'm now here to chat — tell me more about what's on your mind, or let's explore what you've been experiencing. What emotions have been most present for you recently? 💚",
+          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        }]);
         setPhase("chat");
         setConversationStage("exploration");
-        addMessage("ai", "Your check-in is complete. I'm now here to chat — tell me more about what's on your mind, or let's explore what you've been experiencing. What emotions have been most present for you recently? 💚");
-      }, 1500);
+      }, 2000);
     });
   };
 
@@ -779,9 +823,13 @@ export default function ScreeningPage() {
                   </div>
                 )}
                 {/* Chat Area */}
-        <div className="flex-1 flex flex-col bg-surface-container-lowest/80 backdrop-blur-md rounded-2xl border border-outline-variant/30 shadow-sm overflow-hidden min-h-0">
+        <div className="flex-1 flex flex-col bg-surface-container-lowest/80 backdrop-blur-md rounded-2xl border border-outline-variant/30 shadow-sm overflow-hidden min-h-0 relative">
+          {/* Logo watermark */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+            <img src="/logo.jpeg" alt="" className="w-48 h-48 md:w-64 md:h-64 object-contain opacity-[0.15]" />
+          </div>
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-4">
+          <div className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-4 relative z-10">
             <div className="flex justify-center">
               <span className="text-xs text-on-surface-variant bg-surface-container px-3 py-1 rounded-full">
                 Daily Check-in
@@ -844,8 +892,8 @@ export default function ScreeningPage() {
               </div>
             ))}
 
-            {/* Result - no scores shown to student */}
-            {done && severity && (
+            {/* Result - shown briefly then hidden when chat starts */}
+            {done && severity && phase !== "chat" && (
               <div className="self-center my-4 animate-fade-in">
                 <div className={`px-6 py-4 rounded-2xl border text-center ${severity.bg} border-outline-variant/30`}>
                   <span className="material-symbols-outlined text-primary text-[40px] mb-2">check_circle</span>

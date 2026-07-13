@@ -102,15 +102,17 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
       <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-surface border-b border-surface-variant shadow-sm">
         {/* Logo */}
         <div className="flex items-center gap-3">
-          <button
-            className="md:hidden p-1 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle menu"
-          >
-            <span className="material-symbols-outlined">
-              {mobileMenuOpen ? "close" : "menu"}
-            </span>
-          </button>
+          {variant === "counsellor" && (
+            <button
+              className="md:hidden p-1 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              <span className="material-symbols-outlined">
+                {mobileMenuOpen ? "close" : "menu"}
+              </span>
+            </button>
+          )}
           <Link href="/" className="flex items-center gap-2">
             <img src="/logo.jpeg" alt="Selfcare Hub" className="w-8 h-8 object-contain rounded-lg" />
             <span className="hidden sm:block font-bold text-2xl text-primary tracking-tight">Selfcare Hub</span>
@@ -256,34 +258,23 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
         </div>
       </header>
 
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
+      {/* Mobile Menu — counsellor only (student uses bottom nav) */}
+      {mobileMenuOpen && variant === "counsellor" && (
         <div className="fixed top-16 left-0 right-0 z-40 bg-surface border-b border-outline-variant shadow-lg md:hidden animate-fade-in">
           <nav className="flex flex-col p-3 gap-1">
-            {(
-              variant === "student"
-                ? [
-                    { href: "/dashboard", label: t("navbar.dashboard"), icon: "dashboard" },
-                    { href: "/screening", label: t("navbar.screening"), icon: "psychology" },
-                    { href: "/wellness", label: t("navbar.wellness"), icon: "self_improvement" },
-                    { href: "/crisis", label: t("navbar.crisis"), icon: "emergency", red: true },
-                  ]
-                : [
-                    { href: "/counsellor", label: t("navbar.dashboard"), icon: "dashboard" },
-                    { href: "/counsellor/analytics", label: t("navbar.analytics"), icon: "monitoring" },
-                    { href: "/counsellor/chat", label: t("navbar.chat"), icon: "forum" },
-                    { href: "/counsellor/library", label: t("navbar.library"), icon: "library_books" },
-                  ]
-            ).map((item) => (
+            {[
+              { href: "/counsellor", label: t("navbar.dashboard"), icon: "dashboard" },
+              { href: "/counsellor/analytics", label: t("navbar.analytics"), icon: "monitoring" },
+              { href: "/counsellor/chat", label: t("navbar.chat"), icon: "forum" },
+              { href: "/counsellor/library", label: t("navbar.library"), icon: "library_books" },
+            ].map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
                 className={clsx(
                   "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
-                  (item as any).red
-                    ? "text-error hover:bg-error-container/50"
-                    : pathname === item.href
+                  pathname === item.href
                     ? "bg-primary-container text-on-primary-container"
                     : "text-on-surface-variant hover:bg-surface-container"
                 )}
