@@ -19,8 +19,8 @@ function getAIClient(): { client: OpenAI; model: string } | null {
         baseURL: "https://openrouter.ai/api/v1",
         apiKey: process.env.OPENROUTER_API_KEY,
         defaultHeaders: {
-          "HTTP-Referer": "https://mindcare-ai-mu.vercel.app",
-          "X-Title": "MindCare AI",
+          "HTTP-Referer": "https://Selfcare-ai-mu.vercel.app",
+          "X-Title": "Selfcare",
         },
       }),
       model: "openai/gpt-4o-mini",
@@ -95,7 +95,7 @@ function buildSystemPrompt(stage: ConversationStage, nlpContext?: NlpContext): s
 - Sentiment: ${nlpContext.sentimentBreakdown ? `${(nlpContext.sentimentBreakdown.negative * 100).toFixed(0)}% negative` : "unknown"}
 - Recommendation: ${nlpContext.recommendation || "none"}` : "";
 
-  const base = `You are MindCare, a compassionate AI mental health support assistant at a university student wellness platform. You are NOT a therapist — you provide empathetic support, psychoeducation, and crisis referrals.
+  const base = `You are Selfcare, a compassionate AI mental health support assistant at a university student wellness platform. You are NOT a therapist — you provide empathetic support, psychoeducation, and crisis referrals.
 
 Rules:
 - Validate emotions before offering advice

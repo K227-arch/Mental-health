@@ -86,7 +86,7 @@ export default function ScreeningPage() {
   // Load chat history from localStorage
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("mindcare_chat_history");
+      const saved = localStorage.getItem("Selfcare_chat_history");
       if (saved) setChatHistory(JSON.parse(saved));
     } catch {}
   }, []);
@@ -101,7 +101,7 @@ export default function ScreeningPage() {
 
     setChatHistory((prev) => {
       const updated = [newEntry, ...prev.filter((h) => h.id !== id)].slice(0, 20);
-      localStorage.setItem("mindcare_chat_history", JSON.stringify(updated));
+      localStorage.setItem("Selfcare_chat_history", JSON.stringify(updated));
       return updated;
     });
   };
@@ -152,12 +152,12 @@ export default function ScreeningPage() {
         if (!userId) { setCheckingLastScreening(false); return; }
 
         // Load saved chat messages from localStorage
-        const savedMessages = localStorage.getItem(`mindcare_chat_messages_${userId}`);
-        const savedPhase = localStorage.getItem(`mindcare_chat_phase_${userId}`);
-        const savedStage = localStorage.getItem(`mindcare_chat_stage_${userId}`);
+        const savedMessages = localStorage.getItem(`Selfcare_chat_messages_${userId}`);
+        const savedPhase = localStorage.getItem(`Selfcare_chat_phase_${userId}`);
+        const savedStage = localStorage.getItem(`Selfcare_chat_stage_${userId}`);
 
         // Check localStorage for last screening timestamp (fast check)
-        const lastScreeningStr = localStorage.getItem(`mindcare_last_screening_${userId}`);
+        const lastScreeningStr = localStorage.getItem(`Selfcare_last_screening_${userId}`);
         if (lastScreeningStr) {
           const lastDate = new Date(lastScreeningStr);
           const now = new Date();
@@ -211,9 +211,9 @@ export default function ScreeningPage() {
         if (!userId) return;
         // Save only last 50 messages to avoid localStorage bloat
         const toSave = messages.slice(-50);
-        localStorage.setItem(`mindcare_chat_messages_${userId}`, JSON.stringify(toSave));
-        localStorage.setItem(`mindcare_chat_phase_${userId}`, phase);
-        localStorage.setItem(`mindcare_chat_stage_${userId}`, conversationStage);
+        localStorage.setItem(`Selfcare_chat_messages_${userId}`, JSON.stringify(toSave));
+        localStorage.setItem(`Selfcare_chat_phase_${userId}`, phase);
+        localStorage.setItem(`Selfcare_chat_stage_${userId}`, conversationStage);
       } catch {}
     })();
   }, [messages, phase, conversationStage]);
@@ -509,7 +509,7 @@ export default function ScreeningPage() {
     try {
       fetch("/api/auth/me").then((r) => r.ok ? r.json() : null).then((d) => {
         const uid = d?.user?.id;
-        if (uid) localStorage.setItem(`mindcare_last_screening_${uid}`, new Date().toISOString());
+        if (uid) localStorage.setItem(`Selfcare_last_screening_${uid}`, new Date().toISOString());
       });
     } catch {}
 

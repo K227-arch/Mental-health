@@ -55,7 +55,7 @@ const staticTranslations: Record<SupportedLang, Record<string, string>> = {
     "howItWorks.step2.desc": "Receive AI-powered analysis of your mental state, mood trends, and personalized recommendations — all private and encrypted.",
     "howItWorks.step3.title": "Take Action",
     "howItWorks.step3.desc": "Access wellness resources, connect with a counsellor, or use crisis support tools. The right help at the right time.",
-    "testimonial.quote": "MindCare helped me realize I wasn't alone. The daily check-ins became my anchor during exam season.",
+    "testimonial.quote": "Selfcare helped me realize I wasn't alone. The daily check-ins became my anchor during exam season.",
     "testimonial.author": "— 3rd Year Student, MUBS",
     "counsellor.label": "For Professionals",
     "counsellor.title": "Counsellor Dashboard",
@@ -523,7 +523,7 @@ const staticTranslations: Record<SupportedLang, Record<string, string>> = {
     "howItWorks.step2.desc": "Pokea uchambuzi unaotumia AI wa hali yako ya akili, mienendo ya hisia, na mapendekezo binafsi — yote kwa faragha.",
     "howItWorks.step3.title": "Chukua Hatua",
     "howItWorks.step3.desc": "Fikia rasilimali za ustawi, unganisha na mshauri, au tumia zana za msaada wa dharura. Msaada sahihi kwa wakati sahihi.",
-    "testimonial.quote": "MindCare ilinisaidia kutambua kwamba siko peke yangu. Uchunguzi wa kila siku ukawa nanga yangu wakati wa mitihani.",
+    "testimonial.quote": "Selfcare ilinisaidia kutambua kwamba siko peke yangu. Uchunguzi wa kila siku ukawa nanga yangu wakati wa mitihani.",
     "testimonial.author": "— Mwanafunzi wa Mwaka wa 3, MUBS",
     "counsellor.label": "Kwa Wataalamu",
     "counsellor.title": "Dashibodi ya Mshauri",
@@ -976,7 +976,7 @@ const staticTranslations: Record<SupportedLang, Record<string, string>> = {
     "howItWorks.step2.desc": "Funa okunnyannyiriza okukozesebwa AI okw'embeera yo ey'omutwe, ebiseera by'embeera, n'okubuulirira okukubawo.",
     "howItWorks.step3.title": "Kola Ekintu",
     "howItWorks.step3.desc": "Funa ebyensimbi by'obulamu, oyungane n'omusawo, oba okozese ebikozesebwa mu buyambi bwa mangu.",
-    "testimonial.quote": "MindCare yanyambye okutegeera nti siri nzekka. Okukebereza okwa buli lunaku kwafuuka essaawa yange mu biseera by'ebibuuzo.",
+    "testimonial.quote": "Selfcare yanyambye okutegeera nti siri nzekka. Okukebereza okwa buli lunaku kwafuuka essaawa yange mu biseera by'ebibuuzo.",
     "testimonial.author": "— Omuyizi ow'Omwaka ogw'3, MUBS",
     "counsellor.label": "Eri Abasawo",
     "counsellor.title": "Dashiboodi y'Omusawo",
@@ -1106,7 +1106,7 @@ const staticTranslations: Record<SupportedLang, Record<string, string>> = {
     "howItWorks.step2.desc": "Bona okunywanywiriza okukozesebwa AI okw'embeera yawe ey'omutwe, ebiseera by'embeera, n'okuburikirwa okukubawo.",
     "howItWorks.step3.title": "Kora Ekintu",
     "howItWorks.step3.desc": "Bona ebyensimbi by'obuhangwa, oyungane n'omushawo, nari okozese ebikozesebwa omu buyambi bwa bwangu.",
-    "testimonial.quote": "MindCare yanyambyize okutegyereza ndi nti tindiri nyeka. Okwebereza okwa buri iro kwafuuka essaawa yange omu biseera by'ebibuzo.",
+    "testimonial.quote": "Selfcare yanyambyize okutegyereza ndi nti tindiri nyeka. Okwebereza okwa buri iro kwafuuka essaawa yange omu biseera by'ebibuzo.",
     "testimonial.author": "— Omushomi ow'Omwaka ogw'3, MUBS",
     "counsellor.label": "Eri Abashawo",
     "counsellor.title": "Dashboodi y'Omushawo",
@@ -1230,12 +1230,12 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
     const urlLang = params.get("lang") as SupportedLang | null;
     if (urlLang && languages.some((l) => l.code === urlLang)) {
       setLangState(urlLang);
-      localStorage.setItem("mindcare-lang", urlLang);
+      localStorage.setItem("Selfcare-lang", urlLang);
       return;
     }
 
     // 2. Fallback to localStorage
-    const saved = localStorage.getItem("mindcare-lang") as SupportedLang | null;
+    const saved = localStorage.getItem("Selfcare-lang") as SupportedLang | null;
     if (saved && languages.some((l) => l.code === saved)) {
       setLangState(saved);
       // Sync URL with saved preference
@@ -1256,7 +1256,7 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
 
   const setLang = useCallback((newLang: SupportedLang) => {
     setLangState(newLang);
-    localStorage.setItem("mindcare-lang", newLang);
+    localStorage.setItem("Selfcare-lang", newLang);
     updateUrlLang(newLang);
   }, []);
 
