@@ -1,5 +1,5 @@
-﻿import { NextRequest, NextResponse } from "next/server";
-import { insforge } from "@/lib/insforge";
+import { NextRequest, NextResponse } from "next/server";
+import { insforgeAdmin as insforge } from "@/lib/insforge";
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,18 +17,17 @@ export async function POST(request: NextRequest) {
       .database
       .from("referrals")
       .insert({
-        user_id: userId,
+        student_id: userId,
         counsellor_id: counsellorId,
-        reason,
-        type: type || "general",
+        notes: reason,
+        referral_type: type || "general",
         status: "pending",
-        created_at: new Date().toISOString(),
       })
       .select();
 
     if (error) {
       return NextResponse.json(
-        { error: "Failed to create referral" },
+        { error: "Failed to create referral: " + error.message },
         { status: 500 }
       );
     }
@@ -51,7 +50,7 @@ export async function GET(request: NextRequest) {
     let query = insforge.database.from("referrals").select();
 
     if (userId) {
-      query = query.eq("user_id", userId);
+      query = query.eq("student_id", userId);
     }
 
     if (counsellorId) {

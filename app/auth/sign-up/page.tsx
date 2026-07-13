@@ -1,28 +1,33 @@
-﻿"use client";
+"use client";
 
-import { useState, FormEvent } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { insforge } from "@/lib/insforge";
+import { useTranslation } from "../../lib/i18n";
 
 export default function SignUpPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const role = searchParams.get("role") === "counsellor" ? "counsellor" : "student";
+  const { t } = useTranslation();
+  const [role, setRole] = useState<"student" | "counsellor">("student");
   const [name, setName] = useState("");
+  const [studentId, setStudentId] = useState("");
+  const [faculty, setFaculty] = useState("");
+  const [yearOfStudy, setYearOfStudy] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [consent, setConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
 
-  const getRedirect = () => {
-    if (typeof window === "undefined") return role === "counsellor" ? "/counsellor" : "/dashboard";
-    return new URLSearchParams(window.location.search).get("redirect") || (role === "counsellor" ? "/counsellor" : "/dashboard");
-  };
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("role") === "counsellor") setRole("counsellor");
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -38,23 +43,57 @@ export default function SignUpPage() {
       return;
     }
 
+    if (role === "student" && !consent) {
+      setError("You must consent to participate before continuing.");
+      return;
+    }
+
     setLoading(true);
+    const redirectTarget = role === "counsellor" ? "/counsellor" : "/dashboard";
 
     try {
-      const res = await fetch("/api/auth/sign-up", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, name, redirect: getRedirect() }),
+      const { data, error: signUpError } = await insforge.auth.signUp({
+        email,
+        password,
+        name,
+        redirectTo: `${window.location.origin}/auth/sign-in`,
       });
-      const data = await res.json();
 
-      if (!res.ok) {
-        setError(data.error || "Sign up failed");
+      if (signUpError) {
+        setError(signUpError.message || "Sign up failed");
         setLoading(false);
         return;
       }
 
-      router.push(data.redirect || "/dashboard");
+      if (data?.requireEmailVerification) {
+        setError(null);
+        router.push(`/auth/sign-in?message=Check your email to verify your account`);
+        return;
+      }
+
+      // Save token to cookie
+      if (data?.accessToken) {
+        document.cookie = `insforge_access_token=${data.accessToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+      }
+
+      // Create student profile in DB
+      if (data?.user?.id) {
+        await fetch("/api/auth/sign-up", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: data.user.id,
+            name,
+            email,
+            role: redirectTarget === "/counsellor" ? "counsellor" : "student",
+            studentId: role === "student" ? studentId : undefined,
+            faculty: role === "student" ? faculty : undefined,
+            yearOfStudy: role === "student" ? parseInt(yearOfStudy) : undefined,
+          }),
+        }).catch(() => {});
+      }
+
+      router.push(redirectTarget);
     } catch {
       setError("Network error. Please try again.");
       setLoading(false);
@@ -64,7 +103,7 @@ export default function SignUpPage() {
   const handleOAuth = async (provider: string) => {
     setError(null);
     setOauthLoading(provider);
-    const redirect = getRedirect();
+    const redirect = role === "counsellor" ? "/counsellor" : "/dashboard";
     document.cookie = `insforge_redirect=${redirect}; path=/; max-age=600; SameSite=Lax`;
     const { data, error } = await insforge.auth.signInWithOAuth(provider as any, {
       redirectTo: `${window.location.origin}/api/auth/callback`,
@@ -94,7 +133,7 @@ export default function SignUpPage() {
 
   return (
     <div className="min-h-screen flex bg-surface relative overflow-hidden">
-      {/* Left Panel ΓÇö Branding */}
+      {/* Left Panel — Branding */}
       <div className={`hidden lg:flex lg:w-1/2 relative items-center justify-center p-12 ${
         role === "counsellor"
           ? "bg-gradient-to-br from-secondary via-primary-container to-primary"
@@ -107,21 +146,21 @@ export default function SignUpPage() {
         </div>
 
         <div className="relative z-10 max-w-md text-center">
-          <div className="w-20 h-20 bg-white/15 backdrop-blur-sm rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg border border-white/20">
-            <span className="material-symbols-outlined icon-fill text-white text-[40px]">
-              {role === "counsellor" ? "medical_information" : "favorite"}
-            </span>
-          </div>
+          <img
+            src="/logo.jpeg"
+            alt="Selfcare Hub"
+            className="w-20 h-20 object-contain rounded-2xl mx-auto mb-4 shadow-lg border border-white/20 bg-white/90"
+          />
           <p className="text-white/70 text-xs font-medium uppercase tracking-widest mb-6">
-            {role === "counsellor" ? "Counsellor Portal" : "Student Portal"}
+            {role === "counsellor" ? t("auth.portal.counsellor") : t("auth.portal.student")}
           </p>
           <h1 className="text-4xl font-black text-white mb-4 leading-tight">
-            {role === "counsellor" ? "Join the care team." : "Start your wellness journey."}
+            {role === "counsellor" ? t("auth.signup.heroCounsellor") : t("auth.signup.heroStudent")}
           </h1>
           <p className="text-white/80 text-lg leading-relaxed mb-8">
             {role === "counsellor"
-              ? "Register to access your counsellor dashboard and start supporting students with AI-assisted insights."
-              : "Join thousands of students taking control of their mental health with AI-powered support."}
+              ? t("auth.signup.descCounsellor")
+              : t("auth.signup.descStudent")}
           </p>
 
           {role === "counsellor" ? (
@@ -158,7 +197,7 @@ export default function SignUpPage() {
         </div>
       </div>
 
-      {/* Right Panel ΓÇö Form */}
+      {/* Right Panel — Form */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 relative overflow-y-auto">
         <div className="fixed inset-0 pointer-events-none overflow-hidden lg:hidden">
           <div className="bg-blob-1" />
@@ -166,24 +205,22 @@ export default function SignUpPage() {
         </div>
 
         <div className="relative z-10 w-full max-w-sm">
-          {/* Mobile logo */}
+          {/* Logo + Header */}
           <div className="text-center mb-6">
-            <Link href="/" className="inline-flex items-center gap-2">
-              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-                <span className="material-symbols-outlined icon-fill text-on-primary text-[22px]">psychiatry</span>
-              </div>
-              <span className="font-black text-2xl text-primary">MindCare AI</span>
+            <Link href="/" className="inline-block">
+              <img src="/logo.jpeg" alt="Selfcare Hub" className="w-14 h-14 object-contain rounded-xl mx-auto mb-3" />
             </Link>
-            <p className="text-on-surface-variant text-xs font-medium uppercase tracking-wider mt-2">
-              {role === "counsellor" ? "Counsellor Portal" : "Student Portal"}
+            <h2 className="font-black text-xl text-primary">Selfcare Hub</h2>
+            <p className="text-on-surface-variant text-xs font-medium uppercase tracking-widest mt-1.5">
+              {role === "counsellor" ? t("auth.portal.counsellor") : t("auth.portal.student")}
             </p>
           </div>
 
           {/* Form Card */}
           <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-7 shadow-lg shadow-primary/5">
-            <h1 className="text-lg font-bold text-on-surface mb-1">Create Account</h1>
+            <h1 className="text-lg font-bold text-on-surface mb-1">{t("auth.signup.title")}</h1>
             <p className="text-xs text-on-surface-variant mb-5">
-              {role === "counsellor" ? "Set up your counsellor account" : "Takes less than a minute"}
+              {role === "counsellor" ? t("auth.signup.counsellorSubtitle") : t("auth.signup.subtitle")}
             </p>
 
             {/* OAuth */}
@@ -202,7 +239,7 @@ export default function SignUpPage() {
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                 </svg>
               )}
-              {oauthLoading === "google" ? "Connecting..." : "Sign up with Google"}
+              {oauthLoading === "google" ? t("auth.signin.connecting") : t("auth.signup.google")}
             </button>
 
             <div className="flex items-center gap-3 my-5">
@@ -214,7 +251,7 @@ export default function SignUpPage() {
             <form onSubmit={handleSubmit} className="space-y-3.5">
               <div>
                 <label htmlFor="name" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
-                  Full Name
+                  {t("auth.signup.fullName")}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
@@ -225,16 +262,97 @@ export default function SignUpPage() {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Your full name"
+                    placeholder={t("auth.signup.namePlaceholder")}
                     required
                     className="w-full pl-10 pr-4 py-2.5 bg-surface-container-low border border-outline-variant/40 text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all placeholder:text-on-surface-variant/40"
                   />
                 </div>
               </div>
 
+              {/* Student ID & Faculty/Year — only for students */}
+              {role === "student" && (
+                <>
+                  <div>
+                    <label htmlFor="studentId" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
+                      Student ID
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
+                        <span className="material-symbols-outlined text-[18px]">badge</span>
+                      </span>
+                      <input
+                        id="studentId"
+                        type="text"
+                        value={studentId}
+                        onChange={(e) => setStudentId(e.target.value)}
+                        placeholder="e.g. 2100701234"
+                        required
+                        className="w-full pl-10 pr-4 py-2.5 bg-surface-container-low border border-outline-variant/40 text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all placeholder:text-on-surface-variant/40"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="faculty" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
+                        Faculty
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
+                          <span className="material-symbols-outlined text-[18px]">school</span>
+                        </span>
+                        <select
+                          id="faculty"
+                          value={faculty}
+                          onChange={(e) => setFaculty(e.target.value)}
+                          required
+                          className="w-full pl-10 pr-4 py-2.5 bg-surface-container-low border border-outline-variant/40 text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-none"
+                        >
+                          <option value="">Select</option>
+                          <option value="Computing & IT">Computing & IT</option>
+                          <option value="Engineering">Engineering</option>
+                          <option value="Science">Science</option>
+                          <option value="Business">Business</option>
+                          <option value="Arts & Humanities">Arts & Humanities</option>
+                          <option value="Education">Education</option>
+                          <option value="Law">Law</option>
+                          <option value="Medicine">Medicine</option>
+                          <option value="Social Sciences">Social Sciences</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label htmlFor="yearOfStudy" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
+                        Year
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
+                          <span className="material-symbols-outlined text-[18px]">calendar_month</span>
+                        </span>
+                        <select
+                          id="yearOfStudy"
+                          value={yearOfStudy}
+                          onChange={(e) => setYearOfStudy(e.target.value)}
+                          required
+                          className="w-full pl-10 pr-4 py-2.5 bg-surface-container-low border border-outline-variant/40 text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-none"
+                        >
+                          <option value="">Select</option>
+                          <option value="1">Year 1</option>
+                          <option value="2">Year 2</option>
+                          <option value="3">Year 3</option>
+                          <option value="4">Year 4</option>
+                          <option value="5">Year 5+</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
               <div>
                 <label htmlFor="email" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
-                  Email
+                  {t("auth.signin.email")}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
@@ -254,7 +372,7 @@ export default function SignUpPage() {
 
               <div>
                 <label htmlFor="password" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
-                  Password
+                  {t("auth.signup.password")}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
@@ -296,7 +414,7 @@ export default function SignUpPage() {
 
               <div>
                 <label htmlFor="confirmPassword" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
-                  Confirm Password
+                  {t("auth.signup.confirmPassword")}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
@@ -324,10 +442,31 @@ export default function SignUpPage() {
                 {confirmPassword && password !== confirmPassword && (
                   <p className="text-xs text-error mt-1.5 flex items-center gap-1">
                     <span className="material-symbols-outlined text-[14px]">error</span>
-                    Passwords don&apos;t match
+                    {t("auth.signup.passwordsNoMatch")}
                   </p>
                 )}
               </div>
+
+              {/* Consent — only for students */}
+              {role === "student" && (
+                <div className="bg-surface-container-low border border-outline-variant/40 rounded-xl p-4 space-y-2.5">
+                  <p className="text-xs text-on-surface-variant leading-relaxed">
+                    The following information will be kept strictly confidential and used solely for research classification purposes. You are free to withdraw at any point if not comfortable continuing.
+                  </p>
+                  <div className="flex items-start gap-2.5">
+                    <input
+                      id="consent"
+                      type="checkbox"
+                      checked={consent}
+                      onChange={(e) => setConsent(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30 accent-primary"
+                    />
+                    <label htmlFor="consent" className="text-sm font-medium text-on-surface cursor-pointer leading-snug">
+                      I consent to participate in this interview.
+                    </label>
+                  </div>
+                </div>
+              )}
 
               {error && (
                 <div className="flex items-start gap-2 p-3 bg-error-container/80 text-on-error-container text-sm rounded-xl animate-fade-in">
@@ -338,7 +477,7 @@ export default function SignUpPage() {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || (role === "student" && !consent)}
                 className="w-full py-3 bg-primary text-on-primary font-semibold rounded-xl shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all flex items-center justify-center gap-2 mt-2"
               >
                 {loading ? (
@@ -346,25 +485,25 @@ export default function SignUpPage() {
                 ) : (
                   <span className="material-symbols-outlined text-[20px]">person_add</span>
                 )}
-                {loading ? "Creating account..." : "Create Account"}
+                {loading ? t("auth.signup.creating") : t("auth.signup.title")}
               </button>
             </form>
           </div>
 
           <p className="text-center text-sm text-on-surface-variant mt-5">
-            Already have an account?{" "}
-            <Link href={`/auth/sign-in${role === "counsellor" ? "?role=counsellor" : ""}`} className="text-primary font-semibold hover:underline">
-              Sign in
-            </Link>
+            {t("auth.signup.hasAccount")}{" "}
+            <a href={`/auth/sign-in${role === "counsellor" ? "?role=counsellor" : ""}`} className="text-primary font-semibold hover:underline">
+              {t("auth.signup.signIn")}
+            </a>
           </p>
 
           <div className="text-center mt-3">
-            <Link
+            <a
               href={`/auth/sign-up${role === "counsellor" ? "" : "?role=counsellor"}`}
               className="text-xs text-on-surface-variant/70 hover:text-primary transition-colors"
             >
-              {role === "counsellor" ? "ΓåÉ Switch to Student Sign Up" : "Are you a counsellor? ΓåÆ"}
-            </Link>
+              {role === "counsellor" ? t("auth.signup.switchStudent") : t("auth.signup.switchCounsellor")}
+            </a>
           </div>
 
           <p className="text-center text-xs text-on-surface-variant/50 mt-3">

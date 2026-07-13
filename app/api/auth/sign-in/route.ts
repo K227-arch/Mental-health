@@ -1,25 +1,38 @@
-﻿import { NextRequest, NextResponse } from "next/server";
-import { createAuthActions } from "@insforge/sdk/ssr";
+import { NextRequest, NextResponse } from "next/server";
 
+// This route handles setting httpOnly cookies after client-side sign-in
+// The actual authentication is done client-side via the InsForge SDK
 export async function POST(request: NextRequest) {
-  const { email, password, redirect: redirectTo } = await request.json();
+  try {
+    const { accessToken, refreshToken, redirect } = await request.json();
 
-  if (!email || !password) {
-    return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
+    const response = NextResponse.json({
+      success: true,
+      redirect: redirect || "/dashboard",
+    });
+
+    if (accessToken) {
+      response.cookies.set("insforge_access_token", accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7,
+      });
+    }
+
+    if (refreshToken) {
+      response.cookies.set("insforge_refresh_token", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 30,
+      });
+    }
+
+    return response;
+  } catch {
+    return NextResponse.json({ error: "Failed to set session" }, { status: 500 });
   }
-
-  const response = NextResponse.json({ success: true, redirect: redirectTo || "/dashboard" }, { status: 200 });
-
-  const auth = createAuthActions({
-    requestCookies: request.cookies,
-    responseCookies: response.cookies,
-  });
-
-  const { error } = await auth.signInWithPassword({ email, password });
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
-
-  return response;
 }

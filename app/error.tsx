@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 export default function Error({
   error,
@@ -26,7 +26,7 @@ export default function Error({
           {error.message || "An unexpected error occurred."}
         </p>
         <p className="text-xs text-on-surface-variant/70 mb-6">
-          Take a moment ΓÇö you can try again whenever you&apos;re ready.
+          Take a moment — you can try again whenever you&apos;re ready.
         </p>
         <button
           onClick={() => reset()}

@@ -1,10 +1,10 @@
-﻿import { NextRequest, NextResponse } from "next/server";
-import { insforge } from "@/lib/insforge";
+import { NextRequest, NextResponse } from "next/server";
+import { insforgeAdmin as insforge } from "@/lib/insforge";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, score, severity, responses } = body;
+    const { userId, score, severity, responses, assessmentType } = body;
 
     if (!userId || score === undefined || !severity) {
       return NextResponse.json(
@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
         score,
         severity,
         responses: responses || [],
+        assessment_type: assessmentType || "phq9",
         created_at: new Date().toISOString(),
       })
       .select();

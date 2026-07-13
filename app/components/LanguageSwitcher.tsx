@@ -1,106 +1,86 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { insforge } from "@/lib/insforge";
-import { getLang, type Lang } from "@/app/lib/i18n";
+import { useState, useRef, useEffect } from "react";
+import { useTranslation, languages } from "../lib/i18n";
 
-const LANGUAGES: { code: Lang; label: string; flag: string; native: string }[] = [
-  { code: "en",  label: "English",    flag: "🇬🇧", native: "English"    },
-  { code: "rny", label: "Runyankore", flag: "🇺🇬", native: "Runyankore"  },
-  { code: "lg",  label: "Luganda",    flag: "🇺🇬", native: "Luganda"    },
-  { code: "sw",  label: "Swahili",    flag: "🇹🇿", native: "Kiswahili"  },
-];
-
-interface Props {
-  /** compact = icon only (for tight navbars), full = flag + label */
-  compact?: boolean;
-}
-
-export default function LanguageSwitcher({ compact = false }: Props) {
+export default function LanguageSwitcher({ variant = "light" }: { variant?: "light" | "dark" }) {
+  const { lang, setLang, t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const [current, setCurrent] = useState<Lang>("en");
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setCurrent(getLang());
-  }, []);
+  const currentLang = languages.find((l) => l.code === lang) || languages[0];
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const select = async (lang: Lang) => {
-    setCurrent(lang);
-    setOpen(false);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("mindcare_lang", lang);
-      // Broadcast so any component using getLang() can re-read
-      window.dispatchEvent(new CustomEvent("mindcare_lang_change", { detail: lang }));
-    }
-    // Persist to DB for authenticated users
-    try {
-      const { data } = await insforge.auth.getCurrentUser();
-      if (data?.user) {
-        await insforge.database
-          .from("student_profiles")
-          .update({ language_preference: lang, updated_at: new Date().toISOString() })
-          .eq("id", data.user.id);
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
       }
-    } catch { /* silent — user may not be authenticated */ }
-  };
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-  const active = LANGUAGES.find(l => l.code === current) ?? LANGUAGES[0];
+  const isDark = variant === "dark";
 
   return (
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 h-9 px-2.5 rounded-xl text-on-surface-variant hover:bg-surface-container border border-transparent hover:border-outline-variant/30 transition-colors"
-        aria-label={`Language: ${active.label}`}
-        title="Switch language"
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+          isDark
+            ? "text-white/60 hover:text-white hover:bg-white/5 border border-white/10"
+            : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container border border-outline-variant/40"
+        }`}
+        aria-label={t("language.label")}
       >
-        <span className="text-base leading-none select-none">{active.flag}</span>
-        {!compact && (
-          <span className="text-xs font-semibold hidden md:inline">{active.label}</span>
-        )}
-        <span
-          className="material-symbols-outlined text-[14px] transition-transform duration-200"
-          style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
-        >
-          expand_more
+        <span className="material-symbols-outlined text-[16px]">language</span>
+        <span className="hidden sm:inline">{currentLang.nativeLabel}</span>
+        <span className="material-symbols-outlined text-[14px]">
+          {open ? "expand_less" : "expand_more"}
         </span>
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-52 bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-xl overflow-hidden z-[60] animate-fade-in">
-          <div className="p-1.5">
-            {LANGUAGES.map(lang => (
-              <button
-                key={lang.code}
-                onClick={() => select(lang.code)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
-                  current === lang.code
-                    ? "bg-primary-container text-on-primary-container font-semibold"
-                    : "text-on-surface hover:bg-surface-container"
-                }`}
-              >
-                <span className="text-lg select-none">{lang.flag}</span>
-                <div className="text-left flex-1 min-w-0">
-                  <p className="font-medium leading-tight">{lang.label}</p>
-                  <p className="text-[10px] opacity-60">{lang.native}</p>
-                </div>
-                {current === lang.code && (
-                  <span className="material-symbols-outlined icon-fill text-[16px] shrink-0">
-                    check_circle
-                  </span>
-                )}
-              </button>
-            ))}
+        <div className={`absolute right-0 top-full mt-2 w-48 rounded-xl shadow-xl border overflow-hidden z-50 animate-fade-in ${
+          isDark
+            ? "bg-[#1a1f2e] border-white/10"
+            : "bg-surface-container-lowest border-outline-variant"
+        }`}>
+          <div className={`px-3 py-2 border-b ${isDark ? "border-white/5" : "border-outline-variant/30"}`}>
+            <span className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-white/40" : "text-on-surface-variant"}`}>
+              {t("language.label")}
+            </span>
           </div>
+          {languages.map((l) => (
+            <button
+              key={l.code}
+              onClick={() => {
+                setLang(l.code);
+                setOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2.5 text-sm transition-colors ${
+                l.code === lang
+                  ? isDark
+                    ? "bg-white/5 text-cyan-400"
+                    : "bg-primary-container/50 text-primary"
+                  : isDark
+                  ? "text-white/70 hover:bg-white/5 hover:text-white"
+                  : "text-on-surface hover:bg-surface-container"
+              }`}
+            >
+              <div className="flex flex-col items-start">
+                <span className="font-medium">{l.nativeLabel}</span>
+                <span className={`text-xs ${isDark ? "text-white/30" : "text-on-surface-variant"}`}>
+                  {l.label}
+                </span>
+              </div>
+              {l.code === lang && (
+                <span className={`material-symbols-outlined text-[16px] ${isDark ? "text-cyan-400" : "text-primary"}`}>
+                  check
+                </span>
+              )}
+            </button>
+          ))}
         </div>
       )}
     </div>

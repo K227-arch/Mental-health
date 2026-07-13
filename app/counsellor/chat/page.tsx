@@ -1,215 +1,415 @@
-﻿"use client";
+"use client";
 
-import { useState } from "react";
-import { students, riskColors } from "../../lib/data";
-import type { Student } from "../../lib/data";
+import { useState, useEffect, useRef } from "react";
 import clsx from "clsx";
+import { useTranslation } from "../../lib/i18n";
 
 interface ChatMsg {
   id: string;
-  role: "counsellor" | "student";
+  sender_role: string;
   content: string;
-  timestamp: string;
+  created_at: string;
 }
 
-const mockChats: Record<string, ChatMsg[]> = {
-  "1": [
-    { id: "c1", role: "student", content: "I just don't see the point in trying for these midterms anymore. Everything feels too heavy to carry.", timestamp: "03:15 AM" },
-    { id: "c2", role: "counsellor", content: "I hear you, and I'm glad you reached out. Can you tell me more about what's been feeling heavy?", timestamp: "03:16 AM" },
-    { id: "c3", role: "student", content: "It's like every assignment is piling up and I can't breathe. I've been skipping classes.", timestamp: "03:18 AM" },
-    { id: "c4", role: "counsellor", content: "That sounds incredibly tough. You're not alone. Would you be open to scheduling a brief session today?", timestamp: "03:20 AM" },
-  ],
-  "2": [
-    { id: "d1", role: "student", content: "I've been struggling to get out of bed. Everything feels pointless lately.", timestamp: "11:40 PM" },
-    { id: "d2", role: "counsellor", content: "Thank you for sharing that. Lack of motivation can be a sign of depression. How has your sleep been?", timestamp: "11:42 PM" },
-    { id: "d3", role: "student", content: "I'm sleeping but I wake up exhausted. Like I haven't rested at all.", timestamp: "11:45 PM" },
-  ],
-  "3": [
-    { id: "e1", role: "student", content: "Exams are coming up and I'm feeling overwhelmed by all the pressure.", timestamp: "09:20 AM" },
-    { id: "e2", role: "counsellor", content: "Exam stress is very common. Have you tried breaking your study sessions into smaller chunks?", timestamp: "09:22 AM" },
-    { id: "e3", role: "student", content: "I haven't. I just try to do everything at once and nothing sticks.", timestamp: "09:25 AM" },
-    { id: "e4", role: "counsellor", content: "Let's work on a study schedule together. I'll share some techniques that might help.", timestamp: "09:27 AM" },
-  ],
-  "4": [
-    { id: "f1", role: "student", content: "Hi! Just checking in for the weekly update. Everything has been going well.", timestamp: "02:00 PM" },
-    { id: "f2", role: "counsellor", content: "Great to hear! Any particular wins this week you'd like to share?", timestamp: "02:02 PM" },
-  ],
-};
+interface StudentSession {
+  id: string;
+  sessionId: string;
+  name: string;
+  riskLevel: string;
+  lastActive: string;
+}
 
 export default function CounsellorChat() {
-  const [selectedStudent, setSelectedStudent] = useState<Student>(students[0]);
-  const [messages, setMessages] = useState<ChatMsg[]>(mockChats[students[0].id] || []);
+  const { t } = useTranslation();
+  const [sessions, setSessions] = useState<StudentSession[]>([]);
+  const [selectedSession, setSelectedSession] = useState<StudentSession | null>(null);
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [user, setUser] = useState<{ id?: string } | null>(null);
+  const [recording, setRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [micError, setMicError] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  function selectStudent(student: Student) {
-    setSelectedStudent(student);
-    setMessages(mockChats[student.id] || []);
+  useEffect(() => {
+    // Get current user
+    fetch("/api/auth/me").then((r) => r.ok ? r.json() : null).then((d) => {
+      if (d?.user) setUser(d.user);
+    });
+
+    // Fetch student sessions
+    fetch("/api/counsellor/students")
+      .then((r) => r.ok ? r.json() : { students: [] })
+      .then((data) => {
+        const studentSessions = (data.students || []).map((s: any) => ({
+          id: s.id,
+          sessionId: s.sessionId,
+          name: s.name,
+          riskLevel: s.riskLevel,
+          lastActive: s.lastActive,
+        }));
+        setSessions(studentSessions);
+        if (studentSessions.length > 0) {
+          setSelectedSession(studentSessions[0]);
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (!selectedSession?.sessionId) {
+      setMessages([]);
+      return;
+    }
+    fetch(`/api/messages?sessionId=${selectedSession.sessionId}`)
+      .then((r) => r.ok ? r.json() : { messages: [] })
+      .then((data) => setMessages(data.messages || []))
+      .catch(() => setMessages([]));
+
+    // Poll for new messages every 3 seconds
+    const interval = setInterval(() => {
+      if (!selectedSession?.sessionId) return;
+      fetch(`/api/messages?sessionId=${selectedSession.sessionId}`)
+        .then((r) => r.ok ? r.json() : null)
+        .then((data) => {
+          if (data?.messages) setMessages(data.messages);
+        })
+        .catch(() => {});
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [selectedSession]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const sendMessage = async () => {
+    if (!input.trim() || !selectedSession || !user?.id) return;
+    setSending(true);
+
+    let sessionId = selectedSession.sessionId;
+
+    // If no session exists, create one
+    if (!sessionId) {
+      try {
+        const sessRes = await fetch("/api/sessions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            studentId: selectedSession.id,
+            counsellorId: user.id,
+            riskLevel: selectedSession.riskLevel || "Minimal",
+            notes: "Session created from chat.",
+            studentName: selectedSession.name,
+          }),
+        });
+        if (sessRes.ok) {
+          const sessData = await sessRes.json();
+          sessionId = sessData.session?.id;
+          // Update the selected session with the new ID
+          setSelectedSession({ ...selectedSession, sessionId: sessionId || "" });
+          setSessions((prev) =>
+            prev.map((s) => s.id === selectedSession.id ? { ...s, sessionId: sessionId || "" } : s)
+          );
+        }
+      } catch {
+        // Session creation failed
+      }
+    }
+
+    if (!sessionId) {
+      setSending(false);
+      return;
+    }
+
+    const res = await fetch("/api/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionId,
+        senderId: user.id,
+        senderRole: "counsellor",
+        content: input.trim(),
+        studentId: selectedSession.id,
+      }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.message) {
+        setMessages((prev) => {
+          const exists = prev.some((m) => m.id === data.message.id);
+          return exists ? prev : [...prev, data.message];
+        });
+      }
+      setInput("");
+    }
+    setSending(false);
+  };
+
+  const formatTime = (dateStr: string) => {
+    return new Date(dateStr).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
+  const startVoiceRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      // Use a supported mimeType
+      let mimeType = "audio/webm";
+      if (!MediaRecorder.isTypeSupported("audio/webm")) {
+        mimeType = "audio/mp4";
+        if (!MediaRecorder.isTypeSupported("audio/mp4")) {
+          mimeType = ""; // Let browser pick default
+        }
+      }
+      
+      const recorder = mimeType 
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
+      const chunks: BlobPart[] = [];
+
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        if (chunks.length === 0) return;
+        const blob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
+
+        // Upload the voice note
+        const formData = new FormData();
+        formData.append("file", blob, `voice-note.${recorder.mimeType.includes("mp4") ? "mp4" : "webm"}`);
+        formData.append("userId", user?.id || "counsellor");
+        formData.append("type", "audio");
+
+        try {
+          const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json();
+            const audioUrl = uploadData.url || uploadData.key;
+
+            // Send as a message with audio URL
+            let sessionId = selectedSession?.sessionId;
+            if (!sessionId && selectedSession && user?.id) {
+              const sessRes = await fetch("/api/sessions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  studentId: selectedSession.id,
+                  counsellorId: user.id,
+                  riskLevel: selectedSession.riskLevel || "Minimal",
+                  notes: "Session created from voice note.",
+                  studentName: selectedSession.name,
+                }),
+              });
+              if (sessRes.ok) {
+                const sessData = await sessRes.json();
+                sessionId = sessData.session?.id;
+              }
+            }
+
+            if (sessionId) {
+              const res = await fetch("/api/messages", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  sessionId,
+                  senderId: user?.id,
+                  senderRole: "counsellor",
+                  content: `🎤 Voice note: ${audioUrl}`,
+                  studentId: selectedSession?.id,
+                }),
+              });
+              if (res.ok) {
+                const data = await res.json();
+                if (data.message) {
+                  setMessages((prev) => {
+                    const exists = prev.some((m) => m.id === data.message.id);
+                    return exists ? prev : [...prev, data.message];
+                  });
+                }
+              }
+            }
+          }
+        } catch {
+          // Upload failed
+        }
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setRecording(true);
+    } catch (err: any) {
+      const msg = err?.name === "NotFoundError"
+        ? "No microphone detected. Please connect a microphone and try again."
+        : err?.name === "NotAllowedError"
+        ? "Microphone access was denied. Please allow mic permissions in your browser settings."
+        : "Unable to access microphone. Check your device settings.";
+      setMicError(msg);
+      setTimeout(() => setMicError(null), 5000);
+    }
+  };
+
+  const stopVoiceRecording = () => {
+    if (mediaRecorder && recording) {
+      mediaRecorder.stop();
+      setRecording(false);
+      setMediaRecorder(null);
+    }
+  };
+
+  const riskColor = (risk: string) => {
+    switch (risk) {
+      case "Critical": return "bg-error text-on-error";
+      case "High": return "bg-error-container text-on-error-container";
+      case "Moderate": return "bg-secondary-container text-on-secondary-container";
+      default: return "bg-surface-container-high text-on-surface";
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-64px)] text-on-surface-variant">
+        <span className="material-symbols-outlined animate-spin text-[24px] mr-2">progress_activity</span>
+        {t("counsellor.chat.loading")}
+      </div>
+    );
   }
-
-  function sendMessage() {
-    if (!input.trim()) return;
-    const newMsg: ChatMsg = {
-      id: `m${Date.now()}`,
-      role: "counsellor",
-      content: input.trim(),
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    };
-    setMessages((prev) => [...prev, newMsg]);
-    setInput("");
-  }
-
-  const colors = riskColors[selectedStudent.riskLevel];
 
   return (
-    <div className="p-4 md:p-8 max-w-[1200px] mx-auto h-full flex flex-col gap-6">
-      <div>
-        <h1 className="text-3xl font-bold text-on-background">Counselling Chat</h1>
-        <p className="text-on-surface-variant mt-1">Real-time messaging with anonymized students.</p>
-      </div>
-
-      <div className="flex flex-1 min-h-0 gap-4 relative">
-        {/* Sidebar toggle (mobile) */}
-        <button
-          className="md:hidden fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary text-on-primary shadow-lg flex items-center justify-center"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          aria-label="Toggle student list"
-        >
-          <span className="material-symbols-outlined icon-fill">{sidebarOpen ? "close" : "forum"}</span>
-        </button>
-
-        {/* Mobile backdrop */}
-        {sidebarOpen && (
-          <div className="fixed inset-0 z-30 bg-black/30 md:hidden" onClick={() => setSidebarOpen(false)} />
-        )}
-
-        {/* Student List */}
-        <div className={`w-72 shrink-0 flex flex-col gap-3 ${
-          sidebarOpen ? "fixed left-0 top-16 z-40 bg-surface h-[calc(100vh-64px)] p-4 shadow-2xl animate-slide-in" : "hidden"
-        } md:flex`}>
-          <h3 className="text-sm font-bold text-on-surface flex items-center gap-2">
-            <span className="material-symbols-outlined text-[18px]">forum</span>
-            Active Conversations
-          </h3>
-          <div className="flex flex-col gap-2 overflow-y-auto flex-1 pr-1">
-            {students.map((student) => {
-              const c = riskColors[student.riskLevel];
-              return (
-                <button
-                  key={student.id}
-                  onClick={() => selectStudent(student)}
-                  className={clsx(
-                    "w-full text-left bg-surface-container-lowest border-l-4 border-y border-r border-outline-variant rounded-r-xl p-4 cursor-pointer transition-colors relative overflow-hidden",
-                    c.border,
-                    selectedStudent.id === student.id ? "bg-surface-container-low shadow-md" : "hover:bg-surface-container-low"
-                  )}
-                >
-                  {student.riskLevel === "Critical" && (
-                    <div className="absolute top-0 right-0 w-14 h-14 bg-error-container/20 rounded-bl-full -mr-3 -mt-3" />
-                  )}
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <span className="text-sm font-bold text-on-background block">{student.anonymousId}</span>
-                      <span className="text-xs text-on-surface-variant">{student.faculty}, Yr {student.year}</span>
-                    </div>
-                    <span className={clsx("text-[10px] px-2 py-0.5 rounded uppercase tracking-wider font-semibold", c.badge)}>
-                      {student.riskLevel}
-                    </span>
-                  </div>
-                  <div className={clsx("flex items-center gap-1 mb-2 text-xs", c.text)}>
-                    <span className="material-symbols-outlined text-[14px]">
-                      {student.trend === "Declining" ? "trending_up" : student.trend === "Improving" ? "trending_down" : "trending_flat"}
-                    </span>
-                    <span className="uppercase tracking-wider">{student.trend}</span>
-                  </div>
-                  <p className="text-xs text-on-surface-variant line-clamp-2 mb-2">{student.summary}</p>
-                  <div className="text-xs text-outline flex items-center justify-between">
-                    <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[12px]">schedule</span>
-                      {student.lastActive}
-                    </span>
-                    {student.hasNewMessage && (
-                      <span className="flex items-center gap-1 text-primary font-medium">
-                        <span className="material-symbols-outlined text-[12px]">mark_chat_unread</span>
-                        1 New
-                      </span>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+    <div className="flex h-[calc(100svh-64px)] bg-surface">
+      {/* Sidebar - Student List */}
+      <aside className="hidden sm:flex w-72 border-r border-outline-variant bg-surface-container-low flex-col overflow-hidden shrink-0">
+        <div className="p-4 border-b border-outline-variant">
+          <h2 className="text-sm font-bold text-on-surface">{t("counsellor.chat.conversations")}</h2>
+          <p className="text-xs text-on-surface-variant mt-0.5">{sessions.length} {t("counsellor.chat.activeSessions")}</p>
         </div>
-
-        {/* Chat Panel */}
-        <div className="flex-1 bg-surface-container-lowest border border-outline-variant rounded-xl flex flex-col overflow-hidden shadow-sm">
-          <div className="p-4 border-b border-outline-variant flex items-center gap-3 bg-surface-bright">
-            <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-primary shrink-0">
-              <span className="material-symbols-outlined icon-fill">person</span>
+        <div className="flex-1 overflow-y-auto">
+          {sessions.length === 0 ? (
+            <div className="p-4 text-center text-sm text-on-surface-variant">
+              <span className="material-symbols-outlined text-[32px] opacity-40 block mb-2">forum</span>
+              {t("counsellor.chat.noSessions")}
             </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-bold text-on-background">{selectedStudent.anonymousId}</h2>
-                <span className={clsx("text-[10px] px-2 py-0.5 rounded uppercase tracking-wider font-semibold", colors.badge)}>
-                  {selectedStudent.riskLevel}
+          ) : (
+            sessions.map((session) => (
+              <button
+                key={session.id}
+                onClick={() => setSelectedSession(session)}
+                className={clsx(
+                  "w-full text-left px-4 py-3 border-b border-outline-variant/30 hover:bg-surface-container transition-colors",
+                  selectedSession?.id === session.id && "bg-primary-container/30"
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-on-surface truncate">{session.name}</span>
+                  <span className={clsx("text-[10px] px-2 py-0.5 rounded-full font-semibold", riskColor(session.riskLevel))}>
+                    {session.riskLevel}
+                  </span>
+                </div>
+                <span className="text-xs text-on-surface-variant">
+                  {session.lastActive ? new Date(session.lastActive).toLocaleDateString() : "No activity"}
+                </span>
+              </button>
+            ))
+          )}
+        </div>
+      </aside>
+
+      {/* Chat Area */}
+      <div className="flex-1 flex flex-col">
+        {selectedSession ? (
+          <>
+            {/* Chat Header */}
+            <div className="px-6 py-3 border-b border-outline-variant bg-surface-container-lowest flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-on-surface">{selectedSession.name}</h3>
+                <span className={clsx("text-[10px] px-2 py-0.5 rounded-full font-semibold", riskColor(selectedSession.riskLevel))}>
+                  {selectedSession.riskLevel} Risk
                 </span>
               </div>
-              <p className="text-xs text-on-surface-variant">{selectedStudent.faculty}, Yr {selectedStudent.year} &middot; PHQ-9: {selectedStudent.phq9Score}</p>
             </div>
-            <button className="p-2 rounded-full border border-outline-variant text-on-surface-variant hover:bg-surface-container transition-colors" title="History">
-              <span className="material-symbols-outlined text-[18px]">history</span>
-            </button>
-          </div>
 
-          <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
-            {messages.length === 0 && (
-              <div className="flex-1 flex items-center justify-center text-on-surface-variant text-sm">
-                <span className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[20px]">chat</span>
-                  No messages yet. Start the conversation.
-                </span>
-              </div>
-            )}
-            {messages.map((msg) => {
-              const isMe = msg.role === "counsellor";
-              return (
-                <div key={msg.id} className={clsx("flex", isMe ? "justify-end" : "justify-start")}>
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {messages.length === 0 ? (
+                <div className="text-center text-on-surface-variant text-sm mt-20">
+                  <span className="material-symbols-outlined text-[40px] opacity-30 block mb-2">chat</span>
+                  {t("counsellor.chat.noMessages")}
+                </div>
+              ) : (
+                messages.map((msg, idx) => (
                   <div
+                    key={`${msg.id}-${idx}`}
                     className={clsx(
-                      "max-w-[75%] rounded-2xl px-4 py-2.5 text-sm",
-                      isMe
-                        ? "bg-secondary text-on-secondary rounded-br-[4px]"
-                        : "bg-surface-container-high text-on-surface rounded-bl-[4px]"
+                      "max-w-[70%] px-4 py-3 rounded-2xl text-sm",
+                      msg.sender_role === "counsellor"
+                        ? "ml-auto bg-primary text-on-primary rounded-br-sm"
+                        : "mr-auto bg-surface-container text-on-surface rounded-bl-sm"
                     )}
                   >
-                    <p className="whitespace-pre-wrap">{msg.content}</p>
-                    <p className={clsx("text-[10px] mt-1", isMe ? "text-on-secondary/60" : "text-outline")}>
-                      {msg.timestamp}
-                    </p>
+                    <p>{msg.content}</p>
+                    <span className={clsx(
+                      "text-[10px] mt-1 block",
+                      msg.sender_role === "counsellor" ? "text-on-primary/60 text-right" : "text-on-surface-variant"
+                    )}>
+                      {formatTime(msg.created_at)}
+                    </span>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                ))
+              )}
+              <div ref={messagesEndRef} />
+            </div>
 
-          <div className="p-4 border-t border-outline-variant bg-surface-bright">
-            <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex items-center gap-3">
-              <button type="button" className="p-2 rounded-full text-on-surface-variant hover:bg-surface-container transition-colors" title="Attach">
-                <span className="material-symbols-outlined text-[20px]">attach_file</span>
-              </button>
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Type your message..."
-                className="flex-1 bg-surface border border-outline-variant rounded-xl px-4 py-2.5 text-sm text-on-background outline-none focus:ring-2 focus:ring-primary placeholder:text-on-surface-variant/60"
-              />
-              <button type="submit" disabled={!input.trim()} className="p-2.5 rounded-full bg-primary text-on-primary disabled:opacity-40 hover:opacity-90 transition-opacity">
-                <span className="material-symbols-outlined text-[20px]">send</span>
-              </button>
-            </form>
+            {/* Input */}
+            <div className="px-6 py-4 border-t border-outline-variant bg-surface-container-lowest">
+              {micError && (
+                <div className="mb-3 p-3 bg-error-container/80 text-on-error-container text-xs rounded-xl flex items-center gap-2 animate-fade-in">
+                  <span className="material-symbols-outlined text-[16px]">mic_off</span>
+                  {micError}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <button
+                  onClick={recording ? stopVoiceRecording : startVoiceRecording}
+                  className={`px-3 py-3 rounded-xl font-medium text-sm transition-all flex items-center gap-1 ${
+                    recording
+                      ? "bg-error text-on-error animate-pulse"
+                      : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
+                  }`}
+                  title={recording ? "Stop recording" : "Record voice note"}
+                >
+                  <span className="material-symbols-outlined text-[18px]">{recording ? "stop" : "mic"}</span>
+                </button>
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+                  placeholder={recording ? t("counsellor.chat.recording") : t("counsellor.chat.typeMessage")}
+                  disabled={recording}
+                  className="flex-1 px-4 py-3 bg-surface-container border border-outline-variant/50 rounded-xl text-sm text-on-surface focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none placeholder:text-on-surface-variant/50 disabled:opacity-50"
+                />
+                <button
+                  onClick={sendMessage}
+                  disabled={!input.trim() || sending || recording}
+                  className="px-4 py-3 bg-primary text-on-primary rounded-xl font-medium text-sm hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-[18px]">send</span>
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-on-surface-variant">
+            <div className="text-center">
+              <span className="material-symbols-outlined text-[48px] opacity-30 block mb-3">forum</span>
+              <p className="text-sm">{t("counsellor.chat.selectConversation")}</p>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

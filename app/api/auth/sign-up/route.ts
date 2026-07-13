@@ -1,25 +1,28 @@
-﻿import { NextRequest, NextResponse } from "next/server";
-import { createAuthActions } from "@insforge/sdk/ssr";
+import { NextRequest, NextResponse } from "next/server";
+import { insforgeAdmin } from "@/lib/insforge";
 
+// This route only handles profile creation after client-side sign-up
 export async function POST(request: NextRequest) {
-  const { email, password, name, redirect: redirectTo } = await request.json();
+  try {
+    const { userId, name, email, role, studentId, faculty, yearOfStudy } = await request.json();
 
-  if (!email || !password || !name) {
-    return NextResponse.json({ error: "Name, email, and password are required" }, { status: 400 });
+    if (!userId) {
+      return NextResponse.json({ error: "userId required" }, { status: 400 });
+    }
+
+    await insforgeAdmin.database.from("student_profiles").upsert([{
+      id: userId,
+      name: name || email?.split("@")[0] || "Student",
+      email: email || "",
+      role: role || "student",
+      anonymous_id: userId.slice(0, 8),
+      student_id: studentId || null,
+      faculty: faculty || null,
+      year_of_study: yearOfStudy || null,
+    }]);
+
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
-
-  const response = NextResponse.json({ success: true, redirect: redirectTo || "/dashboard" });
-
-  const auth = createAuthActions({
-    requestCookies: request.cookies,
-    responseCookies: response.cookies,
-  });
-
-  const { error } = await auth.signUp({ email, password, name });
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
-
-  return response;
 }

@@ -1,55 +1,82 @@
 import { NextRequest, NextResponse } from "next/server";
-import { insforge, detectKeywords } from "@/lib/insforge";
+import { insforgeAdmin as insforge } from "@/lib/insforge";
 
 export async function GET(request: NextRequest) {
   try {
-    const sessionId = request.nextUrl.searchParams.get("sessionId");
-    const limit = Math.min(Number(request.nextUrl.searchParams.get("limit")) || 50, 200);
+    const { searchParams } = request.nextUrl;
+    const sessionId = searchParams.get("sessionId");
 
-    if (!sessionId) return NextResponse.json({ error: "sessionId required" }, { status: 400 });
+    if (!sessionId) {
+      return NextResponse.json({ error: "sessionId required" }, { status: 400 });
+    }
 
-    const { data, error } = await insforge.database.from("messages")
-      .select().eq("session_id", sessionId)
-      .order("created_at", { ascending: true }).limit(limit);
+    const { data, error } = await insforge.database
+      .from("messages")
+      .select()
+      .eq("session_id", sessionId)
+      .order("created_at", { ascending: true });
 
-    if (error) return NextResponse.json({ error: "Failed to fetch messages" }, { status: 500 });
-    return NextResponse.json({ data });
-  } catch {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ messages: data || [] });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { sessionId, senderId, senderRole, content } = await request.json();
-    if (!sessionId || !senderId || !content) {
-      return NextResponse.json({ error: "sessionId, senderId, content required" }, { status: 400 });
+    const body = await request.json();
+    const { sessionId, senderId, senderRole, content } = body;
+
+    if (!sessionId || !senderId || !senderRole || !content) {
+      return NextResponse.json(
+        { error: "sessionId, senderId, senderRole, and content are required" },
+        { status: 400 }
+      );
     }
 
-    const keywords = detectKeywords(content);
-    const { data, error } = await insforge.database.from("messages").insert([{
-      session_id: sessionId,
-      sender_id: senderId,
-      sender_role: senderRole || "student",
-      content,
-      is_flagged: keywords.length > 0,
-    }]).select();
+    const { data, error } = await insforge.database
+      .from("messages")
+      .insert({
+        session_id: sessionId,
+        sender_id: senderId,
+        sender_role: senderRole,
+        content,
+      })
+      .select();
 
-    if (error) return NextResponse.json({ error: "Failed to send message" }, { status: 500 });
-
-    // If flagged — notify counsellor immediately
-    if (keywords.length > 0) {
-      await insforge.database.from("notifications").insert([{
-        user_id: "counsellor",
-        title: "⚠️ Flagged Message",
-        body: `Message contains crisis keywords: ${keywords.join(", ")}`,
-        type: "critical",
-        link: `/counsellor/chat?session=${sessionId}&student=${senderId}`,
-      }]);
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data: data?.[0] }, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    // Also create a notification for the recipient
+    const notifUserId = senderRole === "counsellor" ? body.studentId : body.counsellorId;
+    if (notifUserId && notifUserId !== "counsellor-system") {
+      await insforge.database.from("notifications").insert({
+        user_id: notifUserId,
+        title: senderRole === "counsellor" ? "New Message from Counsellor" : "New Message from Student",
+        body: content.length > 50 ? content.slice(0, 50) + "..." : content,
+        type: "message",
+        link: senderRole === "counsellor" ? "/dashboard/chat" : "/counsellor/chat",
+      });
+    }
+
+    // If student sends and counsellorId is "counsellor-system", notify all counsellors via system
+    if (senderRole === "student" && (!body.counsellorId || body.counsellorId === "counsellor-system")) {
+      await insforge.database.from("notifications").insert({
+        user_id: "counsellor-system",
+        title: "New Student Message",
+        body: content.length > 50 ? content.slice(0, 50) + "..." : content,
+        type: "message",
+        link: "/counsellor/chat",
+      });
+    }
+
+    return NextResponse.json({ message: data?.[0] }, { status: 201 });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

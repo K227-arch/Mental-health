@@ -1,11 +1,11 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import Footer from "../components/Footer";
 
 const sections = [
   {
     title: "Information We Collect",
     content:
-      "We collect information you provide when using MindCare AI, including screening responses, mood entries, and wellness check-in data. This may include your name, student ID, faculty, year of study, and self-reported mental health information. We also collect usage data such as feature interactions, session duration, and engagement patterns to improve our services. All screening and mood data is collected with your explicit consent and is anonymized where possible to protect your identity.",
+      "We collect information you provide when using Selfcare Hub, including screening responses, mood entries, and wellness check-in data. This may include your name, student ID, faculty, year of study, and self-reported mental health information. We also collect usage data such as feature interactions, session duration, and engagement patterns to improve our services. All screening and mood data is collected with your explicit consent and is anonymized where possible to protect your identity.",
   },
   {
     title: "How We Use Your Information",
@@ -25,7 +25,7 @@ const sections = [
   {
     title: "Contact",
     content:
-      "If you have questions about this privacy policy or how we handle your data, please contact our Privacy Team at privacy@mindcareai.app or write to: MindCare AI Privacy, University Wellness Center, Kampala, Uganda. For immediate concerns about your data or account, you can also reach out through the in-app support system.",
+      "If you have questions about this privacy policy or how we handle your data, please contact our Privacy Team at privacy@mindcareai.app or write to: Selfcare Hub Privacy, University Wellness Center, Kampala, Uganda. For immediate concerns about your data or account, you can also reach out through the in-app support system.",
   },
 ];
 
@@ -38,8 +38,9 @@ export default function PrivacyPolicy() {
       </div>
 
       <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-6 md:px-20 h-16 bg-surface/95 backdrop-blur-sm border-b border-outline-variant/30 shadow-sm">
-        <Link href="/" className="font-black text-2xl text-primary">
-          MindCare AI
+        <Link href="/" className="flex items-center gap-2">
+          <img src="/logo.jpeg" alt="Selfcare Hub" className="w-8 h-8 object-contain rounded-lg" />
+          <span className="hidden sm:block font-black text-2xl text-primary">Selfcare Hub</span>
         </Link>
         <Link
           href="/"
@@ -82,7 +83,7 @@ export default function PrivacyPolicy() {
           </div>
 
           <p className="text-xs text-on-surface-variant/60 mt-8 text-center">
-            This privacy policy is part of the MindCare AI Student Wellness System.
+            This privacy policy is part of the Selfcare Hub Student Wellness System.
             By using our platform, you agree to the terms outlined here.
           </p>
         </div>

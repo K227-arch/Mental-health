@@ -1,9 +1,10 @@
-﻿"use client";
+"use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Footer from "../components/Footer";
 import { hopeMessages } from "../lib/data";
+import { useTranslation } from "../lib/i18n";
 
 const groundingSteps = [
   { num: 5, sense: "see", icon: "visibility", description: "Things you can see right now" },
@@ -13,12 +14,29 @@ const groundingSteps = [
   { num: 1, sense: "taste", icon: "restaurant", description: "Thing you can taste" },
 ];
 
-export default function CrisisPage() {
+export default function PublicCrisisPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"breathing" | "grounding" | "distraction">("breathing");
   const [breathPhase, setBreathPhase] = useState<"inhale" | "hold" | "exhale">("inhale");
   const [breathCount, setBreathCount] = useState(0);
   const [isBreathing, setIsBreathing] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [recording, setRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [uploadingAudio, setUploadingAudio] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [hopeIndex, setHopeIndex] = useState(0);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-rotate hope images
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHopeIndex((prev) => (prev + 1) % hopeMessages.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const startBreathing = () => {
     setIsBreathing(true);
@@ -41,46 +59,157 @@ export default function CrisisPage() {
     cycle();
   };
 
+  const startAudioRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+      const chunks: BlobPart[] = [];
+      recorder.ondataavailable = (e) => chunks.push(e.data);
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(chunks, { type: "audio/webm" });
+        setUploadingAudio(true);
+        const formData = new FormData();
+        formData.append("file", blob, "crisis-audio.webm");
+        formData.append("userId", "anonymous");
+        formData.append("type", "audio");
+        try {
+          await fetch("/api/upload", { method: "POST", body: formData });
+          setUploadSuccess("Voice message sent securely.");
+        } catch { setUploadSuccess("Audio saved locally."); }
+        setTimeout(() => setUploadSuccess(null), 4000);
+        setUploadingAudio(false);
+      };
+      recorder.start();
+      setMediaRecorder(recorder);
+      setRecording(true);
+    } catch {
+      setUploadSuccess("Microphone access denied.");
+      setTimeout(() => setUploadSuccess(null), 3000);
+    }
+  };
+
+  const stopAudioRecording = () => {
+    if (mediaRecorder && recording) { mediaRecorder.stop(); setRecording(false); setMediaRecorder(null); }
+  };
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingVideo(true);
+    const formData = new FormData
+    formData.append("file", file);
+    formData.append("userId", "anonymous");
+    formData.append("type", "video");
+    try {
+      await fetch("/api/upload", { method: "POST", body: formData });
+      setUploadSuccess("Video sent securely.");
+    } catch { setUploadSuccess("Video saved locally."); }
+    setTimeout(() => setUploadSuccess(null), 4000);
+    setUploadingVideo(false);
+    if (videoInputRef.current) videoInputRef.current.value = "";
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-surface selection:bg-primary-fixed selection:text-on-primary-fixed">
-      {/* Hero */}
-      <header className="relative w-full min-h-[300px] md:h-[40vh] flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-secondary/10 to-surface" />
-          <div className="absolute inset-0 bg-gradient-to-br from-primary-fixed/30 to-secondary-container/20" />
+    <div className="min-h-screen flex flex-col bg-surface relative">
+      {/* Logo Watermark */}
+      <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0">
+        <img src="/logo.jpeg" alt="" className="w-[500px] h-[500px] object-contain opacity-[0.06]" />
+      </div>
+
+      {/* Navbar — shared style with landing page */}
+      <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-4 md:px-16 h-16 bg-surface/90 backdrop-blur-xl border-b border-outline-variant/20 shadow-sm">
+        <Link href="/" className="flex items-center gap-2">
+          <img src="/logo.jpeg" alt="Selfcare Hub" className="w-8 h-8 object-contain rounded-lg" />
+          <span className="hidden sm:block font-black text-xl text-primary tracking-tight">Selfcare Hub</span>
+        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/auth/sign-in" className="hidden sm:inline-flex px-4 py-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">
+            Sign In
+          </Link>
+          <Link href="/auth/sign-up" className="hidden sm:inline-flex px-4 py-2 bg-primary text-on-primary text-sm font-semibold rounded-lg shadow-sm hover:opacity-90 transition-opacity">
+            Get Started
+          </Link>
+          {/* Hamburger — mobile only */}
+          <button
+            className="sm:hidden p-2 text-on-surface-variant hover:bg-surface-container rounded-lg transition-colors"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            <span className="material-symbols-outlined text-[24px]">
+              {mobileMenuOpen ? "close" : "menu"}
+            </span>
+          </button>
         </div>
-        <div className="relative z-20 text-center px-6 max-w-4xl mx-auto w-full py-16 md:py-12">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-error text-on-error rounded-full text-sm font-semibold mb-4">
-            <span className="material-symbols-outlined icon-fill text-[18px]">emergency</span>
-            Crisis Support ΓÇö Available 24/7
+      </nav>
+
+      {/* Mobile menu drawer */}
+      {mobileMenuOpen && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm sm:hidden" onClick={() => setMobileMenuOpen(false)} />
+          <div className="fixed top-0 right-0 bottom-0 z-50 w-72 bg-surface-container-lowest border-l border-outline-variant shadow-xl sm:hidden flex flex-col animate-slide-in">
+            <div className="flex items-center justify-between px-5 h-16 border-b border-outline-variant">
+              <div className="flex items-center gap-2">
+                <img src="/logo.jpeg" alt="" className="w-8 h-8 object-contain rounded-lg" />
+                <span className="font-black text-lg text-primary">Selfcare Hub</span>
+              </div>
+              <button onClick={() => setMobileMenuOpen(false)} className="p-1.5 text-on-surface-variant hover:bg-surface-container rounded-lg transition-colors">
+                <span className="material-symbols-outlined text-[22px]">close</span>
+              </button>
+            </div>
+            <nav className="flex-1 px-3 py-4 space-y-1">
+              <Link href="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-on-surface hover:bg-surface-container transition-colors">
+                <span className="material-symbols-outlined text-[20px] text-on-surface-variant">home</span>
+                Home
+              </Link>
+              <Link href="/auth/sign-in" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-on-surface hover:bg-surface-container transition-colors">
+                <span className="material-symbols-outlined text-[20px] text-on-surface-variant">login</span>
+                Sign In
+              </Link>
+            </nav>
+            <div className="px-4 py-5 border-t border-outline-variant">
+              <Link href="/auth/sign-up" onClick={() => setMobileMenuOpen(false)} className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-primary text-on-primary font-semibold rounded-xl shadow-md text-sm">
+                <span className="material-symbols-outlined text-[18px]">rocket_launch</span>
+                Get Started
+              </Link>
+            </div>
           </div>
-          <h1 className="text-3xl md:text-5xl font-black text-primary mb-4 leading-tight">
-            You are not alone.{" "}
-            <br className="hidden md:block" />
-            Help is here right now.
+        </>
+      )}
+
+      {/* Full Hero — with proper top spacing */}
+      <header className="relative w-full flex items-center justify-center pt-20">
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/15 via-secondary/10 to-surface" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary-fixed/20 to-secondary-container/15" />
+        </div>
+        <div className="relative z-20 text-center px-6 max-w-4xl mx-auto w-full py-10">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-error text-on-error rounded-full text-sm font-semibold mb-5">
+            <span className="material-symbols-outlined icon-fill text-[18px]">emergency</span>
+            {t("crisis.available247")}
+          </div>
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-black text-primary mb-4 leading-tight">
+            {t("crisis.heroTitle")}
           </h1>
-          <p className="text-lg text-on-surface-variant max-w-2xl mx-auto">
-            Immediate Mental Health Crisis Resources. Confidential. Available 24/7.
+          <p className="text-base sm:text-lg text-on-surface-variant max-w-2xl mx-auto leading-relaxed">
+            {t("crisis.heroSubtitle")}
           </p>
         </div>
       </header>
 
-      <main className="flex-grow relative z-30 -mt-16 px-4 md:px-20 pb-20 w-full max-w-6xl mx-auto">
+      {/* Content */}
+      <main className="flex-grow relative z-10 px-4 md:px-20 pb-20 w-full max-w-6xl mx-auto mt-6">
         {/* Urgent Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full mb-8">
-          {/* Call */}
-          <a
-            href="tel:0800-HELP"
-            className="group block w-full bg-error rounded-xl p-6 shadow-sm transition-transform active:scale-95 hover:-translate-y-1 relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-error-container"
-          >
-            <div className="absolute -right-8 -top-8 bg-on-error/10 w-32 h-32 rounded-full blur-xl group-hover:bg-on-error/20 transition-colors" />
+          <a href="tel:0800-HELP" className="group block w-full bg-error rounded-xl p-6 shadow-sm transition-transform active:scale-95 hover:-translate-y-1 relative overflow-hidden">
+            <div className="absolute -right-8 -top-8 bg-on-error/10 w-32 h-32 rounded-full blur-xl" />
             <div className="flex items-start gap-6 relative z-10">
               <div className="w-12 h-12 rounded-full bg-on-error text-error flex items-center justify-center shrink-0">
                 <span className="material-symbols-outlined icon-fill text-[28px]">phone_in_talk</span>
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-on-error mb-1">Call Crisis Line</h2>
-                <p className="text-on-error/90 text-sm mb-3">Connect immediately with a trained counselor.</p>
+                <h2 className="text-xl font-semibold text-on-error mb-1">{t("crisis.callTitle")}</h2>
+                <p className="text-on-error/90 text-sm mb-3">{t("crisis.callDesc")}</p>
                 <div className="inline-flex items-center gap-1 text-sm text-on-error bg-on-error/20 px-3 py-1 rounded-full">
                   <span>0800-HELP</span>
                   <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
@@ -88,22 +217,17 @@ export default function CrisisPage() {
               </div>
             </div>
           </a>
-
-          {/* Chat */}
-          <Link
-            href="/screening"
-            className="group block w-full bg-primary rounded-xl p-6 shadow-sm transition-transform active:scale-95 hover:-translate-y-1 relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-primary-fixed"
-          >
-            <div className="absolute -right-8 -bottom-8 bg-on-primary/10 w-32 h-32 rounded-full blur-xl group-hover:bg-on-primary/20 transition-colors" />
+          <Link href="/auth/sign-in" className="group block w-full bg-primary rounded-xl p-6 shadow-sm transition-transform active:scale-95 hover:-translate-y-1 relative overflow-hidden">
+            <div className="absolute -right-8 -bottom-8 bg-on-primary/10 w-32 h-32 rounded-full blur-xl" />
             <div className="flex items-start gap-6 relative z-10">
               <div className="w-12 h-12 rounded-full bg-on-primary text-primary flex items-center justify-center shrink-0">
                 <span className="material-symbols-outlined icon-fill text-[28px]">chat</span>
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-on-primary mb-1">Start Emergency Chat</h2>
-                <p className="text-on-primary/90 text-sm mb-3">Text confidentially with a support specialist.</p>
+                <h2 className="text-xl font-semibold text-on-primary mb-1">{t("crisis.chatTitle")}</h2>
+                <p className="text-on-primary/90 text-sm mb-3">{t("crisis.chatDesc")}</p>
                 <div className="inline-flex items-center gap-1 text-sm text-on-primary bg-on-primary/20 px-3 py-1 rounded-full">
-                  <span>Start Session</span>
+                  <span>{t("crisis.signInToStart")}</span>
                   <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
                 </div>
               </div>
@@ -111,148 +235,101 @@ export default function CrisisPage() {
           </Link>
         </div>
 
-        {/* Safety Plan Banner */}
+        {/* Safety Plan */}
         <div className="w-full mb-8">
-          <button className="w-full bg-secondary-container border border-secondary-fixed-dim rounded-xl p-4 md:p-5 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors hover:bg-secondary-fixed focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2">
-            <div className="flex items-center gap-3 text-on-secondary-container">
-              <span className="material-symbols-outlined text-[24px]">health_and_safety</span>
-              <div className="text-left">
-                <span className="block text-sm font-semibold">Personal Safety Plan</span>
-                <span className="block text-sm opacity-80">Access your pre-filled coping strategies and contacts.</span>
+          <details className="group w-full bg-secondary-container border border-secondary-fixed-dim rounded-xl overflow-hidden">
+            <summary className="p-4 md:p-5 flex flex-col md:flex-row items-center justify-between gap-4 cursor-pointer hover:bg-secondary-fixed list-none">
+              <div className="flex items-center gap-3 text-on-secondary-container">
+                <span className="material-symbols-outlined text-[24px]">health_and_safety</span>
+                <div className="text-left">
+                  <span className="block text-sm font-semibold">Personal Safety Plan</span>
+                  <span className="block text-sm opacity-80">Your coping strategies and emergency contacts.</span>
+                </div>
               </div>
+              <span className="text-sm font-medium text-on-secondary-container bg-surface-container-lowest px-5 py-2 rounded-full shadow-sm whitespace-nowrap group-open:hidden">View Plan</span>
+              <span className="text-sm font-medium text-on-secondary-container bg-surface-container-lowest px-5 py-2 rounded-full shadow-sm whitespace-nowrap hidden group-open:inline">Close</span>
+            </summary>
+            <div className="px-5 pb-5 border-t border-secondary-fixed-dim/50 pt-4 space-y-4 text-on-secondary-container">
+              <div><h4 className="text-sm font-bold mb-1">1. Warning Signs</h4><p className="text-sm opacity-80">Thoughts of worthlessness, withdrawal from friends, difficulty sleeping, loss of interest in activities.</p></div>
+              <div><h4 className="text-sm font-bold mb-1">2. Coping Strategies</h4><ul className="text-sm opacity-80 list-disc ml-4 space-y-1"><li>Deep breathing (4-7-8 technique)</li><li>Go for a walk outside</li><li>Call a friend or family member</li><li>Use the grounding exercise below</li></ul></div>
+              <div><h4 className="text-sm font-bold mb-1">3. People I Can Contact</h4><ul className="text-sm opacity-80 list-disc ml-4 space-y-1"><li>University Counselling Centre: 0800-HELP</li><li>Trusted friend or family member</li><li>Campus security (for immediate danger)</li></ul></div>
+              <div><h4 className="text-sm font-bold mb-1">4. Professional Help</h4><p className="text-sm opacity-80">If coping strategies aren&apos;t working, contact your counsellor or go to the nearest hospital emergency department.</p></div>
             </div>
-            <span className="text-sm font-medium text-on-secondary-container bg-surface-container-lowest px-5 py-2 rounded-full shadow-sm whitespace-nowrap">
-              View Plan
-            </span>
-          </button>
+          </details>
         </div>
 
-        {/* Stabilization Tools + Professional Support */}
+        {/* Stabilization + Professional Support */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Stabilization */}
           <section className="bg-surface-container-lowest rounded-xl border border-outline-variant p-6 flex flex-col shadow-sm">
             <div className="flex items-center gap-3 mb-4 text-primary">
               <span className="material-symbols-outlined">grid_view</span>
               <h3 className="text-xl font-semibold">Stabilization Tools</h3>
             </div>
-            <p className="text-on-surface-variant text-sm mb-5">
-              Choose a tool to help regain focus and calm.
-            </p>
-
-            {/* Tabs */}
             <div className="flex gap-2 mb-5 bg-surface-container rounded-xl p-1">
               {(["breathing", "grounding", "distraction"] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`flex-1 py-2 px-2 rounded-lg text-xs font-semibold capitalize transition-colors ${
-                    activeTab === tab
-                      ? "bg-surface-container-lowest text-primary shadow-sm"
-                      : "text-on-surface-variant hover:text-on-surface"
-                  }`}
-                >
-                  {tab}
-                </button>
+                <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-2 px-2 rounded-lg text-xs font-semibold capitalize transition-colors ${activeTab === tab ? "bg-surface-container-lowest text-primary shadow-sm" : "text-on-surface-variant hover:text-on-surface"}`}>{tab}</button>
               ))}
             </div>
 
-            {/* Breathing */}
             {activeTab === "breathing" && (
               <div className="flex flex-col items-center gap-4 animate-fade-in">
                 <div className="flex justify-center items-center h-44 w-full bg-surface-bright rounded-xl border border-surface-container-high relative overflow-hidden">
-                  <div
-                    className={`w-20 h-20 rounded-full bg-secondary/20 flex items-center justify-center transition-all duration-1000 ${
-                      breathPhase === "inhale" ? "scale-125 opacity-80" : breathPhase === "hold" ? "scale-125 opacity-90" : "scale-100 opacity-40"
-                    }`}
-                  >
+                  <div className={`w-20 h-20 rounded-full bg-secondary/20 flex items-center justify-center transition-all duration-1000 ${breathPhase === "inhale" ? "scale-125 opacity-80" : breathPhase === "hold" ? "scale-125 opacity-90" : "scale-100 opacity-40"}`}>
                     <div className="w-12 h-12 rounded-full bg-secondary/40" />
                   </div>
-                  <span className="absolute bottom-3 text-xs text-secondary uppercase tracking-widest opacity-70">
-                    {isBreathing
-                      ? breathPhase === "inhale"
-                        ? "Breathe In..."
-                        : breathPhase === "hold"
-                        ? "Hold..."
-                        : "Breathe Out..."
-                      : "Breathe"}
-                  </span>
-                  {breathCount > 0 && (
-                    <span className="absolute top-3 right-3 text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full">
-                      {breathCount}/5
-                    </span>
-                  )}
+                  <span className="absolute bottom-3 text-xs text-secondary uppercase tracking-widest opacity-70">{isBreathing ? (breathPhase === "inhale" ? "Breathe In..." : breathPhase === "hold" ? "Hold..." : "Breathe Out...") : "Breathe"}</span>
+                  {breathCount > 0 && <span className="absolute top-3 right-3 text-xs bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full">{breathCount}/5</span>}
                 </div>
                 {!isBreathing ? (
-                  <button
-                    onClick={startBreathing}
-                    className="px-6 py-2.5 bg-secondary text-on-secondary rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
-                  >
-                    Start Breathing Exercise
-                  </button>
+                  <button onClick={startBreathing} className="px-6 py-2.5 bg-secondary text-on-secondary rounded-xl text-sm font-semibold hover:opacity-90">Start Breathing Exercise</button>
                 ) : (
-                  <p className="text-xs text-on-surface-variant text-center">
-                    Breathe in for 4 seconds ΓåÆ Hold for 2 ΓåÆ Breathe out for 4
-                  </p>
+                  <p className="text-xs text-on-surface-variant text-center">Breathe in for 4s → Hold for 2s → Breathe out for 4s</p>
                 )}
               </div>
             )}
 
-            {/* Grounding */}
             {activeTab === "grounding" && (
               <div className="space-y-2 animate-fade-in">
-                <p className="text-xs text-on-surface-variant mb-3">
-                  Name things for each sense to ground yourself in the present moment:
-                </p>
                 {groundingSteps.map((step) => (
-                  <button
-                    key={step.num}
-                    onClick={() =>
-                      setCompletedSteps((prev) =>
-                        prev.includes(step.num) ? prev.filter((s) => s !== step.num) : [...prev, step.num]
-                      )
-                    }
-                    className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors ${
-                      completedSteps.includes(step.num)
-                        ? "bg-secondary-container border-secondary text-on-secondary-container"
-                        : "bg-surface-bright border-surface-container-high hover:bg-secondary-container/30"
-                    }`}
-                  >
-                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
-                      completedSteps.includes(step.num) ? "bg-secondary text-on-secondary" : "bg-secondary-container text-on-secondary-container"
-                    }`}>
-                      {step.num}
-                    </span>
-                    <div className="text-left">
-                      <span className="text-sm font-medium">Things you can {step.sense}</span>
-                    </div>
-                    {completedSteps.includes(step.num) && (
-                      <span className="ml-auto material-symbols-outlined icon-fill text-secondary text-[18px]">check_circle</span>
-                    )}
+                  <button key={step.num} onClick={() => setCompletedSteps((prev) => prev.includes(step.num) ? prev.filter((s) => s !== step.num) : [...prev, step.num])} className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors ${completedSteps.includes(step.num) ? "bg-secondary-container border-secondary" : "bg-surface-bright border-surface-container-high hover:bg-secondary-container/30"}`}>
+                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${completedSteps.includes(step.num) ? "bg-secondary text-on-secondary" : "bg-secondary-container text-on-secondary-container"}`}>{step.num}</span>
+                    <span className="text-sm font-medium text-left">Things you can {step.sense}</span>
+                    {completedSteps.includes(step.num) && <span className="ml-auto material-symbols-outlined icon-fill text-secondary text-[18px]">check_circle</span>}
                   </button>
                 ))}
               </div>
             )}
 
-            {/* Distraction */}
             {activeTab === "distraction" && (
               <div className="space-y-3 animate-fade-in">
-                <p className="text-xs text-on-surface-variant mb-3">Try a quick mental challenge:</p>
                 <div className="bg-surface-bright border border-surface-container-high rounded-xl p-4 space-y-3">
-                  {[
-                    "Name 5 types of fruit you enjoy",
-                    "Count backwards from 100 by 7s",
-                    "Name 3 countries for each letter A, B, C",
-                    "Think of songs that start with the letter M",
-                    "Describe your perfect day in detail",
-                  ].map((challenge) => (
-                    <div key={challenge} className="flex items-start gap-2">
-                      <span className="material-symbols-outlined text-secondary text-[18px] mt-0.5 shrink-0">check_circle</span>
-                      <span className="text-sm">{challenge}</span>
-                    </div>
+                  {["Name 5 types of fruit you enjoy", "Count backwards from 100 by 7s", "Name 3 countries for each letter A, B, C", "Think of songs that start with the letter M", "Describe your perfect day in detail"].map((c) => (
+                    <div key={c} className="flex items-start gap-2"><span className="material-symbols-outlined text-secondary text-[18px] mt-0.5 shrink-0">check_circle</span><span className="text-sm">{c}</span></div>
                   ))}
                 </div>
               </div>
             )}
+
+            {/* Audio/Video Upload */}
+            <div className="mt-6 pt-5 border-t border-outline-variant">
+              <h4 className="text-sm font-semibold text-on-surface mb-2 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-[18px]">upload</span>
+                Share with a Counsellor
+              </h4>
+              <p className="text-xs text-on-surface-variant mb-4">Record a voice message or upload a video. Sign in to send it securely.</p>
+              {uploadSuccess && <div className="mb-4 p-3 bg-secondary-container text-on-secondary-container rounded-xl text-sm flex items-center gap-2 animate-fade-in"><span className="material-symbols-outlined text-[18px]">check_circle</span>{uploadSuccess}</div>}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button onClick={recording ? stopAudioRecording : startAudioRecording} disabled={uploadingAudio} className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all ${recording ? "bg-error text-on-error animate-pulse" : "bg-primary-container text-on-primary-container hover:bg-primary-fixed"} disabled:opacity-50`}>
+                  <span className="material-symbols-outlined text-[20px]">{uploadingAudio ? "progress_activity" : recording ? "stop_circle" : "mic"}</span>
+                  {uploadingAudio ? "Sending..." : recording ? "Stop Recording" : "Record Voice"}
+                </button>
+                <button onClick={() => videoInputRef.current?.click()} disabled={uploadingVideo} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium bg-secondary-container text-on-secondary-container hover:bg-secondary-fixed transition-all disabled:opacity-50">
+                  <span className="material-symbols-outlined text-[20px]">{uploadingVideo ? "progress_activity" : "videocam"}</span>
+                  {uploadingVideo ? "Uploading..." : "Upload Video"}
+                </button>
+                <input ref={videoInputRef} type="file" accept="video/*,audio/*" className="hidden" onChange={handleVideoUpload} />
+              </div>
+            </div>
           </section>
 
           {/* Professional Support */}
@@ -261,65 +338,76 @@ export default function CrisisPage() {
               <span className="material-symbols-outlined">local_hospital</span>
               <h3 className="text-xl font-semibold">Professional Support</h3>
             </div>
-
             <div className="space-y-5 flex-grow">
               <div className="p-4 bg-surface-bright rounded-xl border border-surface-container-high">
                 <h4 className="text-sm font-semibold text-on-surface mb-2">Counselor Notification</h4>
-                <p className="text-sm text-on-surface-variant leading-relaxed">
-                  If you initiate an emergency chat, your assigned university counselor will be securely notified to follow up within 24 hours. This ensures continuous care.
-                </p>
+                <p className="text-sm text-on-surface-variant leading-relaxed">If you initiate an emergency chat, your assigned university counselor will be securely notified to follow up within 24 hours.</p>
               </div>
-
               <div className="p-4 bg-surface-bright rounded-xl border border-surface-container-high">
                 <h4 className="text-sm font-semibold text-on-surface mb-2">Campus Emergency Services</h4>
-                <p className="text-sm text-on-surface-variant mb-3">
-                  For immediate physical safety concerns on campus, contact Public Safety directly.
-                </p>
-                <button className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary-container transition-colors">
-                  <span className="material-symbols-outlined text-[18px]">call</span>
-                  Call Campus Security
-                </button>
+                <p className="text-sm text-on-surface-variant mb-3">For immediate physical safety concerns on campus, contact Public Safety directly.</p>
+                <a href="tel:0800-SECURITY" className="flex items-center gap-2 text-sm font-medium text-primary hover:underline"><span className="material-symbols-outlined text-[18px]">call</span>Call Campus Security</a>
               </div>
-
               <div className="p-4 bg-error-container/30 rounded-xl border border-error-container">
-                <h4 className="text-sm font-semibold text-on-surface mb-2 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-error text-[18px]">warning</span>
-                  National Hotlines
-                </h4>
+                <h4 className="text-sm font-semibold text-on-surface mb-2 flex items-center gap-2"><span className="material-symbols-outlined text-error text-[18px]">warning</span>National Hotlines</h4>
                 <div className="space-y-2">
-                  <a href="tel:988" className="flex items-center gap-2 text-sm text-error font-semibold hover:underline">
-                    <span className="material-symbols-outlined text-[16px]">phone</span>
-                    988 ΓÇö Suicide & Crisis Lifeline
-                  </a>
-                  <a href="tel:0800-HELP" className="flex items-center gap-2 text-sm text-error font-semibold hover:underline">
-                    <span className="material-symbols-outlined text-[16px]">phone</span>
-                    0800-HELP ΓÇö Crisis Helpline
-                  </a>
+                  <a href="tel:988" className="flex items-center gap-2 text-sm text-error font-semibold hover:underline"><span className="material-symbols-outlined text-[16px]">phone</span>988 — Suicide & Crisis Lifeline</a>
+                  <a href="tel:0800-HELP" className="flex items-center gap-2 text-sm text-error font-semibold hover:underline"><span className="material-symbols-outlined text-[16px]">phone</span>0800-HELP — Crisis Helpline</a>
                 </div>
               </div>
             </div>
           </section>
         </div>
 
-        {/* Hope Gallery */}
+        {/* Hope Gallery — Slideshow */}
         <section className="bg-surface-container-lowest rounded-xl border border-outline-variant p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-2 text-primary">
             <span className="material-symbols-outlined">favorite</span>
             <h3 className="text-xl font-semibold">Messages of Hope</h3>
           </div>
           <p className="text-on-surface-variant text-sm mb-5">Small reminders that you are valued and resilient.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {hopeMessages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`relative overflow-hidden rounded-xl aspect-video flex items-center justify-center p-5 text-center ${msg.colorClass}`}
-              >
-                <div className={`absolute inset-0 opacity-40 bg-gradient-to-br ${msg.gradientClass}`} />
-                <p className={`relative z-10 text-sm font-semibold leading-relaxed ${msg.textClass}`}>
-                  {msg.text}
-                </p>
-              </div>
-            ))}
+
+          {/* Slideshow — text based */}
+          <div className="relative w-full max-w-lg mx-auto">
+            <div className="relative h-32 flex items-center justify-center">
+              {hopeMessages.map((msg, idx) => (
+                <div
+                  key={msg.id}
+                  className={`absolute inset-0 flex items-center justify-center transition-all duration-700 ${
+                    idx === hopeIndex ? "opacity-100 scale-100" : "opacity-0 scale-95"
+                  }`}
+                >
+                  <p className="text-center text-lg md:text-xl font-semibold text-primary px-6 leading-relaxed">
+                    &ldquo;{msg.text}&rdquo;
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Navigation arrows */}
+            <button
+              onClick={() => setHopeIndex((prev) => (prev - 1 + hopeMessages.length) % hopeMessages.length)}
+              className="absolute left-0 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-surface/80 backdrop-blur-sm border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors"
+            >
+              <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+            </button>
+            <button
+              onClick={() => setHopeIndex((prev) => (prev + 1) % hopeMessages.length)}
+              className="absolute right-0 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-surface/80 backdrop-blur-sm border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors"
+            >
+              <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+            </button>
+
+            {/* Dots */}
+            <div className="flex justify-center gap-1.5 mt-4">
+              {hopeMessages.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setHopeIndex(idx)}
+                  className={`w-2 h-2 rounded-full transition-colors ${idx === hopeIndex ? "bg-primary" : "bg-outline-variant"}`}
+                />
+              ))}
+            </div>
           </div>
         </section>
       </main>

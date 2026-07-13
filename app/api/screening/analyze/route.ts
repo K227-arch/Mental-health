@@ -1,10 +1,33 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import OpenAI from "openai";
 
-const HF_API_URL =
-  "https://api-inference.huggingface.co/models/rabiaqayyum/autotrain-mental-health-analysis-58535106298";
+// ── AI client — Groq primary (free & fast), OpenRouter fallback ──────────────
 
-const SENTIMENT_API_URL =
-  "https://api-inference.huggingface.co/models/cardiffnlp/twitter-roberta-base-sentiment-latest";
+function getAIClient(): { client: OpenAI; model: string } | null {
+  if (process.env.GROQ_API_KEY) {
+    return {
+      client: new OpenAI({
+        baseURL: "https://api.groq.com/openai/v1",
+        apiKey: process.env.GROQ_API_KEY,
+      }),
+      model: "llama-3.1-8b-instant",
+    };
+  }
+  if (process.env.OPENROUTER_API_KEY) {
+    return {
+      client: new OpenAI({
+        baseURL: "https://openrouter.ai/api/v1",
+        apiKey: process.env.OPENROUTER_API_KEY,
+        defaultHeaders: {
+          "HTTP-Referer": "https://mindcare-ai-mu.vercel.app",
+          "X-Title": "MindCare AI",
+        },
+      }),
+      model: "openai/gpt-4o-mini",
+    };
+  }
+  return null;
+}
 
 interface AnalysisResult {
   nlpSeverity: string;
@@ -18,229 +41,206 @@ interface AnalysisResult {
   recommendation: string;
 }
 
-async function classifyMentalHealth(text: string): Promise<{ label: string; score: number }[]> {
-  const response = await fetch(HF_API_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.HF_READ_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ inputs: text }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Mental health model error: ${response.status} - ${errorText}`);
-  }
-
-  const result = await response.json();
-  // The model returns [[{label, score}, ...]] or [{label, score}, ...]
-  return Array.isArray(result[0]) ? result[0] : result;
-}
-
-async function analyzeSentiment(text: string): Promise<{ label: string; score: number }[]> {
-  const response = await fetch(SENTIMENT_API_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.HF_READ_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ inputs: text }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Sentiment model error: ${response.status} - ${errorText}`);
-  }
-
-  const result = await response.json();
-  return Array.isArray(result[0]) ? result[0] : result;
+function getOpenAI() {
+  return getAIClient();
 }
 
 function buildContextText(
   answers: { question: string; answer: string; score: number }[],
   freeText?: string
 ): string {
-  const parts = answers.map(
-    (a) => `Q: ${a.question} A: ${a.answer} (severity: ${a.score}/3)`
-  );
-
+  const parts = answers.map((a) => `Q: ${a.question} — A: ${a.answer} (score: ${a.score}/3)`);
   let text = parts.join(". ");
-  if (freeText && freeText.trim()) {
-    text += `. Additional context: ${freeText.trim()}`;
-  }
+  if (freeText?.trim()) text += `. Additional context: ${freeText.trim()}`;
   return text;
-}
-
-function mapToNlpSeverity(
-  classifications: { label: string; score: number }[],
-  phq9Score: number
-): { severity: string; confidence: number } {
-  if (!classifications || classifications.length === 0) {
-    return { severity: "Unknown", confidence: 0 };
-  }
-
-  // Get the top prediction
-  const sorted = [...classifications].sort((a, b) => b.score - a.score);
-  const top = sorted[0];
-
-  // Map model labels to our severity scale
-  const labelMap: Record<string, string> = {
-    depression: "Moderate to Severe",
-    anxiety: "Moderate",
-    bipolar: "Moderate to Severe",
-    normal: "Minimal",
-    "personality disorder": "Moderate",
-    stress: "Mild to Moderate",
-    suicidal: "Severe - Immediate Attention Required",
-  };
-
-  const severity = labelMap[top.label.toLowerCase()] || top.label;
-  return { severity, confidence: top.score };
 }
 
 function identifyRiskIndicators(
   answers: { question: string; answer: string; score: number }[],
-  classifications: { label: string; score: number }[]
+  assessmentType?: string
 ): string[] {
   const indicators: string[] = [];
 
-  // Check question 9 (suicidal ideation)
-  const q9 = answers.find((a) => a.question.includes("better off dead") || a.question.includes("hurting yourself"));
-  if (q9 && q9.score >= 2) {
-    indicators.push("Self-harm ideation detected ΓÇö immediate follow-up recommended");
+  const highScoreAnswers = answers.filter((a) => a.score >= 3);
+  if (highScoreAnswers.length >= 3) {
+    indicators.push(`Multiple severe responses detected (${highScoreAnswers.length} items at maximum severity)`);
   }
 
-  // Check for high scores on key questions
-  const anhedonia = answers.find((a) => a.question.includes("interest or pleasure"));
-  if (anhedonia && anhedonia.score >= 3) {
-    indicators.push("Severe anhedonia ΓÇö loss of interest in activities");
+  if (assessmentType === "phq9" || !assessmentType) {
+    const q9 = answers.find((a) => a.question.toLowerCase().includes("better off dead") || a.question.toLowerCase().includes("hurting yourself"));
+    if (q9 && q9.score >= 2) indicators.push("Self-harm ideation detected — immediate follow-up recommended");
+    const anhedonia = answers.find((a) => a.question.toLowerCase().includes("interest or pleasure"));
+    if (anhedonia && anhedonia.score >= 3) indicators.push("Severe anhedonia — loss of interest in activities");
+    const hopelessness = answers.find((a) => a.question.toLowerCase().includes("down, depressed, or hopeless"));
+    if (hopelessness && hopelessness.score >= 3) indicators.push("Persistent hopelessness reported");
   }
 
-  const hopelessness = answers.find((a) => a.question.includes("down, depressed, or hopeless"));
-  if (hopelessness && hopelessness.score >= 3) {
-    indicators.push("Persistent hopelessness reported");
+  if (assessmentType === "gad7") {
+    const worry = answers.find((a) => a.question.toLowerCase().includes("stop or control worrying"));
+    if (worry && worry.score >= 3) indicators.push("Uncontrollable worry — may indicate generalized anxiety disorder");
+    const fear = answers.find((a) => a.question.toLowerCase().includes("afraid") || a.question.toLowerCase().includes("awful"));
+    if (fear && fear.score >= 2) indicators.push("Persistent dread/fear responses");
   }
 
-  const sleep = answers.find((a) => a.question.includes("sleep"));
-  if (sleep && sleep.score >= 2) {
-    indicators.push("Significant sleep disturbance");
+  if (assessmentType === "pcptsd5") {
+    const yesCount = answers.filter((a) => a.score >= 1).length;
+    if (yesCount >= 4) indicators.push("Strong PTSD indicators — professional trauma assessment recommended");
+    const nightmares = answers.find((a) => a.question.toLowerCase().includes("nightmares"));
+    if (nightmares && nightmares.score >= 1) indicators.push("Trauma-related nightmares or intrusive thoughts");
+    const numb = answers.find((a) => a.question.toLowerCase().includes("numb or detached"));
+    if (numb && numb.score >= 1) indicators.push("Emotional numbing/detachment from surroundings");
   }
 
-  // Check NLP classifications for high-risk labels
-  if (classifications) {
-    const suicidal = classifications.find(
-      (c) => c.label.toLowerCase() === "suicidal" && c.score > 0.3
-    );
-    if (suicidal) {
-      indicators.push(`NLP model flags suicidal risk (confidence: ${(suicidal.score * 100).toFixed(1)}%)`);
-    }
-
-    const depression = classifications.find(
-      (c) => c.label.toLowerCase() === "depression" && c.score > 0.5
-    );
-    if (depression) {
-      indicators.push(`Depression markers detected (confidence: ${(depression.score * 100).toFixed(1)}%)`);
-    }
+  if (assessmentType === "pss10") {
+    const cantCope = answers.find((a) => a.question.toLowerCase().includes("could not cope"));
+    if (cantCope && cantCope.score >= 3) indicators.push("Severe difficulty coping with daily demands");
+    const piling = answers.find((a) => a.question.toLowerCase().includes("piling up"));
+    if (piling && piling.score >= 3) indicators.push("Overwhelming perception of stress accumulation");
   }
+
+  if (assessmentType === "who5") {
+    const lowItems = answers.filter((a) => a.score <= 1);
+    if (lowItems.length >= 3) indicators.push("Very low wellbeing across multiple dimensions — depression screening recommended");
+  }
+
+  const sleep = answers.find((a) => a.question.toLowerCase().includes("sleep"));
+  if (sleep && sleep.score >= 2) indicators.push("Significant sleep disturbance");
 
   return indicators;
 }
 
-function generateRecommendation(
-  phq9Score: number,
-  nlpSeverity: string,
-  riskIndicators: string[]
-): string {
-  const hasSuicidalRisk = riskIndicators.some(
-    (r) => r.includes("Self-harm") || r.includes("suicidal")
-  );
+function generateRecommendation(score: number, nlpSeverity: string, riskIndicators: string[], assessmentType?: string, maxScore?: number): string {
+  const hasSuicidalRisk = riskIndicators.some((r) => r.includes("Self-harm") || r.includes("suicidal"));
+  const threshold = maxScore || 27;
+  const pct = score / threshold;
 
-  if (hasSuicidalRisk || phq9Score >= 20) {
-    return "Immediate professional intervention recommended. Please contact your counselor or crisis services. This is not something you need to face alone.";
+  if (hasSuicidalRisk || pct >= 0.75) return "Immediate professional intervention recommended. Please contact your counselor or crisis services (0800-HELP). You don't have to face this alone.";
+  if (pct >= 0.55 || nlpSeverity.toLowerCase().includes("severe")) {
+    if (assessmentType === "gad7") return "Your anxiety levels are significant. We strongly recommend speaking with a mental health professional.";
+    if (assessmentType === "pcptsd5") return "Your responses suggest probable PTSD. A detailed trauma assessment with a qualified professional is strongly recommended.";
+    if (assessmentType === "pss10") return "You're experiencing high levels of perceived stress. Consider stress management techniques and speak with a counsellor.";
+    if (assessmentType === "who5") return "Your wellbeing is quite low. This may indicate underlying depression or burnout. We recommend a counsellor session.";
+    return "Your responses indicate significant distress. We strongly recommend scheduling a session with a mental health professional.";
   }
-
-  if (phq9Score >= 15 || nlpSeverity.includes("Severe")) {
-    return "Your responses indicate significant distress. We strongly recommend scheduling a session with a mental health professional. In the meantime, our crisis resources are available 24/7.";
+  if (pct >= 0.35) {
+    if (assessmentType === "gad7") return "You're experiencing moderate anxiety. Relaxation exercises and mindfulness can help. Consider discussing this with a counsellor.";
+    if (assessmentType === "pss10") return "Moderate stress detected. Try breaking tasks into smaller pieces and ensure adequate sleep.";
+    if (assessmentType === "who5") return "Your wellbeing could be better. Small daily habits — exercise, social connection, sleep hygiene — can make a meaningful difference.";
+    return "Your wellbeing matters. Consider speaking with a counselor about what you're experiencing.";
   }
+  if (assessmentType === "who5") return "Your wellbeing scores are good! Keep up your healthy routines and check in regularly.";
+  return "Your responses suggest you're managing well. Continue your healthy habits and check in regularly.";
+}
 
-  if (phq9Score >= 10 || nlpSeverity.includes("Moderate")) {
-    return "Your wellbeing matters. Consider speaking with a counselor about what you're experiencing. Regular check-ins and self-care practices can make a meaningful difference.";
+// Rule-based severity from score alone (used as fallback)
+function scoreBasedSeverity(score: number, maxScore: number, assessmentType?: string): { severity: string; confidence: number } {
+  const pct = score / maxScore;
+  if (assessmentType === "who5") {
+    // Higher = better for WHO-5
+    if (pct >= 0.72) return { severity: "High Wellbeing", confidence: 0.85 };
+    if (pct >= 0.50) return { severity: "Moderate Wellbeing", confidence: 0.80 };
+    if (pct >= 0.28) return { severity: "Low Wellbeing", confidence: 0.80 };
+    return { severity: "Very Low Wellbeing", confidence: 0.85 };
   }
+  if (pct >= 0.75) return { severity: "Severe", confidence: 0.85 };
+  if (pct >= 0.55) return { severity: "Moderately Severe", confidence: 0.80 };
+  if (pct >= 0.35) return { severity: "Moderate", confidence: 0.75 };
+  if (pct >= 0.15) return { severity: "Mild", confidence: 0.75 };
+  return { severity: "Minimal", confidence: 0.85 };
+}
 
-  if (phq9Score >= 5) {
-    return "You're showing some signs of stress. Keep monitoring how you feel, and don't hesitate to reach out if things feel heavier. Small consistent self-care helps.";
-  }
-
-  return "Your responses suggest you're managing well. Continue your healthy habits and check in regularly. Prevention is key to long-term wellness.";
+// Rule-based sentiment from answers
+function scoreBasedSentiment(score: number, maxScore: number): { negative: number; neutral: number; positive: number } {
+  const pct = score / maxScore;
+  return {
+    negative: Math.min(pct * 1.1, 1),
+    neutral: Math.max(0.5 - pct * 0.5, 0.05),
+    positive: Math.max(1 - pct * 1.5, 0.02),
+  };
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { answers, phq9Score, freeText } = body;
+    const { answers, phq9Score, freeText, assessmentType, maxScore } = body;
+    const score = phq9Score;
 
-    if (!answers || !Array.isArray(answers) || phq9Score === undefined) {
-      return NextResponse.json(
-        { error: "Missing required fields: answers (array), phq9Score" },
-        { status: 400 }
-      );
+    if (!answers || !Array.isArray(answers) || score === undefined) {
+      return NextResponse.json({ error: "Missing required fields: answers (array), phq9Score" }, { status: 400 });
     }
 
+    const effectiveMaxScore = maxScore || 27;
     const contextText = buildContextText(answers, freeText);
+    const riskIndicators = identifyRiskIndicators(answers, assessmentType);
 
-    // Run both models in parallel
-    const [classifications, sentimentResults] = await Promise.allSettled([
-      classifyMentalHealth(contextText),
-      analyzeSentiment(contextText),
-    ]);
+    const ai = getOpenAI();
 
-    // Process mental health classification
-    let nlpSeverity = "Unknown";
-    let confidence = 0;
-    let classificationData: { label: string; score: number }[] = [];
+    if (ai) {
+      try {
+        const prompt = `You are a clinical mental health NLP system. Analyze these ${assessmentType?.toUpperCase() || "PHQ-9"} screening responses and return a JSON object.
 
-    if (classifications.status === "fulfilled") {
-      classificationData = classifications.value;
-      const mapped = mapToNlpSeverity(classificationData, phq9Score);
-      nlpSeverity = mapped.severity;
-      confidence = mapped.confidence;
-    }
+Responses:
+${contextText}
 
-    // Process sentiment
-    const sentimentBreakdown = { negative: 0, neutral: 0, positive: 0 };
-    if (sentimentResults.status === "fulfilled") {
-      for (const item of sentimentResults.value) {
-        const label = item.label.toLowerCase();
-        if (label === "negative") sentimentBreakdown.negative = item.score;
-        else if (label === "neutral") sentimentBreakdown.neutral = item.score;
-        else if (label === "positive") sentimentBreakdown.positive = item.score;
+Score: ${score}/${effectiveMaxScore}
+
+Return ONLY valid JSON with this exact structure:
+{
+  "classification": "one of: Minimal | Mild | Moderate | Moderately Severe | Severe | Mild to Moderate | Moderate to Severe | High Wellbeing | Moderate Wellbeing | Low Wellbeing | Very Low Wellbeing",
+  "confidence": 0.0-1.0,
+  "sentiment": {
+    "negative": 0.0-1.0,
+    "neutral": 0.0-1.0,
+    "positive": 0.0-1.0
+  },
+  "additionalRiskIndicators": []
+}`;
+
+        const completion = await ai.client.chat.completions.create({
+          model: ai.model,
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 300,
+          temperature: 0.1,
+          response_format: { type: "json_object" },
+        });
+
+        const raw = completion.choices[0]?.message?.content || "{}";
+        const parsed = JSON.parse(raw);
+
+        const nlpSeverity = parsed.classification || scoreBasedSeverity(score, effectiveMaxScore, assessmentType).severity;
+        const confidence = parsed.confidence || 0.82;
+        const sentimentBreakdown = {
+          negative: parsed.sentiment?.negative ?? scoreBasedSentiment(score, effectiveMaxScore).negative,
+          neutral: parsed.sentiment?.neutral ?? scoreBasedSentiment(score, effectiveMaxScore).neutral,
+          positive: parsed.sentiment?.positive ?? scoreBasedSentiment(score, effectiveMaxScore).positive,
+        };
+
+        // Merge LLM-detected indicators with rule-based ones
+        const allIndicators = [...new Set([...riskIndicators, ...(parsed.additionalRiskIndicators || [])])];
+        const recommendation = generateRecommendation(score, nlpSeverity, allIndicators, assessmentType, effectiveMaxScore);
+
+        return NextResponse.json({
+          nlpSeverity,
+          confidence,
+          sentimentBreakdown,
+          riskIndicators: allIndicators,
+          recommendation,
+        });
+      } catch (llmError) {
+        console.error("LLM analysis error, using rule-based fallback:", llmError);
+        // Fall through to rule-based
       }
     }
 
-    // Identify risk indicators
-    const riskIndicators = identifyRiskIndicators(answers, classificationData);
+    // Rule-based fallback
+    const { severity: nlpSeverity, confidence } = scoreBasedSeverity(score, effectiveMaxScore, assessmentType);
+    const sentimentBreakdown = scoreBasedSentiment(score, effectiveMaxScore);
+    const recommendation = generateRecommendation(score, nlpSeverity, riskIndicators, assessmentType, effectiveMaxScore);
 
-    // Generate recommendation
-    const recommendation = generateRecommendation(phq9Score, nlpSeverity, riskIndicators);
+    return NextResponse.json({ nlpSeverity, confidence, sentimentBreakdown, riskIndicators, recommendation });
 
-    const result: AnalysisResult = {
-      nlpSeverity,
-      confidence,
-      sentimentBreakdown,
-      riskIndicators,
-      recommendation,
-    };
-
-    return NextResponse.json(result, { status: 200 });
   } catch (error) {
     console.error("Screening analysis error:", error);
-    return NextResponse.json(
-      {
-        error: "Analysis service temporarily unavailable. PHQ-9 score remains valid.",
-        fallback: true,
-      },
-      { status: 503 }
-    );
+    return NextResponse.json({ error: "Analysis service temporarily unavailable.", fallback: true }, { status: 503 });
   }
 }
