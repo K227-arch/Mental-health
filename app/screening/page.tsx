@@ -478,9 +478,37 @@ export default function ScreeningPage() {
     setTimeout(() => {
       if (currentQuestion + 1 < questions.length) {
         const nextQ = questions[currentQuestion + 1];
+
+        // Varied empathetic responses based on answer severity and question number
+        const empathyResponses = {
+          high: [ // score 2-3 (More than half / Nearly every day)
+            "I hear you — that sounds really difficult.",
+            "That must be weighing on you. You're not alone in this.",
+            "I'm sorry you're going through that. It takes courage to share.",
+            "That sounds tough. How long has this been going on?",
+            "I appreciate you being honest with me about this.",
+          ],
+          moderate: [ // score 1 (Several days)
+            "I see. Let's keep exploring how you've been feeling.",
+            "Got it — even occasional struggles matter.",
+            "Thanks for sharing. Every feeling is valid.",
+            "I understand. Let's continue checking in.",
+          ],
+          low: [ // score 0 (Not at all)
+            "That's good to hear.",
+            "Glad that hasn't been bothering you.",
+            "That's positive — let's keep going.",
+            "Good. Let's check on a few more things.",
+          ],
+        };
+
+        const category = optionIndex >= 2 ? "high" : optionIndex === 1 ? "moderate" : "low";
+        const responses = empathyResponses[category];
+        const empathy = responses[currentQuestion % responses.length];
+
         addMessage(
           "ai",
-          `Thank you for sharing that.\n\nOver the last two weeks, how often have you been bothered by:\n\n**${nextQ.text}**`
+          `${empathy}\n\nOver the last two weeks, how often have you been bothered by:\n\n**${nextQ.text}**`
         );
         setCurrentQuestion((prev) => prev + 1);
       } else {
@@ -507,7 +535,7 @@ export default function ScreeningPage() {
           setPhase("functional");
           addMessage(
             "ai",
-            `Thank you for sharing that.\n\nOne more question — if you checked off any problems above, how difficult have these problems made it for you to do your work, take care of things at home, or get along with other people?`
+            `I appreciate your honesty throughout this check-in.\n\nOne last question — if you checked off any problems above, how difficult have these problems made it for you to do your work, take care of things at home, or get along with other people?`
           );
         } else {
           // Non-PHQ-9: complete immediately
@@ -604,7 +632,7 @@ export default function ScreeningPage() {
       // Acknowledge it and gently remind them to select an option.
       setTimeout(() => {
         if (!done && currentQuestion < selectedModel.questions.length) {
-          addMessage("ai", `Thank you for sharing that — I hear you. Please select one of the options below to indicate how often you've experienced this over the last two weeks.`);
+          addMessage("ai", `I hear you — that's important context. Please select one of the options below to indicate how often you've experienced this.`);
         }
       }, 500);
     }
