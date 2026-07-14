@@ -537,7 +537,7 @@ export default function LandingPage() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.7 }}
-        className="px-6 md:px-16 py-24 text-center"
+        className="px-6 md:px-16 py-24 text-center relative z-20"
       >
         <div className="max-w-2xl mx-auto">
           <h2 className="text-3xl md:text-5xl font-bold text-on-surface mb-4 tracking-tight">
@@ -548,7 +548,7 @@ export default function LandingPage() {
           </p>
           <Link
             href="/auth/sign-up"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-on-primary font-semibold rounded-2xl shadow-lg shadow-primary/15 hover:shadow-xl hover:-translate-y-1 transition-all text-lg"
+            className="relative z-30 inline-flex items-center gap-2 px-8 py-4 bg-primary text-on-primary font-semibold rounded-2xl shadow-lg shadow-primary/15 hover:shadow-xl hover:-translate-y-1 transition-all text-lg"
           >
             <span className="material-symbols-outlined text-[22px]">rocket_launch</span>
             {t("landing.getstarted")}
