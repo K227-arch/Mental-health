@@ -62,7 +62,7 @@ export default function TermsOfService() {
               How we serve you
             </h1>
             <p className="text-on-surface-variant text-sm">
-              Last updated: January 2025
+              Last updated: July 2026
             </p>
           </div>
 

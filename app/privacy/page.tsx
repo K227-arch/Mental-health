@@ -62,7 +62,7 @@ export default function PrivacyPolicy() {
               Your privacy matters
             </h1>
             <p className="text-on-surface-variant text-sm">
-              Last updated: January 2025
+              Last updated: July 2026
             </p>
           </div>
 
