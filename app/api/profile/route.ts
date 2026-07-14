@@ -42,7 +42,6 @@ export async function PUT(request: NextRequest) {
         id: userId,
         name: name || undefined,
         faculty: faculty || undefined,
-        year_of_study: yearOfStudy || undefined,
         language_preference: languagePreference || undefined,
         updated_at: new Date().toISOString(),
       }, { onConflict: "id" })

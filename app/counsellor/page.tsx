@@ -266,7 +266,7 @@ export default function CounsellorDashboard() {
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <span className="text-sm font-bold text-on-background block">{student.anonymousId}</span>
-                      <span className="text-xs text-on-surface-variant">{student.faculty}, Yr {student.year}</span>
+                      <span className="text-xs text-on-surface-variant">{student.faculty}</span>
                     </div>
                     <span className={clsx("text-[10px] px-2 py-0.5 rounded uppercase tracking-wider font-semibold", colors.badge)}>
                       {student.riskLevel}
@@ -327,7 +327,7 @@ export default function CounsellorDashboard() {
                 </span>
               </div>
               <p className="text-sm text-on-surface-variant">
-                {selectedStudent.faculty}, Year {selectedStudent.year} • Last active: {selectedStudent.lastActive} via Chat
+                {selectedStudent.faculty} • Last active: {selectedStudent.lastActive} via Chat
               </p>
             </div>
             <div className="flex gap-2">
@@ -384,7 +384,7 @@ export default function CounsellorDashboard() {
                   <div>
                     <h4 className="text-xs font-bold text-on-surface mb-1">Student Info</h4>
                     <p className="text-xs text-on-surface-variant">
-                      {selectedStudent.faculty}, Year {selectedStudent.year}
+                      {selectedStudent.faculty}
                     </p>
                   </div>
                 </div>

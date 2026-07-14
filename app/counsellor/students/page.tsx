@@ -170,7 +170,7 @@ export default function StudentsManagementPage() {
                       </div>
                     </td>
                     <td className="py-3 px-4 text-on-surface-variant">
-                      {student.faculty}{student.year > 0 ? `, Yr ${student.year}` : ""}
+                      {student.faculty}{student.year > 0 ? `` : ""}
                     </td>
                     <td className="py-3 px-4 text-center">
                       <span className={clsx("text-[10px] px-2 py-0.5 rounded-full uppercase font-semibold", riskBadgeColors[student.riskLevel] || riskBadgeColors["Minimal"])}>
@@ -223,7 +223,7 @@ export default function StudentsManagementPage() {
               </div>
               <div>
                 <h2 className="text-lg font-bold text-on-surface">{selectedStudent.name}</h2>
-                <p className="text-sm text-on-surface-variant">{selectedStudent.faculty}{selectedStudent.year > 0 ? `, Year ${selectedStudent.year}` : ""}</p>
+                <p className="text-sm text-on-surface-variant">{selectedStudent.faculty}{selectedStudent.year > 0 ? `` : ""}</p>
               </div>
             </div>
             <button onClick={() => setSelectedStudent(null)} className="p-2 rounded-full hover:bg-surface-container transition-colors">

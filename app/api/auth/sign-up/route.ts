@@ -18,7 +18,6 @@ export async function POST(request: NextRequest) {
       anonymous_id: userId.slice(0, 8),
       student_id: studentId || null,
       faculty: faculty || null,
-      year_of_study: yearOfStudy || null,
     }]);
 
     return NextResponse.json({ success: true });

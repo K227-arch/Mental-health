@@ -27,7 +27,7 @@ export default function SettingsPage() {
             if (data?.profile) {
               setProfile(data.profile);
               setFaculty(data.profile.faculty || "");
-              setYear(data.profile.year_of_study || 1);
+              
               if (data.profile.name) setName(data.profile.name);
             }
           });
