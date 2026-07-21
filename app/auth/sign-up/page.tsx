@@ -11,6 +11,7 @@ export default function SignUpPage() {
   const { t } = useTranslation();
   const [role, setRole] = useState<"student" | "counsellor">("student");
   const [name, setName] = useState("");
+  const [registrationNumber, setRegistrationNumber] = useState("");
   const [faculty, setFaculty] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -85,6 +86,7 @@ export default function SignUpPage() {
             email,
             role: redirectTarget === "/counsellor" ? "counsellor" : "student",
             faculty: role === "student" ? faculty : undefined,
+            registrationNumber: role === "student" ? registrationNumber : undefined,
           }),
         }).catch(() => {});
       }
@@ -269,6 +271,25 @@ export default function SignUpPage() {
               {role === "student" && (
                 <>
                   <div>
+                    <label htmlFor="registrationNumber" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
+                      Registration Number
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
+                        <span className="material-symbols-outlined text-[18px]">badge</span>
+                      </span>
+                      <input
+                        id="registrationNumber"
+                        type="text"
+                        value={registrationNumber}
+                        onChange={(e) => setRegistrationNumber(e.target.value)}
+                        placeholder="e.g. 2100701234"
+                        required
+                        className="w-full pl-10 pr-4 py-2.5 bg-surface-container-low border border-outline-variant/40 text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all placeholder:text-on-surface-variant/40"
+                      />
+                    </div>
+                  </div>
+                  <div>
                     <label htmlFor="faculty" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
                       Faculty
                     </label>
@@ -401,7 +422,7 @@ export default function SignUpPage() {
               {role === "student" && (
                 <div className="bg-surface-container-low border border-outline-variant/40 rounded-xl p-4 space-y-2.5">
                   <p className="text-xs text-on-surface-variant leading-relaxed">
-                    The following information will be kept strictly confidential and used solely for research classification purposes. You are free to withdraw at any point if not comfortable continuing.
+                    The following information will be kept strictly confidential. You are free to withdraw at any point if not comfortable continuing.
                   </p>
                   <div className="flex items-start gap-2.5">
                     <input
@@ -412,7 +433,7 @@ export default function SignUpPage() {
                       className="mt-0.5 w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30 accent-primary"
                     />
                     <label htmlFor="consent" className="text-sm font-medium text-on-surface cursor-pointer leading-snug">
-                      I consent to participate in this interview.
+                      Consent
                     </label>
                   </div>
                 </div>

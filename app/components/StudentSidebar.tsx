@@ -29,7 +29,10 @@ export default function StudentSidebar() {
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col h-[calc(100svh-64px)] sticky top-16 w-60 shrink-0 p-3 border-r border-outline-variant bg-surface-container-low overflow-y-auto">
         <div className="mb-4 px-3">
-          <h2 className="text-xs text-on-surface-variant uppercase tracking-wider mb-1 mt-3">{t("sidebar.student.title")}</h2>
+          <div className="flex items-center gap-2 mt-3 mb-1">
+            <img src="/logo.jpeg" alt="Selfcare Hub" className="w-7 h-7 object-contain rounded-md" />
+            <h2 className="text-xs text-on-surface-variant uppercase tracking-wider">{t("sidebar.student.title")}</h2>
+          </div>
           <p className="text-sm font-semibold text-on-surface">{t("sidebar.student.subtitle")}</p>
         </div>
         <nav className="flex-1 flex flex-col gap-1">

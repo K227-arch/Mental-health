@@ -243,6 +243,7 @@ export default function StudentChatPage() {
                 <div className="text-center text-on-surface-variant text-sm mt-16">
                   <span className="material-symbols-outlined text-[40px] opacity-30 block mb-2">chat</span>
                   <p>{t("chat.noMessages")}</p>
+                  <p className="text-xs text-on-surface-variant/70 mt-3 max-w-xs mx-auto italic">Kindly be patient if you do not receive an immediate response. Sometimes, the counselor is not on but will respond shortly.</p>
                 </div>
               ) : (
                 messages.map((msg, idx) => (

@@ -61,13 +61,15 @@ export default function ScreeningPage() {
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [cameraRecording, setCameraRecording] = useState(false);
   const [cameraRecorder, setCameraRecorder] = useState<MediaRecorder | null>(null);
-  // Phase: "rapport" = initial greeting, "phq9" = answering questions, "functional" = Q10 impairment, "chat" = free AI conversation
-  const [phase, setPhase] = useState<"rapport" | "phq9" | "functional" | "chat">("rapport");
+  // Phase: "rapport" = initial greeting, "phq9" = answering questions, "functional" = Q10 impairment, "followup" = post-assessment questions, "chat" = free AI conversation
+  const [phase, setPhase] = useState<"rapport" | "phq9" | "functional" | "followup" | "chat">("rapport");
   const [conversationStage, setConversationStage] = useState<"rapport" | "exploration" | "stressors" | "risk" | "intervention">("rapport");
   const [functionalImpairment, setFunctionalImpairment] = useState<number | null>(null);
   const [nlpContextRef, setNlpContextRef] = useState<object | null>(null);
   const [checkingLastScreening, setCheckingLastScreening] = useState(true);
   const [daysUntilNextScreening, setDaysUntilNextScreening] = useState<number | null>(null);
+  const [followupStep, setFollowupStep] = useState(0);
+  const [starRating, setStarRating] = useState(0);
   const [chatHistory, setChatHistory] = useState<{ id: string; title: string; date: string; messages: Message[] }[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -261,7 +263,7 @@ export default function ScreeningPage() {
     setTotalScore(0);
     setNlpAnalysis(null);
     const questions = selectedModel.questions;
-    addMessage("ai", `Thank you for sharing. Let\u2019s check in a bit more closely.\n\nOver the last two weeks, how often have you been bothered by:\n\n**${questions[0].text}**\n\nPlease select how often below.`);
+    addMessage("ai", `Thank you so much for sharing that with me — it means a lot. 💚\n\nI'd love to understand a little better how you've been doing. Let's take a gentle look together over the last two weeks.\n\nOver the last two weeks, how often have you been bothered by:\n\n**${questions[0].text}**\n\nPlease select how often below.`);
   };
 
   const startAssessment = () => {
@@ -488,11 +490,11 @@ export default function ScreeningPage() {
         // Varied empathetic responses based on answer severity and question number
         const empathyResponses = {
           high: [ // score 2-3 (More than half / Nearly every day)
-            "I hear you — that sounds really difficult.",
-            "That must be weighing on you. You're not alone in this.",
-            "I'm sorry you're going through that. It takes courage to share.",
-            "That sounds tough. How long has this been going on?",
-            "I appreciate you being honest with me about this.",
+            "Ohhhh nooo, that is so bad to hear… what happened exactly? Do you mind sharing?",
+            "I'm so sorry to hear that. That must be really weighing on you.",
+            "Sorry about that. Sometimes, days seem to be different. But healing and becoming happy and peaceful is the goal.",
+            "Feeling bad is normal, but you deserve peace, contentment, and appreciation. Be grateful for whatever comes your way.",
+            "That must be weighing on you. But be strong and stay positive — have faith for the best always.",
           ],
           moderate: [ // score 1 (Several days)
             "I see. Let's keep exploring how you've been feeling.",
@@ -560,12 +562,12 @@ export default function ScreeningPage() {
     const severity = selectedModel.getSeverity(score);
     addMessage(
       "ai",
-      `Thank you for completing the assessment.\n\nYou're doing great by checking in. Based on your responses, here's what I noticed: **${severity.label}**.\n\n${
+      `Thank you so much for being open and honest with me through this. That takes real courage. 💚\n\nBased on what you've shared, here's what I noticed: **${severity.label}**.\n\n${
         score >= selectedModel.maxScore * 0.7
-          ? "I want you to know that help is available. Your counselor will be notified securely. Please consider reaching out to crisis support if you need immediate help."
+          ? "I want you to know that help is available and you are not alone. Your counselor will be notified securely. Please consider reaching out to crisis support if you need immediate help — you deserve care and support."
           : score >= selectedModel.maxScore * 0.5
-          ? "Your wellbeing matters. I recommend scheduling a session with a counselor to discuss what you're experiencing."
-          : "You're doing okay, but keep checking in. Small steps make a big difference."
+          ? "Your wellbeing matters deeply. I would recommend connecting with a counselor to talk through what you've been experiencing — you don't have to carry this alone."
+          : "You're doing okay — and you're doing the right thing by checking in. Keep going, small steps make a big difference."
       }`
     );
     saveScreeningResult(finalAnswers, score, severity.label);
@@ -580,15 +582,10 @@ export default function ScreeningPage() {
 
     runNlpAnalysis(finalAnswers, score).then(() => {
       setTimeout(() => {
-        // Clear assessment messages and start fresh chat
-        setMessages([{
-          id: `chat-start-${Date.now()}`,
-          role: "ai",
-          content: "Your check-in is complete. I'm now here to chat — tell me more about what's on your mind, or let's explore what you've been experiencing. What emotions have been most present for you recently? 💚",
-          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        }]);
-        setPhase("chat");
-        setConversationStage("exploration");
+        // Enter followup phase — post-assessment questions
+        setPhase("followup");
+        setFollowupStep(0);
+        addMessage("ai", followupQuestions[0]);
       }, 2000);
     });
   };
@@ -611,10 +608,65 @@ export default function ScreeningPage() {
       }),
     }).catch(() => {});
 
-    // Now complete the assessment
+    // Complete assessment scoring, then enter followup phase
     setTimeout(() => {
       completeAssessment(answers);
     }, 500);
+  };
+
+  const followupQuestions = [
+    "Thank you for trusting me this much and opening up to me. What could have triggered what you've shared with me? Is it a life change (poverty, prolonged sickness, lack of jobs, etc.), disagreement/disappointment, shyness, or isolation (a feeling of being alone)?",
+    "How long have you been feeling this way — days, weeks, months, or years?",
+    "What would you wish to achieve at the end of the day?",
+    "Thank you for your time. Would you recommend anyone to use this platform? (Give stars 1–5)",
+  ];
+
+  const handleFollowupTextSubmit = (text: string) => {
+    if (!text.trim()) return;
+    addMessage("user", text);
+    setFreeTextInputs((prev) => [...prev, text]);
+    const nextStep = followupStep + 1;
+    setFollowupStep(nextStep);
+    if (nextStep < followupQuestions.length) {
+      setTimeout(() => {
+        addMessage("ai", followupQuestions[nextStep]);
+      }, 600);
+    } else {
+      // All followup done — move to chat
+      setTimeout(() => {
+        setMessages([{
+          id: `chat-start-${Date.now()}`,
+          role: "ai",
+          content: "Your check-in is complete. I'm now here to chat — tell me more about what's on your mind, or let's explore what you've been experiencing. What emotions have been most present for you recently? 💚",
+          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        }]);
+        setPhase("chat");
+        setConversationStage("exploration");
+      }, 1000);
+    }
+  };
+
+  const handleStarRating = (stars: number) => {
+    setStarRating(stars);
+    addMessage("user", `${"⭐".repeat(stars)} (${stars}/5 stars)`);
+    setFollowupStep((prev) => {
+      const nextStep = prev + 1;
+      // After star rating — move to chat
+      setTimeout(() => {
+        addMessage("ai", "Thank you so much! Your feedback means the world to us. 💚");
+        setTimeout(() => {
+          setMessages([{
+            id: `chat-start-${Date.now()}`,
+            role: "ai",
+            content: "Your check-in is complete. I'm now here to chat — tell me more about what's on your mind, or let's explore what you've been experiencing. What emotions have been most present for you recently? 💚",
+            time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          }]);
+          setPhase("chat");
+          setConversationStage("exploration");
+        }, 1500);
+      }, 600);
+      return nextStep;
+    });
   };
 
   const handleTextSubmit = () => {
@@ -630,6 +682,8 @@ export default function ScreeningPage() {
       setTimeout(() => {
         transitionToPhq9();
       }, 600);
+    } else if (phase === "followup") {
+      handleFollowupTextSubmit(userMsg);
     } else if (phase === "chat") {
       // In chat phase, get AI response
       getAIResponse(userMsg);
@@ -1146,6 +1200,21 @@ export default function ScreeningPage() {
                 ))}
               </div>
             )}
+            {phase === "followup" && followupStep === followupQuestions.length - 1 && starRating === 0 && (
+              <div className="flex items-center justify-center gap-2 pb-1">
+                <span className="text-xs text-on-surface-variant mr-1">Your rating:</span>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    onClick={() => handleStarRating(star)}
+                    className="text-2xl hover:scale-110 transition-transform text-yellow-400 hover:text-yellow-500"
+                    title={`${star} star${star > 1 ? "s" : ""}`}
+                  >
+                    ⭐
+                  </button>
+                ))}
+              </div>
+            )}
             {phase === "chat" && (
               <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
                 {getAIChatSuggestions().map((sug, i) => (
@@ -1169,17 +1238,17 @@ export default function ScreeningPage() {
               <div className="flex-1">
                 <textarea
                   value={input}
-                  onChange={(e) => { if (phase === "chat") setInput(e.target.value); }}
+                  onChange={(e) => { if (phase === "chat" || phase === "followup") setInput(e.target.value); }}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey && phase === "chat") {
+                    if (e.key === "Enter" && !e.shiftKey && (phase === "chat" || phase === "followup")) {
                       e.preventDefault();
                       handleTextSubmit();
                     }
                   }}
-                  placeholder={phase === "chat" ? "Type your message..." : "Select an option above..."}
+                  placeholder={phase === "chat" || phase === "followup" ? "Type your message..." : "Select an option above..."}
                   rows={1}
-                  disabled={phase !== "chat"}
-                  className={`w-full border-none focus:outline-none focus:ring-2 focus:ring-primary rounded-xl py-3 px-4 text-on-surface text-sm resize-none min-h-[48px] max-h-[120px] ${phase !== "chat" ? "bg-surface-container opacity-60 cursor-not-allowed" : "bg-surface-container-low"}`}
+                  disabled={phase !== "chat" && phase !== "followup"}
+                  className={`w-full border-none focus:outline-none focus:ring-2 focus:ring-primary rounded-xl py-3 px-4 text-on-surface text-sm resize-none min-h-[48px] max-h-[120px] ${phase !== "chat" && phase !== "followup" ? "bg-surface-container opacity-60 cursor-not-allowed" : "bg-surface-container-low"}`}
                   style={{ fieldSizing: "content" } as React.CSSProperties}
                 />
               </div>

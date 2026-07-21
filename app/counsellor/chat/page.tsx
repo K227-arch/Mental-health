@@ -330,6 +330,7 @@ export default function CounsellorChat() {
                   {selectedSession.riskLevel} Risk
                 </span>
               </div>
+              <p className="text-xs text-on-surface-variant italic hidden sm:block">Kindly be patient if you do not receive an immediate response.</p>
             </div>
 
             {/* Messages */}

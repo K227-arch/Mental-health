@@ -114,7 +114,7 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
             </button>
           )}
           <Link href="/" className="flex items-center gap-2">
-            <img src="/logo.jpeg" alt="Selfcare Hub" className="w-8 h-8 object-contain rounded-lg" />
+            <img src="/logo.jpeg" alt="Selfcare Hub" className="w-10 h-10 object-contain rounded-lg" />
             <span className="hidden sm:block font-bold text-2xl text-primary tracking-tight">Selfcare Hub</span>
           </Link>
         </div>
@@ -201,15 +201,20 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-9 h-9 flex items-center justify-center rounded-full text-primary hover:bg-surface-container transition-colors border-2 border-primary/20 overflow-hidden"
+              className="flex items-center gap-2 px-2 py-1.5 rounded-full text-primary hover:bg-surface-container transition-colors border border-primary/20"
               aria-label="Profile"
             >
-              {user?.avatar_url ? (
-                <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
-              ) : initials ? (
-                <span className="text-xs font-semibold">{initials}</span>
-              ) : (
-                <span className="material-symbols-outlined text-[18px]">person</span>
+              <div className="w-8 h-8 flex items-center justify-center rounded-full overflow-hidden border-2 border-primary/20 bg-surface-container">
+                {user?.avatar_url ? (
+                  <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+                ) : initials ? (
+                  <span className="text-xs font-semibold text-primary">{initials}</span>
+                ) : (
+                  <span className="material-symbols-outlined text-[18px]">person</span>
+                )}
+              </div>
+              {user?.name && (
+                <span className="hidden md:block text-sm font-medium text-on-surface max-w-[120px] truncate">{user.name.split(" ")[0]}</span>
               )}
             </button>
 

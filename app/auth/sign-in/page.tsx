@@ -3,13 +3,14 @@
 import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import clsx from "clsx";
 import { insforge } from "@/lib/insforge";
 import { useTranslation } from "../../lib/i18n";
 
 export default function SignInPage() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [role, setRole] = useState<"student" | "counsellor">("student");
+  const [role, setRole] = useState<"student" | "counsellor" | "administrator">("student");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -64,7 +65,7 @@ export default function SignInPage() {
     setError(null);
     setLoading(true);
 
-    const redirectTarget = role === "counsellor" ? "/counsellor" : "/dashboard";
+    const redirectTarget = (role === "counsellor" || role === "administrator") ? "/counsellor" : "/dashboard";
 
     // Check if there's a redirect param from middleware
     const params = new URLSearchParams(window.location.search);
@@ -105,7 +106,7 @@ export default function SignInPage() {
   const handleOAuth = async (provider: string) => {
     setError(null);
     setOauthLoading(provider);
-    const redirect = role === "counsellor" ? "/counsellor" : "/dashboard";
+    const redirect = (role === "counsellor" || role === "administrator") ? "/counsellor" : "/dashboard";
     document.cookie = `insforge_redirect=${redirect}; path=/; max-age=600; SameSite=Lax`;
     const { data, error } = await insforge.auth.signInWithOAuth(provider as any, {
       redirectTo: `${window.location.origin}/api/auth/callback`,
@@ -209,9 +210,28 @@ export default function SignInPage() {
           {/* Form Card */}
           <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-7 shadow-lg shadow-primary/5">
             <h1 className="text-lg font-bold text-on-surface mb-1">{t("auth.signin.title")}</h1>
-            <p className="text-xs text-on-surface-variant mb-6">
+            <p className="text-xs text-on-surface-variant mb-4">
               {role === "counsellor" ? t("auth.signin.counsellorSubtitle") : t("auth.signin.subtitle")}
             </p>
+
+            {/* Role selector */}
+            <div className="flex rounded-xl overflow-hidden border border-outline-variant/50 mb-5 text-xs font-semibold">
+              {(["student", "counsellor", "administrator"] as const).map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setRole(r === "administrator" ? "counsellor" : r)}
+                  className={clsx(
+                    "flex-1 py-2 transition-colors capitalize",
+                    (r === "administrator" ? role === "counsellor" && r === "administrator" : role === r)
+                      ? "bg-primary text-on-primary"
+                      : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
+                  )}
+                >
+                  {r === "administrator" ? "Admin" : r.charAt(0).toUpperCase() + r.slice(1)}
+                </button>
+              ))}
+            </div>
 
             {/* OAuth */}
             <button

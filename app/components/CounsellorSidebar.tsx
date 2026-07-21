@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import clsx from "clsx";
 import { useTranslation } from "../lib/i18n";
 
@@ -10,6 +10,20 @@ export default function CounsellorSidebar() {
   const pathname = usePathname();
   const { t } = useTranslation();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [available, setAvailable] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("counsellor_available");
+      setAvailable(stored === "true");
+    } catch {}
+  }, []);
+
+  const toggleAvailability = () => {
+    const next = !available;
+    setAvailable(next);
+    try { localStorage.setItem("counsellor_available", String(next)); } catch {}
+  };
 
   const navItems = [
     { href: "/counsellor", label: t("sidebar.counsellor.dashboard"), icon: "dashboard" },
@@ -29,14 +43,29 @@ export default function CounsellorSidebar() {
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col h-full p-3 border-r border-outline-variant bg-surface-container-low w-64 shrink-0">
         <div className="flex items-center gap-3 px-3 py-4 mb-4">
-          <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-primary shrink-0">
-            <span className="material-symbols-outlined icon-fill">person</span>
-          </div>
+          <img src="/logo.jpeg" alt="Selfcare Hub" className="w-10 h-10 object-contain rounded-lg shrink-0" />
           <div>
             <h2 className="text-lg font-black text-primary leading-tight">{t("sidebar.counsellor.title")}</h2>
             <p className="text-xs text-on-surface-variant">{t("sidebar.counsellor.subtitle")}</p>
           </div>
         </div>
+
+        {/* Availability toggle */}
+        <div className="px-3 mb-4">
+          <button
+            onClick={toggleAvailability}
+            className={clsx(
+              "w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all border",
+              available
+                ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
+                : "bg-surface-container text-on-surface-variant border-outline-variant/50 hover:bg-surface-container-high"
+            )}
+          >
+            <span className={clsx("w-2.5 h-2.5 rounded-full shrink-0", available ? "bg-green-500" : "bg-on-surface-variant/30")} />
+            {available ? "Available" : "Unavailable"}
+          </button>
+        </div>
+
         <nav className="flex-1 flex flex-col gap-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href || (item.href !== "/counsellor" && pathname.startsWith(item.href));
@@ -61,6 +90,10 @@ export default function CounsellorSidebar() {
           <Link href="/crisis" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-on-surface-variant hover:bg-surface-container-high transition-colors">
             <span className="material-symbols-outlined">help_outline</span>
             {t("sidebar.counsellor.help")}
+          </Link>
+          <Link href="/counsellor" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-on-surface-variant hover:bg-surface-container-high transition-colors">
+            <span className="material-symbols-outlined">home</span>
+            Home
           </Link>
         </div>
       </aside>

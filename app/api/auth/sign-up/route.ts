@@ -4,7 +4,7 @@ import { insforgeAdmin } from "@/lib/insforge";
 // This route only handles profile creation after client-side sign-up
 export async function POST(request: NextRequest) {
   try {
-    const { userId, name, email, role, studentId, faculty, yearOfStudy } = await request.json();
+    const { userId, name, email, role, studentId, faculty, yearOfStudy, registrationNumber } = await request.json();
 
     if (!userId) {
       return NextResponse.json({ error: "userId required" }, { status: 400 });
@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
       anonymous_id: userId.slice(0, 8),
       student_id: studentId || null,
       faculty: faculty || null,
+      registration_number: registrationNumber || null,
     }]);
 
     return NextResponse.json({ success: true });
