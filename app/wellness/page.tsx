@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import StudentSidebar from "../components/StudentSidebar";
@@ -93,6 +93,45 @@ export default function WellnessPage() {
   const { t } = useTranslation();
   const [activeSection, setActiveSection] = useState<"exercises" | "resources" | "shared" | "inspiration" | "hope">("exercises");
   const [completedExercises, setCompletedExercises] = useState<string[]>([]);
+  const [activeTimer, setActiveTimer] = useState<{ id: string; title: string; totalSeconds: number; remaining: number; running: boolean } | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const parseDurationToSeconds = (duration: string): number => {
+    const match = duration.match(/(\d+)/);
+    return match ? parseInt(match[1]) * 60 : 300;
+  };
+
+  const startExercise = (ex: { id: string; title: string; duration: string }) => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    const totalSeconds = parseDurationToSeconds(ex.duration);
+    setActiveTimer({ id: ex.id, title: ex.title, totalSeconds, remaining: totalSeconds, running: true });
+  };
+
+  useEffect(() => {
+    if (!activeTimer?.running) return;
+    timerRef.current = setInterval(() => {
+      setActiveTimer((prev) => {
+        if (!prev) return null;
+        const next = prev.remaining - 1;
+        if (next <= 0) {
+          clearInterval(timerRef.current!);
+          // Mark as completed when timer runs out
+          setCompletedExercises((c) => c.includes(prev.id) ? c : [...c, prev.id]);
+          return { ...prev, remaining: 0, running: false };
+        }
+        return { ...prev, remaining: next };
+      });
+    }, 1000);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [activeTimer?.running, activeTimer?.id]);
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const s = (seconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
+
+  const progressPct = activeTimer ? ((activeTimer.totalSeconds - activeTimer.remaining) / activeTimer.totalSeconds) * 100 : 0;
   const [sharedResources, setSharedResources] = useState<any[]>([]);
   const [loadingShared, setLoadingShared] = useState(false);
   const [hopeIndex, setHopeIndex] = useState(0);
@@ -189,11 +228,13 @@ export default function WellnessPage() {
                       <p className="text-sm text-on-surface-variant leading-relaxed">{ex.description}</p>
                     </div>
                     <button
-                      onClick={() =>
-                        setCompletedExercises((prev) =>
-                          prev.includes(ex.id) ? prev.filter((e) => e !== ex.id) : [...prev, ex.id]
-                        )
-                      }
+                      onClick={() => {
+                        if (completedExercises.includes(ex.id)) {
+                          setCompletedExercises((prev) => prev.filter((e) => e !== ex.id));
+                        } else {
+                          startExercise(ex);
+                        }
+                      }}
                       className={`mt-auto flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
                         completedExercises.includes(ex.id)
                           ? "bg-secondary-container text-on-secondary-container"
@@ -499,6 +540,59 @@ export default function WellnessPage() {
         </div>
         </main>
       </div>
+
+      {/* Timer Modal */}
+      {activeTimer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-8 w-full max-w-sm shadow-xl animate-fade-in text-center">
+            <h2 className="text-lg font-bold text-on-surface mb-1">{activeTimer.title}</h2>
+            <p className="text-xs text-on-surface-variant mb-6">
+              {activeTimer.remaining > 0 ? (activeTimer.running ? "In progress..." : "Paused") : "Complete! 🎉"}
+            </p>
+            <div className="relative w-40 h-40 mx-auto mb-6">
+              <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" strokeWidth="8" className="text-surface-container-high" />
+                <circle
+                  cx="60" cy="60" r="54" fill="none" stroke="currentColor" strokeWidth="8"
+                  className={activeTimer.remaining === 0 ? "text-secondary" : "text-primary"}
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 54}`}
+                  strokeDashoffset={`${2 * Math.PI * 54 * (1 - progressPct / 100)}`}
+                  style={{ transition: "stroke-dashoffset 1s linear" }}
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-3xl font-black text-on-surface tabular-nums">{formatTime(activeTimer.remaining)}</span>
+                <span className="text-xs text-on-surface-variant mt-1">remaining</span>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-center">
+              {activeTimer.remaining > 0 && (
+                <button
+                  onClick={() => setActiveTimer((prev) => prev ? { ...prev, running: !prev.running } : null)}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTimer.running ? "bg-surface-container-high text-on-surface" : "bg-primary text-on-primary"}`}
+                >
+                  <span className="material-symbols-outlined text-[18px]">{activeTimer.running ? "pause" : "play_arrow"}</span>
+                  {activeTimer.running ? "Pause" : "Resume"}
+                </button>
+              )}
+              {activeTimer.remaining === 0 && (
+                <button onClick={() => setActiveTimer(null)} className="flex items-center gap-2 px-5 py-2.5 bg-secondary text-on-secondary rounded-xl text-sm font-semibold">
+                  <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                  Done!
+                </button>
+              )}
+              <button
+                onClick={() => { if (timerRef.current) clearInterval(timerRef.current); setActiveTimer(null); }}
+                className="flex items-center gap-2 px-5 py-2.5 border border-outline-variant bg-surface text-on-surface rounded-xl text-sm font-medium hover:bg-surface-container transition-colors"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
