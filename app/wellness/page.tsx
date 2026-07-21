@@ -362,7 +362,7 @@ export default function WellnessPage() {
               <h2 className="text-xl font-bold text-on-surface mb-2">{t("wellness.inspirationTitle")}</h2>
               <p className="text-on-surface-variant text-sm mb-6">{t("wellness.inspirationSubtitle")}</p>
               
-              {/* Meditation Videos */}
+              {/* Meditation Videos — real YouTube embeds */}
               <div className="mb-8">
                 <h3 className="text-base font-semibold text-on-surface mb-4 flex items-center gap-2">
                   <span className="material-symbols-outlined text-primary">self_improvement</span>
@@ -370,17 +370,19 @@ export default function WellnessPage() {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[
-                    { title: "5-Minute Guided Meditation", duration: "5:00", thumbnail: "🧘", desc: "A quick meditation to calm your mind" },
-                    { title: "Deep Sleep Relaxation", duration: "15:00", thumbnail: "🌙", desc: "Ultrasonic sounds to help you fall asleep" },
-                    { title: "Breathing for Anxiety", duration: "8:00", thumbnail: "💨", desc: "4-7-8 breathing technique guided session" },
+                    { title: "5-Minute Guided Meditation", duration: "5:00", desc: "A quick meditation to calm your mind", youtubeId: "inpok4MKVLM" },
+                    { title: "Deep Sleep Relaxation", duration: "15:00", desc: "Soothing sounds to help you fall asleep", youtubeId: "1ZYbU82GVz4" },
+                    { title: "Breathing for Anxiety", duration: "8:00", desc: "4-7-8 breathing technique guided session", youtubeId: "tybOi4hjZFQ" },
                   ].map((video) => (
                     <div key={video.title} className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden hover:shadow-md transition-shadow">
-                      <div className="aspect-video bg-gradient-to-br from-primary-container to-secondary-container flex items-center justify-center relative">
-                        <span className="text-5xl">{video.thumbnail}</span>
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
-                          <span className="material-symbols-outlined icon-fill text-white text-[48px]">play_circle</span>
-                        </div>
-                        <span className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-0.5 rounded">{video.duration}</span>
+                      <div className="aspect-video w-full">
+                        <iframe
+                          src={`https://www.youtube.com/embed/${video.youtubeId}?rel=0&modestbranding=1`}
+                          title={video.title}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="w-full h-full rounded-t-xl"
+                        />
                       </div>
                       <div className="p-3">
                         <h4 className="text-sm font-semibold text-on-surface">{video.title}</h4>
@@ -391,28 +393,33 @@ export default function WellnessPage() {
                 </div>
               </div>
 
-              {/* Music & Sounds */}
+              {/* Music & Sounds — YouTube audio embeds */}
               <div className="mb-8">
                 <h3 className="text-base font-semibold text-on-surface mb-4 flex items-center gap-2">
                   <span className="material-symbols-outlined text-secondary">music_note</span>
                   Healing Music & Sounds
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[
-                    { title: "Lo-Fi Study Beats", icon: "headphones", desc: "Calming beats for focus and relaxation" },
-                    { title: "Nature Sounds — Rain", icon: "water_drop", desc: "Gentle rain sounds for sleep" },
-                    { title: "Ultrasonic Brain Healing", icon: "psychology", desc: "Binaural beats for brain health" },
-                    { title: "Piano Ambient", icon: "piano", desc: "Soft piano for emotional release" },
+                    { title: "Lo-Fi Study Beats", desc: "Calming beats for focus and relaxation", youtubeId: "jfKfPfyJRdk" },
+                    { title: "Nature Sounds — Rain", desc: "Gentle rain sounds for sleep and peace", youtubeId: "q76bMs-NwRk" },
+                    { title: "Brain Healing Frequencies", desc: "Binaural beats for brain health", youtubeId: "iaoV9W03i-g" },
+                    { title: "Piano Ambient", desc: "Soft piano for emotional release", youtubeId: "APT01HkGYF8" },
                   ].map((track) => (
-                    <div key={track.title} className="flex items-center gap-3 p-3 bg-surface-container-lowest border border-outline-variant rounded-xl hover:bg-surface-container-low transition-colors cursor-pointer">
-                      <div className="w-10 h-10 rounded-lg bg-secondary-container flex items-center justify-center shrink-0">
-                        <span className="material-symbols-outlined text-on-secondary-container text-[20px]">{track.icon}</span>
+                    <div key={track.title} className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
+                      <div className="aspect-video w-full">
+                        <iframe
+                          src={`https://www.youtube.com/embed/${track.youtubeId}?rel=0&modestbranding=1`}
+                          title={track.title}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="w-full h-full"
+                        />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-medium text-on-surface truncate">{track.title}</h4>
-                        <p className="text-xs text-on-surface-variant truncate">{track.desc}</p>
+                      <div className="p-3">
+                        <h4 className="text-sm font-semibold text-on-surface">{track.title}</h4>
+                        <p className="text-xs text-on-surface-variant">{track.desc}</p>
                       </div>
-                      <span className="material-symbols-outlined text-primary text-[24px] shrink-0">play_circle</span>
                     </div>
                   ))}
                 </div>
