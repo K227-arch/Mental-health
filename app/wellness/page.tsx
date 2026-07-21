@@ -91,7 +91,7 @@ const exercises = [
 
 export default function WellnessPage() {
   const { t } = useTranslation();
-  const [activeSection, setActiveSection] = useState<"exercises" | "resources" | "shared" | "inspiration" | "hope">("exercises");
+  const [activeSection, setActiveSection] = useState<"exercises" | "shared" | "inspiration" | "hope">("exercises");
   const [completedExercises, setCompletedExercises] = useState<string[]>([]);
   const [activeTimer, setActiveTimer] = useState<{ id: string; title: string; totalSeconds: number; remaining: number; running: boolean } | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -190,7 +190,7 @@ export default function WellnessPage() {
         <div className="px-4 md:px-20 py-10 max-w-6xl mx-auto">
           {/* Tabs */}
           <div className="flex flex-wrap gap-2 mb-8 bg-surface-container-low rounded-xl p-1.5 w-fit">
-            {(["exercises", "resources", "shared", "inspiration", "hope"] as const).map((tab) => (
+            {(["exercises", "shared", "inspiration", "hope"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveSection(tab)}
@@ -200,7 +200,7 @@ export default function WellnessPage() {
                     : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
-                {tab === "hope" ? "Hope Gallery" : tab === "shared" ? `Shared (${sharedResources.length})` : tab === "inspiration" ? "Inspiration" : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                {tab === "hope" ? "Hope Gallery" : tab === "shared" ? `Resources (${sharedResources.length})` : tab === "inspiration" ? "Inspiration" : tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
             ))}
           </div>
@@ -388,66 +388,6 @@ export default function WellnessPage() {
                         <h4 className="text-sm font-semibold text-on-surface">{video.title}</h4>
                         <p className="text-xs text-on-surface-variant mt-0.5">{video.desc}</p>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Music & Sounds — YouTube audio embeds */}
-              <div className="mb-8">
-                <h3 className="text-base font-semibold text-on-surface mb-4 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-secondary">music_note</span>
-                  Healing Music & Sounds
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[
-                    { title: "Lo-Fi Study Beats", desc: "Calming beats for focus and relaxation", youtubeId: "jfKfPfyJRdk" },
-                    { title: "Nature Sounds — Rain", desc: "Gentle rain sounds for sleep and peace", youtubeId: "q76bMs-NwRk" },
-                    { title: "Brain Healing Frequencies", desc: "Binaural beats for brain health", youtubeId: "iaoV9W03i-g" },
-                    { title: "Piano Ambient", desc: "Soft piano for emotional release", youtubeId: "APT01HkGYF8" },
-                  ].map((track) => (
-                    <div key={track.title} className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
-                      <div className="aspect-video w-full">
-                        <iframe
-                          src={`https://www.youtube.com/embed/${track.youtubeId}?rel=0&modestbranding=1`}
-                          title={track.title}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                          className="w-full h-full"
-                        />
-                      </div>
-                      <div className="p-3">
-                        <h4 className="text-sm font-semibold text-on-surface">{track.title}</h4>
-                        <p className="text-xs text-on-surface-variant">{track.desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Books & Reading */}
-              <div className="mb-8">
-                <h3 className="text-base font-semibold text-on-surface mb-4 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary">menu_book</span>
-                  Books & Mental Health Tips
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {[
-                    { title: "Feeling Good — David Burns", category: "CBT", desc: "The classic guide to conquering depression" },
-                    { title: "The Anxiety & Phobia Workbook", category: "Anxiety", desc: "Step-by-step strategies for managing anxiety" },
-                    { title: "Why Has Nobody Told Me This Before?", category: "Self-Help", desc: "Practical tools for everyday mental health" },
-                    { title: "Lost Connections — Johann Hari", category: "Depression", desc: "Understanding the real causes of depression" },
-                    { title: "The Body Keeps the Score", category: "Trauma", desc: "How trauma reshapes the body and brain" },
-                    { title: "Mindfulness in Plain English", category: "Meditation", desc: "A practical guide to mindfulness meditation" },
-                  ].map((book) => (
-                    <div key={book.title} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 hover:shadow-md transition-shadow">
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-primary-container text-on-primary-container font-semibold uppercase">{book.category}</span>
-                      <h4 className="text-sm font-semibold text-on-surface mt-2 mb-1">{book.title}</h4>
-                      <p className="text-xs text-on-surface-variant">{book.desc}</p>
-                      <button className="mt-3 flex items-center gap-1 text-xs text-primary font-medium hover:underline">
-                        <span className="material-symbols-outlined text-[14px]">download</span>
-                        Download
-                      </button>
                     </div>
                   ))}
                 </div>
