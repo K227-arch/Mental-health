@@ -9,7 +9,7 @@ import { useTranslation } from "../../lib/i18n";
 export default function SignUpPage() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [role, setRole] = useState<"student" | "counsellor">("student");
+  const [role, setRole] = useState<"student" | "counsellor" | "administrator">("student");
   const [name, setName] = useState("");
   const [registrationNumber, setRegistrationNumber] = useState("");
   const [faculty, setFaculty] = useState("");
@@ -48,7 +48,7 @@ export default function SignUpPage() {
     }
 
     setLoading(true);
-    const redirectTarget = role === "counsellor" ? "/counsellor" : "/dashboard";
+    const redirectTarget = role === "administrator" ? "/admin" : role === "counsellor" ? "/counsellor" : "/dashboard";
 
     try {
       const { data, error: signUpError } = await insforge.auth.signUp({
@@ -84,7 +84,7 @@ export default function SignUpPage() {
             userId: data.user.id,
             name,
             email,
-            role: redirectTarget === "/counsellor" ? "counsellor" : "student",
+            role: role === "counsellor" ? "counsellor" : role === "administrator" ? "administrator" : "student",
             faculty: role === "student" ? faculty : undefined,
             registrationNumber: role === "student" ? registrationNumber : undefined,
           }),
@@ -217,9 +217,23 @@ export default function SignUpPage() {
           {/* Form Card */}
           <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-7 shadow-lg shadow-primary/5">
             <h1 className="text-lg font-bold text-on-surface mb-1">{t("auth.signup.title")}</h1>
-            <p className="text-xs text-on-surface-variant mb-5">
-              {role === "counsellor" ? t("auth.signup.counsellorSubtitle") : t("auth.signup.subtitle")}
+            <p className="text-xs text-on-surface-variant mb-4">
+              {role === "counsellor" ? t("auth.signup.counsellorSubtitle") : role === "administrator" ? "Create an administrator account" : t("auth.signup.subtitle")}
             </p>
+
+            {/* Role selector */}
+            <div className="flex rounded-xl overflow-hidden border border-outline-variant/50 mb-5 text-xs font-semibold">
+              {(["student", "counsellor", "administrator"] as const).map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setRole(r)}
+                  className={`flex-1 py-2 transition-colors capitalize ${role === r ? "bg-primary text-on-primary" : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"}`}
+                >
+                  {r === "administrator" ? "Admin" : r.charAt(0).toUpperCase() + r.slice(1)}
+                </button>
+              ))}
+            </div>
 
             {/* OAuth */}
             <button

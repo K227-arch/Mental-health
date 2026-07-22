@@ -12,13 +12,13 @@ export async function POST(request: NextRequest) {
 
     await insforgeAdmin.database.from("student_profiles").upsert([{
       id: userId,
-      name: name || email?.split("@")[0] || "Student",
+      name: name || email?.split("@")[0] || "User",
       email: email || "",
       role: role || "student",
       anonymous_id: userId.slice(0, 8),
-      student_id: studentId || null,
-      faculty: faculty || null,
-      registration_number: registrationNumber || null,
+      student_id: (role === "student" && studentId) ? studentId : null,
+      faculty: (role === "student" && faculty) ? faculty : null,
+      registration_number: (role === "student" && registrationNumber) ? registrationNumber : null,
     }]);
 
     return NextResponse.json({ success: true });

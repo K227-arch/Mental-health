@@ -65,7 +65,7 @@ export default function SignInPage() {
     setError(null);
     setLoading(true);
 
-    const redirectTarget = (role === "counsellor" || role === "administrator") ? "/counsellor" : "/dashboard";
+    const redirectTarget = role === "administrator" ? "/admin" : role === "counsellor" ? "/counsellor" : "/dashboard";
 
     // Check if there's a redirect param from middleware
     const params = new URLSearchParams(window.location.search);
@@ -106,7 +106,7 @@ export default function SignInPage() {
   const handleOAuth = async (provider: string) => {
     setError(null);
     setOauthLoading(provider);
-    const redirect = (role === "counsellor" || role === "administrator") ? "/counsellor" : "/dashboard";
+    const redirect = role === "administrator" ? "/admin" : role === "counsellor" ? "/counsellor" : "/dashboard";
     document.cookie = `insforge_redirect=${redirect}; path=/; max-age=600; SameSite=Lax`;
     const { data, error } = await insforge.auth.signInWithOAuth(provider as any, {
       redirectTo: `${window.location.origin}/api/auth/callback`,
@@ -220,10 +220,10 @@ export default function SignInPage() {
                 <button
                   key={r}
                   type="button"
-                  onClick={() => setRole(r === "administrator" ? "counsellor" : r)}
+                  onClick={() => setRole(r)}
                   className={clsx(
                     "flex-1 py-2 transition-colors capitalize",
-                    (r === "administrator" ? role === "counsellor" && r === "administrator" : role === r)
+                    role === r
                       ? "bg-primary text-on-primary"
                       : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
                   )}
