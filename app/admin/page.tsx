@@ -44,8 +44,8 @@ export default function AdminDashboard() {
         pendingTasks: criticalCount + students.filter((s: any) => s.q9Flagged).length,
       });
     }
-    // Load notifications (pending tasks)
-    const notifRes = await fetch("/api/notifications?userId=counsellor-system");
+    // Load notifications (admin-specific only, not counsellor ones)
+    const notifRes = await fetch("/api/notifications?userId=admin-system");
     if (notifRes.ok) {
       const data = await notifRes.json();
       setNotifications((data.notifications || []).slice(0, 10));
@@ -62,6 +62,18 @@ export default function AdminDashboard() {
         body: message,
         type: "alert",
         link: "/counsellor",
+      }),
+    });
+    // Log in admin records
+    await fetch("/api/notifications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: "admin-system",
+        title: "🔔 Alert Sent to Counsellors",
+        body: message,
+        type: "info",
+        link: "/admin/alerts",
       }),
     });
     alert("Alert sent to all counsellors.");

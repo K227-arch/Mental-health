@@ -100,9 +100,30 @@ export default function SignUpPage() {
 
   const handleOAuth = async (provider: string) => {
     setError(null);
+
+    // For students: require registration number, faculty, and consent before Google sign-in
+    if (role === "student") {
+      if (!registrationNumber.trim()) {
+        setError("Please enter your Registration Number before signing in with Google.");
+        return;
+      }
+      if (!faculty) {
+        setError("Please select your Faculty before signing in with Google.");
+        return;
+      }
+      if (!consent) {
+        setError("You must give consent before continuing.");
+        return;
+      }
+      // Save to cookies so the callback route can use them to complete profile
+      document.cookie = `insforge_reg_number=${encodeURIComponent(registrationNumber.trim())}; path=/; max-age=600; SameSite=Lax`;
+      document.cookie = `insforge_faculty=${encodeURIComponent(faculty)}; path=/; max-age=600; SameSite=Lax`;
+    }
+
     setOauthLoading(provider);
-    const redirect = role === "counsellor" ? "/counsellor" : "/dashboard";
+    const redirect = role === "administrator" ? "/admin" : role === "counsellor" ? "/counsellor" : "/dashboard";
     document.cookie = `insforge_redirect=${redirect}; path=/; max-age=600; SameSite=Lax`;
+    document.cookie = `insforge_signup_role=${role}; path=/; max-age=600; SameSite=Lax`;
     const { data, error } = await insforge.auth.signInWithOAuth(provider as any, {
       redirectTo: `${window.location.origin}/api/auth/callback`,
       skipBrowserRedirect: true,
@@ -234,6 +255,38 @@ export default function SignUpPage() {
                 </button>
               ))}
             </div>
+
+            {/* For students: collect reg number and faculty BEFORE Google sign-in */}
+            {role === "student" && (
+              <div className="space-y-3.5 mb-5 p-4 bg-surface-container-low rounded-xl border border-outline-variant/40">
+                <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Required before continuing</p>
+                <div>
+                  <label htmlFor="regNum-pre" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">Registration Number</label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none"><span className="material-symbols-outlined text-[18px]">badge</span></span>
+                    <input id="regNum-pre" type="text" value={registrationNumber} onChange={e => setRegistrationNumber(e.target.value)} placeholder="e.g. 2100701234"
+                      className="w-full pl-10 pr-4 py-2.5 bg-surface-container-lowest border border-outline-variant/40 text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all placeholder:text-on-surface-variant/40" />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="faculty-pre" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">Faculty</label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none"><span className="material-symbols-outlined text-[18px]">school</span></span>
+                    <select id="faculty-pre" value={faculty} onChange={e => setFaculty(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 bg-surface-container-lowest border border-outline-variant/40 text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-none">
+                      <option value="">Select Faculty</option>
+                      <option>Computing & IT</option><option>Engineering</option><option>Science</option>
+                      <option>Business</option><option>Arts & Humanities</option><option>Education</option>
+                      <option>Law</option><option>Medicine</option><option>Social Sciences</option><option>Other</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <input id="consent-pre" type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} className="mt-0.5 w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30 accent-primary" />
+                  <label htmlFor="consent-pre" className="text-xs text-on-surface-variant cursor-pointer">The following information will be kept strictly confidential. You are free to withdraw at any point. <strong>Consent</strong></label>
+                </div>
+              </div>
+            )}
 
             {/* OAuth */}
             <button

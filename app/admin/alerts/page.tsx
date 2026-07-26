@@ -12,7 +12,8 @@ export default function AdminAlerts() {
   useEffect(() => { loadAlerts(); }, []);
 
   const loadAlerts = async () => {
-    const r = await fetch("/api/notifications?userId=counsellor-system");
+    // Admin sees only admin-specific alerts, NOT counsellor notifications
+    const r = await fetch("/api/notifications?userId=admin-system");
     if (r.ok) { const d = await r.json(); setAlerts(d.notifications || []); }
     setLoading(false);
   };
@@ -25,9 +26,14 @@ export default function AdminAlerts() {
   const sendCustomAlert = async () => {
     if (!customMsg.trim()) return;
     setSending(true);
+    // Send to counsellor-system so counsellors see it in their notification bell
     await fetch("/api/notifications", { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: "counsellor-system", title: "🔔 Admin Alert", body: customMsg, type: "alert", link: "/counsellor" }) });
+    // Also log it for admin records
+    await fetch("/api/notifications", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: "admin-system", title: "🔔 Alert Sent to Counsellors", body: customMsg, type: "info", link: "/admin/alerts" }) });
     setCustomMsg(""); setSending(false);
+    await loadAlerts();
     alert("Alert sent to counsellors.");
   };
 
