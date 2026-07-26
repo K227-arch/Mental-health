@@ -91,6 +91,25 @@ export default function StudentChatPage() {
   const formatTime = (dateStr: string) =>
     new Date(dateStr).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
+  const renderMessageContent = (content: string) => {
+    const voiceMatch = content.match(/🎤 Voice note: (https?:\/\/\S+)/);
+    if (voiceMatch) {
+      const url = voiceMatch[1];
+      return (
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2 text-xs font-medium opacity-80">
+            <span className="material-symbols-outlined text-[16px]">mic</span>
+            Voice Note
+          </div>
+          <audio controls src={url} className="w-full max-w-[220px] h-8" />
+        </div>
+      );
+    }
+    const videoMatch = content.match(/🎥\s*\[Video [^\]]+\]/);
+    if (videoMatch) return <span className="flex items-center gap-1.5 text-xs opacity-80"><span className="material-symbols-outlined text-[16px]">videocam</span>Video shared</span>;
+    return <p className="whitespace-pre-wrap">{content}</p>;
+  };
+
   const startVoiceRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -255,7 +274,7 @@ export default function StudentChatPage() {
                         : "mr-auto bg-surface-container text-on-surface rounded-bl-sm"
                     }`}
                   >
-                    <p>{msg.content}</p>
+                    {renderMessageContent(msg.content)}
                     <span className={`text-[10px] mt-1 block ${
                       msg.sender_role === "student" ? "text-on-primary/60 text-right" : "text-on-surface-variant"
                     }`}>

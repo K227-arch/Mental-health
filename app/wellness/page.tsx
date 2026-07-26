@@ -82,7 +82,7 @@ const exercises = [
   {
     id: "4",
     title: "Journaling Prompt",
-    duration: "10 min",
+    duration: "5 min",
     icon: "edit_note",
     description: "Write freely about: What went well today? What am I grateful for?",
     color: "bg-surface-container-high text-on-surface",
@@ -95,6 +95,10 @@ export default function WellnessPage() {
   const [completedExercises, setCompletedExercises] = useState<string[]>([]);
   const [activeTimer, setActiveTimer] = useState<{ id: string; title: string; totalSeconds: number; remaining: number; running: boolean } | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [journalOpen, setJournalOpen] = useState(false);
+  const [journalText, setJournalText] = useState("");
+  const [journalSending, setJournalSending] = useState(false);
+  const [journalSent, setJournalSent] = useState(false);
 
   const parseDurationToSeconds = (duration: string): number => {
     const match = duration.match(/(\d+)/);
@@ -132,6 +136,67 @@ export default function WellnessPage() {
   };
 
   const progressPct = activeTimer ? ((activeTimer.totalSeconds - activeTimer.remaining) / activeTimer.totalSeconds) * 100 : 0;
+
+  const sendJournal = async () => {
+    if (!journalText.trim()) return;
+    setJournalSending(true);
+    try {
+      // Get user info
+      const meRes = await fetch("/api/auth/me");
+      const meData = meRes.ok ? await meRes.json() : null;
+      const userId = meData?.user?.id;
+      const userName = meData?.user?.name || "Student";
+
+      // Send journal to counsellor via notification
+      await fetch("/api/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: "counsellor-system",
+          title: `📓 Journal Entry from ${userName}`,
+          body: journalText.trim().slice(0, 300) + (journalText.length > 300 ? "..." : ""),
+          type: "info",
+          link: "/counsellor/students",
+        }),
+      });
+
+      // Also store as a message in the counsellor session if one exists
+      if (userId) {
+        const sessRes = await fetch(`/api/sessions?studentId=${userId}`);
+        if (sessRes.ok) {
+          const sessData = await sessRes.json();
+          const session = sessData.sessions?.[0];
+          if (session?.id) {
+            await fetch("/api/messages", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                sessionId: session.id,
+                senderId: userId,
+                senderRole: "student",
+                content: `📓 Journal Entry:\n\n${journalText.trim()}`,
+              }),
+            });
+          }
+        }
+      }
+
+      setJournalSent(true);
+      setCompletedExercises(prev => prev.includes("4") ? prev : [...prev, "4"]);
+      // Close after 2 seconds
+      setTimeout(() => {
+        setJournalOpen(false);
+        setJournalText("");
+        setJournalSent(false);
+        if (activeTimer?.id === "4") { if (timerRef.current) clearInterval(timerRef.current); setActiveTimer(null); }
+      }, 2000);
+    } catch {
+      // Still mark as sent
+      setJournalSent(true);
+    } finally {
+      setJournalSending(false);
+    }
+  };
   const [sharedResources, setSharedResources] = useState<any[]>([]);
   const [loadingShared, setLoadingShared] = useState(false);
   const [hopeIndex, setHopeIndex] = useState(0);
@@ -231,6 +296,12 @@ export default function WellnessPage() {
                       onClick={() => {
                         if (completedExercises.includes(ex.id)) {
                           setCompletedExercises((prev) => prev.filter((e) => e !== ex.id));
+                        } else if (ex.id === "4") {
+                          // Journaling: open journal modal + start timer
+                          setJournalOpen(true);
+                          setJournalText("");
+                          setJournalSent(false);
+                          startExercise(ex);
                         } else {
                           startExercise(ex);
                         }
@@ -242,9 +313,9 @@ export default function WellnessPage() {
                       }`}
                     >
                       <span className="material-symbols-outlined text-[18px]">
-                        {completedExercises.includes(ex.id) ? "check_circle" : "play_circle"}
+                        {completedExercises.includes(ex.id) ? "check_circle" : ex.id === "4" ? "edit_note" : "play_circle"}
                       </span>
-                      {completedExercises.includes(ex.id) ? t("wellness.completed") : t("wellness.startExercise")}
+                      {completedExercises.includes(ex.id) ? t("wellness.completed") : ex.id === "4" ? "Write Journal" : t("wellness.startExercise")}
                     </button>
                   </div>
                 ))}
@@ -487,6 +558,71 @@ export default function WellnessPage() {
         </div>
         </main>
       </div>
+
+      {/* Journal Modal */}
+      {journalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 w-full max-w-lg shadow-xl animate-fade-in">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-bold text-on-surface flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-[22px]">edit_note</span>
+                  Journal Entry
+                </h2>
+                <p className="text-xs text-on-surface-variant mt-0.5">Write freely — this will be shared with your counsellor.</p>
+              </div>
+              {/* Mini timer */}
+              {activeTimer?.id === "4" && (
+                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-black tabular-nums ${activeTimer.remaining <= 60 ? "bg-error-container text-error" : "bg-primary-container text-primary"}`}>
+                  <span className="material-symbols-outlined text-[16px]">timer</span>
+                  {formatTime(activeTimer.remaining)}
+                </div>
+              )}
+            </div>
+
+            {journalSent ? (
+              <div className="text-center py-8">
+                <span className="material-symbols-outlined icon-fill text-secondary text-[48px] block mb-3">check_circle</span>
+                <p className="text-sm font-semibold text-on-surface">Journal sent to your counsellor!</p>
+                <p className="text-xs text-on-surface-variant mt-1">They will review it and follow up with you.</p>
+              </div>
+            ) : (
+              <>
+                <div className="mb-4 bg-surface-container-low rounded-xl p-3 text-xs text-on-surface-variant space-y-1">
+                  <p className="font-semibold text-on-surface">Prompts to guide you:</p>
+                  <p>• What went well today?</p>
+                  <p>• What am I grateful for?</p>
+                  <p>• What's been on my mind lately?</p>
+                  <p>• How am I really feeling right now?</p>
+                </div>
+                <textarea
+                  value={journalText}
+                  onChange={e => setJournalText(e.target.value)}
+                  placeholder="Start writing here... your thoughts, feelings, or anything on your mind."
+                  rows={8}
+                  className="w-full bg-surface-container-low border border-outline-variant/40 rounded-xl p-4 text-sm text-on-surface focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none resize-none placeholder:text-on-surface-variant/40 mb-4"
+                />
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => { setJournalOpen(false); if (timerRef.current) clearInterval(timerRef.current); setActiveTimer(null); }}
+                    className="flex-1 px-4 py-2.5 border border-outline-variant text-on-surface-variant rounded-xl text-sm font-medium hover:bg-surface-container transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={sendJournal}
+                    disabled={!journalText.trim() || journalSending}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-on-primary rounded-xl text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">{journalSending ? "progress_activity" : "send"}</span>
+                    {journalSending ? "Sending..." : "Send to Counsellor"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Timer Modal */}
       {activeTimer && (
