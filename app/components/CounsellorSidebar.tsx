@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import clsx from "clsx";
 import { useTranslation } from "../lib/i18n";
 
@@ -10,20 +10,6 @@ export default function CounsellorSidebar() {
   const pathname = usePathname();
   const { t } = useTranslation();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [available, setAvailable] = useState(false);
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("counsellor_available");
-      setAvailable(stored === "true");
-    } catch {}
-  }, []);
-
-  const toggleAvailability = () => {
-    const next = !available;
-    setAvailable(next);
-    try { localStorage.setItem("counsellor_available", String(next)); } catch {}
-  };
 
   const navItems = [
     { href: "/counsellor", label: t("sidebar.counsellor.dashboard"), icon: "dashboard" },
@@ -50,22 +36,6 @@ export default function CounsellorSidebar() {
           </div>
         </div>
 
-        {/* Availability toggle */}
-        <div className="px-3 mb-4">
-          <button
-            onClick={toggleAvailability}
-            className={clsx(
-              "w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all border",
-              available
-                ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
-                : "bg-surface-container text-on-surface-variant border-outline-variant/50 hover:bg-surface-container-high"
-            )}
-          >
-            <span className={clsx("w-2.5 h-2.5 rounded-full shrink-0", available ? "bg-green-500" : "bg-on-surface-variant/30")} />
-            {available ? "Available" : "Unavailable"}
-          </button>
-        </div>
-
         <nav className="flex-1 flex flex-col gap-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href || (item.href !== "/counsellor" && pathname.startsWith(item.href));
@@ -82,15 +52,8 @@ export default function CounsellorSidebar() {
             );
           })}
         </nav>
+
         <div className="mt-auto pt-4 border-t border-outline-variant flex flex-col gap-1">
-          <Link href="/settings" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-on-surface-variant hover:bg-surface-container-high transition-colors">
-            <span className="material-symbols-outlined">settings</span>
-            {t("sidebar.counsellor.settings")}
-          </Link>
-          <Link href="/crisis" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-on-surface-variant hover:bg-surface-container-high transition-colors">
-            <span className="material-symbols-outlined">help_outline</span>
-            {t("sidebar.counsellor.help")}
-          </Link>
           <Link href="/counsellor" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-on-surface-variant hover:bg-surface-container-high transition-colors">
             <span className="material-symbols-outlined">home</span>
             Home
@@ -104,25 +67,14 @@ export default function CounsellorSidebar() {
           const isActive = pathname === item.href || (item.href !== "/counsellor" && pathname.startsWith(item.href));
           return (
             <Link key={item.href} href={item.href}
-              className={clsx(
-                "flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-colors min-w-0 flex-1",
-                isActive ? "text-primary" : "text-on-surface-variant"
-              )}
+              className={clsx("flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-colors min-w-0 flex-1", isActive ? "text-primary" : "text-on-surface-variant")}
             >
               <span className="material-symbols-outlined text-[22px]" style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}>{item.icon}</span>
               <span className="text-[9px] font-medium truncate w-full text-center leading-tight">{item.label.split(" ")[0]}</span>
             </Link>
           );
         })}
-
-        {/* More button */}
-        <button
-          onClick={() => setDrawerOpen(true)}
-          className={clsx(
-            "flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-colors min-w-0 flex-1",
-            drawerOpen ? "text-primary" : "text-on-surface-variant"
-          )}
-        >
+        <button onClick={() => setDrawerOpen(true)} className={clsx("flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-colors min-w-0 flex-1", drawerOpen ? "text-primary" : "text-on-surface-variant")}>
           <span className="material-symbols-outlined text-[22px]">more_horiz</span>
           <span className="text-[9px] font-medium text-center leading-tight">More</span>
         </button>
@@ -133,9 +85,7 @@ export default function CounsellorSidebar() {
         <>
           <div className="md:hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setDrawerOpen(false)} />
           <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-container-lowest rounded-t-2xl border-t border-outline-variant shadow-xl animate-slide-in" style={{ paddingBottom: "env(safe-area-inset-bottom, 16px)" }}>
-            <div className="flex justify-center pt-3 pb-2">
-              <div className="w-10 h-1 bg-outline-variant rounded-full" />
-            </div>
+            <div className="flex justify-center pt-3 pb-2"><div className="w-10 h-1 bg-outline-variant rounded-full" /></div>
             <div className="px-4 pb-2">
               <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-3">More</p>
               <div className="flex flex-col gap-1">
@@ -143,28 +93,13 @@ export default function CounsellorSidebar() {
                   const isActive = pathname === item.href || pathname.startsWith(item.href);
                   return (
                     <Link key={item.href} href={item.href} onClick={() => setDrawerOpen(false)}
-                      className={clsx(
-                        "flex items-center gap-4 px-4 py-3.5 rounded-xl text-sm font-medium transition-colors",
-                        isActive ? "bg-primary-container text-on-primary-container" : "text-on-surface hover:bg-surface-container"
-                      )}
+                      className={clsx("flex items-center gap-4 px-4 py-3.5 rounded-xl text-sm font-medium transition-colors", isActive ? "bg-primary-container text-on-primary-container" : "text-on-surface hover:bg-surface-container")}
                     >
                       <span className="material-symbols-outlined text-[22px]" style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}>{item.icon}</span>
                       <span>{item.label}</span>
                     </Link>
                   );
                 })}
-                <Link href="/settings" onClick={() => setDrawerOpen(false)}
-                  className="flex items-center gap-4 px-4 py-3.5 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container transition-colors"
-                >
-                  <span className="material-symbols-outlined text-[22px]">settings</span>
-                  <span>{t("sidebar.counsellor.settings")}</span>
-                </Link>
-                <Link href="/crisis" onClick={() => setDrawerOpen(false)}
-                  className="flex items-center gap-4 px-4 py-3.5 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container transition-colors"
-                >
-                  <span className="material-symbols-outlined text-[22px]">help_outline</span>
-                  <span>{t("sidebar.counsellor.help")}</span>
-                </Link>
               </div>
             </div>
           </div>

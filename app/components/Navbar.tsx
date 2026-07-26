@@ -72,6 +72,17 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
     return () => clearInterval(interval);
   }, [user?.id]);
 
+  // Presence heartbeat — update last_seen every 60 seconds while logged in
+  useEffect(() => {
+    if (!user?.id) return;
+    const sendHeartbeat = () => {
+      fetch("/api/presence", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: user.id }) }).catch(() => {});
+    };
+    sendHeartbeat();
+    const interval = setInterval(sendHeartbeat, 60000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {

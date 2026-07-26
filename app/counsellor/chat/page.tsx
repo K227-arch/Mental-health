@@ -31,7 +31,22 @@ export default function CounsellorChat() {
   const [recording, setRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [micError, setMicError] = useState<string | null>(null);
+  const [studentOnline, setStudentOnline] = useState(false);
+  const [studentLastSeen, setStudentLastSeen] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Check selected student online status
+  useEffect(() => {
+    if (!selectedSession?.id) return;
+    const check = () => {
+      fetch(`/api/presence?userId=${selectedSession.id}`).then(r => r.ok ? r.json() : null).then(d => {
+        if (d) { setStudentOnline(d.online); setStudentLastSeen(d.lastSeen); }
+      });
+    };
+    check();
+    const interval = setInterval(check, 30000);
+    return () => clearInterval(interval);
+  }, [selectedSession?.id]);
 
   useEffect(() => {
     // Get current user
@@ -346,10 +361,23 @@ export default function CounsellorChat() {
             {/* Chat Header */}
             <div className="px-6 py-3 border-b border-outline-variant bg-surface-container-lowest flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-on-surface">{selectedSession.name}</h3>
-                <span className={clsx("text-[10px] px-2 py-0.5 rounded-full font-semibold", riskColor(selectedSession.riskLevel))}>
-                  {selectedSession.riskLevel} Risk
-                </span>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-on-surface">{selectedSession.name}</h3>
+                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${studentOnline ? "bg-green-500 animate-pulse" : "bg-on-surface-variant/30"}`} />
+                  <span className={`text-[10px] font-medium ${studentOnline ? "text-green-700" : "text-on-surface-variant"}`}>
+                    {studentOnline ? "Online" : "Offline"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 mt-0.5">
+                  <span className={clsx("text-[10px] px-2 py-0.5 rounded-full font-semibold", riskColor(selectedSession.riskLevel))}>
+                    {selectedSession.riskLevel} Risk
+                  </span>
+                  {!studentOnline && studentLastSeen && (
+                    <span className="text-[10px] text-on-surface-variant">
+                      Last seen: {new Date(studentLastSeen).toLocaleString([], { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  )}
+                </div>
               </div>
               <p className="text-xs text-on-surface-variant italic hidden sm:block">Kindly be patient if you do not receive an immediate response.</p>
             </div>

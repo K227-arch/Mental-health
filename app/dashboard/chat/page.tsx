@@ -23,7 +23,21 @@ export default function StudentChatPage() {
   const [recording, setRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [micError, setMicError] = useState<string | null>(null);
+  const [counsellorOnline, setCounsellorOnline] = useState(false);
+  const [counsellorLastSeen, setCounsellorLastSeen] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Check counsellor online status every 30s
+  useEffect(() => {
+    const check = () => {
+      fetch("/api/presence?role=counsellor").then(r => r.ok ? r.json() : null).then(d => {
+        if (d) { setCounsellorOnline(d.online); setCounsellorLastSeen(d.lastSeen); }
+      });
+    };
+    check();
+    const interval = setInterval(check, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -213,11 +227,23 @@ export default function StudentChatPage() {
         <div className="flex-1 flex flex-col max-w-3xl w-full mx-auto" style={{ height: "calc(100svh - 64px - 56px)", maxHeight: "calc(100svh - 64px)" }}>
         {/* Header */}
         <div className="px-6 py-4 border-b border-outline-variant">
-          <h1 className="text-lg font-bold text-on-surface flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-[22px]">forum</span>
-            {t("chat.title")}
-          </h1>
-          <p className="text-xs text-on-surface-variant">{t("chat.subtitle")}</p>
+          <div className="flex items-center justify-between">
+            <h1 className="text-lg font-bold text-on-surface flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-[22px]">forum</span>
+              {t("chat.title")}
+            </h1>
+            <div className="flex items-center gap-2">
+              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${counsellorOnline ? "bg-green-500 animate-pulse" : "bg-on-surface-variant/30"}`} />
+              <span className={`text-xs font-medium ${counsellorOnline ? "text-green-700" : "text-on-surface-variant"}`}>
+                {counsellorOnline ? "Online" : "Offline"}
+              </span>
+            </div>
+          </div>
+          {!counsellorOnline && counsellorLastSeen && (
+            <p className="text-[10px] text-on-surface-variant mt-1">
+              Last seen: {new Date(counsellorLastSeen).toLocaleString([], { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+            </p>
+          )}
         </div>
 
         {!session ? (
