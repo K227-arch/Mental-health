@@ -72,14 +72,14 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
     return () => clearInterval(interval);
   }, [user?.id]);
 
-  // Presence heartbeat — update last_seen every 60 seconds while logged in
+  // Presence heartbeat — send every 2 minutes while logged in
   useEffect(() => {
     if (!user?.id) return;
     const sendHeartbeat = () => {
       fetch("/api/presence", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: user.id }) }).catch(() => {});
     };
-    sendHeartbeat();
-    const interval = setInterval(sendHeartbeat, 60000);
+    sendHeartbeat(); // Send immediately on mount
+    const interval = setInterval(sendHeartbeat, 120000); // Every 2 minutes
     return () => clearInterval(interval);
   }, [user?.id]);
 

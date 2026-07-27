@@ -396,14 +396,14 @@ export default function CounsellorChat() {
                     className={clsx(
                       "max-w-[70%] px-4 py-3 rounded-2xl text-sm",
                       msg.sender_role === "counsellor"
-                        ? "ml-auto bg-primary text-on-primary rounded-br-sm"
-                        : "mr-auto bg-surface-container text-on-surface rounded-bl-sm"
+                        ? "ml-auto bg-surface-container-high text-on-surface rounded-br-sm border border-outline-variant/30"
+                        : "mr-auto bg-surface-container-lowest border border-outline-variant/20 text-on-surface rounded-bl-sm"
                     )}
                   >
                     {renderMessageContent(msg.content)}
                     <span className={clsx(
-                      "text-[10px] mt-1 block",
-                      msg.sender_role === "counsellor" ? "text-on-primary/60 text-right" : "text-on-surface-variant"
+                      "text-[10px] mt-1 block text-on-surface-variant",
+                      msg.sender_role === "counsellor" ? "text-right" : ""
                     )}>
                       {formatTime(msg.created_at)}
                     </span>

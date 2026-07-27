@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ user: null }, { status: 401 });
   }
 
-  // Fetch or create profile from DB
+  // Fetch or create profile from DB — DB name always takes priority
   let role = "student";
   try {
     const { data: profiles } = await insforgeAdmin.database
@@ -66,7 +66,8 @@ export async function GET(request: NextRequest) {
       }]);
     } else {
       if (profiles[0]?.role) role = profiles[0].role;
-      if (profiles[0]?.name) userName = profiles[0].name;
+      // DB name ALWAYS wins — overrides anything from JWT token
+      if (profiles[0]?.name && profiles[0].name.trim()) userName = profiles[0].name;
       if (profiles[0]?.avatar_url) avatarUrl = profiles[0].avatar_url;
     }
   } catch { /* DB error — continue with defaults */ }

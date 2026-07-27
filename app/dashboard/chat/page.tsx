@@ -314,11 +314,11 @@ export default function StudentChatPage() {
                     )}
                     <div className={`max-w-[75%] px-4 py-3 rounded-2xl text-sm shadow-sm ${
                       msg.sender_role === "student"
-                        ? "bg-primary text-on-primary rounded-br-sm"
+                        ? "bg-surface-container-high text-on-surface rounded-br-sm border border-outline-variant/30"
                         : "bg-surface-container-lowest border border-outline-variant/20 text-on-surface rounded-bl-sm"
                     }`}>
                       {renderMessageContent(msg.content)}
-                      <span className={`text-[10px] mt-1 block ${msg.sender_role === "student" ? "text-on-primary/60 text-right" : "text-on-surface-variant"}`}>
+                      <span className={`text-[10px] mt-1 block ${msg.sender_role === "student" ? "text-on-surface-variant/60 text-right" : "text-on-surface-variant"}`}>
                         {formatTime(msg.created_at)}
                       </span>
                     </div>
