@@ -367,11 +367,11 @@ export default function WellnessPage() {
             </div>
           )}
 
-          {/* Shared by Counsellor */}
+          {/* Resources shared by counsellor */}
           {activeSection === "shared" && (
             <div className="animate-fade-in">
-              <h2 className="text-xl font-bold text-on-surface mb-2">{t("wellness.sharedTitle")}</h2>
-              <p className="text-on-surface-variant text-sm mb-6">{t("wellness.sharedSubtitle")}</p>
+              <h2 className="text-xl font-bold text-on-surface mb-2">Resources from Your Counsellor</h2>
+              <p className="text-on-surface-variant text-sm mb-6">Resources your counsellor has personally shared with you.</p>
 
               {loadingShared ? (
                 <div className="text-center py-12 text-on-surface-variant">
@@ -380,48 +380,47 @@ export default function WellnessPage() {
               ) : sharedResources.length === 0 ? (
                 <div className="text-center py-16 bg-surface-container-lowest border border-outline-variant rounded-xl">
                   <span className="material-symbols-outlined text-[48px] text-on-surface-variant/30 block mb-3">library_books</span>
-                  <p className="text-sm text-on-surface-variant">{t("wellness.noShared")}</p>
-                  <p className="text-xs text-on-surface-variant/60 mt-1">{t("wellness.noSharedDesc")}</p>
+                  <p className="text-sm font-semibold text-on-surface mb-1">No resources yet</p>
+                  <p className="text-xs text-on-surface-variant/70">Your counsellor will share resources here when they have recommendations for you.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {sharedResources.map((resource: any) => (
-                    <div
-                      key={resource.id}
-                      className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <span className="text-[10px] px-2 py-0.5 rounded uppercase tracking-wider font-semibold bg-secondary-container text-on-secondary-container">
-                          {resource.category}
-                        </span>
-                        <span className="material-symbols-outlined text-[18px] text-secondary">
-                          {resource.type === "video" ? "play_circle" : resource.type === "exercise" ? "self_improvement" : "article"}
-                        </span>
+                <>
+                  <div className="flex items-center gap-2 mb-4 px-4 py-3 bg-secondary-container/20 border border-secondary/20 rounded-xl">
+                    <span className="material-symbols-outlined text-secondary text-[20px]">support_agent</span>
+                    <p className="text-sm text-on-surface">{sharedResources.length} resource{sharedResources.length !== 1 ? "s" : ""} shared by your counsellor</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {sharedResources.map((resource: any) => (
+                      <div key={resource.id} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col">
+                        <div className="flex items-start justify-between mb-3">
+                          <span className="text-[10px] px-2 py-0.5 rounded uppercase tracking-wider font-semibold bg-secondary-container text-on-secondary-container">
+                            {resource.category}
+                          </span>
+                          <span className="material-symbols-outlined text-[18px] text-secondary">
+                            {resource.type === "video" ? "play_circle" : resource.type === "exercise" ? "self_improvement" : resource.type === "worksheet" ? "assignment" : "article"}
+                          </span>
+                        </div>
+                        <h3 className="text-sm font-bold text-on-surface mb-2">{resource.title}</h3>
+                        <p className="text-xs text-on-surface-variant mb-4 flex-1 leading-relaxed">{resource.description}</p>
+                        <div className="flex items-center justify-between pt-3 border-t border-outline-variant">
+                          <span className="text-[10px] text-on-surface-variant flex items-center gap-1">
+                            <span className="material-symbols-outlined text-[12px]">schedule</span>
+                            {resource.read_time || "5 min"}
+                          </span>
+                          {resource.content_url ? (
+                            <a href={resource.content_url} target="_blank" rel="noopener noreferrer"
+                              className="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
+                              Open
+                              <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+                            </a>
+                          ) : (
+                            <span className="text-xs text-on-surface-variant">No link</span>
+                          )}
+                        </div>
                       </div>
-                      <h3 className="text-sm font-bold text-on-surface mb-2">{resource.title}</h3>
-                      <p className="text-xs text-on-surface-variant mb-4 flex-1 leading-relaxed">{resource.description}</p>
-                      <div className="flex items-center justify-between pt-3 border-t border-outline-variant">
-                        <span className="text-[10px] text-on-surface-variant flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[12px]">schedule</span>
-                          {resource.read_time || "5 min"}
-                        </span>
-                        {resource.content_url ? (
-                          <a
-                            href={resource.content_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
-                          >
-                            Open
-                            <span className="material-symbols-outlined text-[14px]">open_in_new</span>
-                          </a>
-                        ) : (
-                          <span className="text-xs text-on-surface-variant">No attachment</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
           )}
