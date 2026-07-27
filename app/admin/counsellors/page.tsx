@@ -4,24 +4,34 @@ import clsx from "clsx";
 
 export default function AdminCounsellors() {
   const [counsellors, setCounsellors] = useState<any[]>([]);
-  const [students, setStudents] = useState<any[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<any | null>(null);
   const [alertMsg, setAlertMsg] = useState("");
   const [sending, setSending] = useState(false);
+  const [promoting, setPromoting] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Fetch all profiles and filter by role
+  const loadData = () => {
     fetch("/api/counsellor/students").then(r => r.ok ? r.json() : { students: [] }).then(d => {
       const all = d.students || [];
-      // Show counsellors and administrators (non-student roles)
-      const counsellorList = all.filter((s: any) => s.role === "counsellor");
-      const studentList = all.filter((s: any) => s.role === "student" || !s.role);
-      setCounsellors(counsellorList);
-      setStudents(studentList);
+      setCounsellors(all.filter((s: any) => s.role === "counsellor"));
+      setAllUsers(all);
       setLoading(false);
     });
-  }, []);
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  const promoteToRole = async (userId: string, role: string) => {
+    setPromoting(userId);
+    await fetch("/api/admin/profiles", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, role }),
+    });
+    setPromoting(null);
+    loadData();
+  };
 
   const sendAlert = async () => {
     if (!alertMsg.trim()) return;
@@ -56,6 +66,29 @@ export default function AdminCounsellors() {
           <button onClick={sendAlert} disabled={sending || !alertMsg.trim()} className="px-5 py-2.5 bg-error text-on-error rounded-xl text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity">
             {sending ? "Sending..." : "Send"}
           </button>
+        </div>
+      </div>
+
+      {/* Promote Users to Counsellor */}
+      <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5">
+        <h3 className="text-sm font-bold text-on-surface mb-3 flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-[18px]">manage_accounts</span>
+          Manage User Roles — Promote to Counsellor
+        </h3>
+        <p className="text-xs text-on-surface-variant mb-4">All users currently have the Student role. Promote a user to Counsellor here.</p>
+        <div className="space-y-2 max-h-64 overflow-y-auto">
+          {allUsers.filter(u => u.role !== "counsellor" && u.role !== "administrator").map((u: any) => (
+            <div key={u.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-surface-container-low border border-outline-variant/30">
+              <div>
+                <p className="text-sm font-medium text-on-surface">{u.name}</p>
+                <p className="text-xs text-on-surface-variant">{u.email} · {u.role}</p>
+              </div>
+              <button onClick={() => promoteToRole(u.id, "counsellor")} disabled={promoting === u.id}
+                className="px-3 py-1.5 bg-secondary text-on-secondary rounded-lg text-xs font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity shrink-0">
+                {promoting === u.id ? "..." : "Make Counsellor"}
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 
