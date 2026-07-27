@@ -1,101 +1,82 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforgeAdmin } from "@/lib/insforge";
 
-// POST: heartbeat — called every 60s by Navbar when user is logged in
+// 5-minute online window
+const ONLINE_WINDOW_MS = 5 * 60 * 1000;
+
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await request.json();
     if (!userId) return NextResponse.json({ ok: false });
 
     const now = new Date().toISOString();
+    const presenceId = `online-${userId}`;
 
-    // Insert a heartbeat record in mood_entries with a special marker
-    // Use upsert-like behavior: insert new record each time (cheap, fast)
-    await insforgeAdmin.database.from("mood_entries").insert([{
-      user_id: userId,
-      mood_score: 0,
-      emoji: "⬤",
-      notes: `heartbeat:${now}`,
+    // Delete old presence record then insert fresh one
+    await insforgeAdmin.database.from("notifications")
+      .delete().eq("user_id", presenceId);
+
+    await insforgeAdmin.database.from("notifications").insert([{
+      user_id: presenceId,
+      title: "presence",
+      body: now,
+      type: "presence",
+      is_read: false,
+      link: null,
       created_at: now,
     }]);
 
     return NextResponse.json({ ok: true });
   } catch {
-    // Non-blocking — heartbeat failure should never break the UI
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true }); // non-blocking
   }
 }
 
-// GET: check if user(s) are online
 export async function GET(request: NextRequest) {
   try {
     const role = request.nextUrl.searchParams.get("role") || "counsellor";
     const userId = request.nextUrl.searchParams.get("userId");
-
-    // Consider online if heartbeat within last 3 minutes
-    const threeMinAgo = new Date(Date.now() - 3 * 60 * 1000).toISOString();
-    // Last seen = last heartbeat ever
-    const oneYearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
+    const since = new Date(Date.now() - ONLINE_WINDOW_MS).toISOString();
 
     if (userId) {
-      // Check specific user's heartbeat
-      const { data: recent } = await insforgeAdmin.database
-        .from("mood_entries")
-        .select("created_at")
-        .eq("user_id", userId)
-        .eq("emoji", "⬤")
-        .gte("created_at", threeMinAgo)
-        .limit(1);
+      // Check specific user
+      const { data } = await insforgeAdmin.database
+        .from("notifications")
+        .select("body, created_at")
+        .eq("user_id", `online-${userId}`)
+        .eq("type", "presence")
+        .single();
 
-      const { data: lastBeat } = await insforgeAdmin.database
-        .from("mood_entries")
-        .select("created_at")
-        .eq("user_id", userId)
-        .eq("emoji", "⬤")
-        .order("created_at", { ascending: false })
-        .limit(1);
-
-      return NextResponse.json({
-        online: (recent?.length || 0) > 0,
-        lastSeen: lastBeat?.[0]?.created_at || null,
-      });
+      const ts = data?.body || data?.created_at;
+      const online = !!ts && new Date(ts) > new Date(since);
+      return NextResponse.json({ online, lastSeen: ts || null });
     }
 
-    // Check if any user with given role is online
+    // Check any user with given role
     const { data: profiles } = await insforgeAdmin.database
       .from("student_profiles")
       .select("id")
       .eq("role", role)
-      .limit(20);
+      .limit(50);
 
     if (!profiles?.length) {
       return NextResponse.json({ online: false, lastSeen: null });
     }
 
-    const ids = profiles.map((p: any) => p.id);
+    const presenceIds = profiles.map((p: any) => `online-${p.id}`);
 
-    const { data: recent } = await insforgeAdmin.database
-      .from("mood_entries")
-      .select("user_id, created_at")
-      .in("user_id", ids)
-      .eq("emoji", "⬤")
-      .gte("created_at", threeMinAgo)
-      .order("created_at", { ascending: false })
-      .limit(5);
+    const { data: records } = await insforgeAdmin.database
+      .from("notifications")
+      .select("user_id, body, created_at")
+      .in("user_id", presenceIds)
+      .eq("type", "presence")
+      .gte("created_at", since)
+      .limit(10);
 
-    const { data: lastBeat } = await insforgeAdmin.database
-      .from("mood_entries")
-      .select("user_id, created_at")
-      .in("user_id", ids)
-      .eq("emoji", "⬤")
-      .order("created_at", { ascending: false })
-      .limit(1);
+    const online = (records?.length || 0) > 0;
+    const lastSeen = records?.[0]?.body || records?.[0]?.created_at || null;
 
-    return NextResponse.json({
-      online: (recent?.length || 0) > 0,
-      count: recent?.length || 0,
-      lastSeen: lastBeat?.[0]?.created_at || null,
-    });
+    return NextResponse.json({ online, count: records?.length || 0, lastSeen });
   } catch (e: any) {
     return NextResponse.json({ online: false, lastSeen: null });
   }

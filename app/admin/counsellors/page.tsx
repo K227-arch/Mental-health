@@ -11,10 +11,14 @@ export default function AdminCounsellors() {
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
+    // Fetch all profiles and filter by role
     fetch("/api/counsellor/students").then(r => r.ok ? r.json() : { students: [] }).then(d => {
       const all = d.students || [];
-      setCounsellors(all.filter((s: any) => s.role === "counsellor"));
-      setStudents(all.filter((s: any) => s.role !== "counsellor"));
+      // Show counsellors and administrators (non-student roles)
+      const counsellorList = all.filter((s: any) => s.role === "counsellor");
+      const studentList = all.filter((s: any) => s.role === "student" || !s.role);
+      setCounsellors(counsellorList);
+      setStudents(studentList);
       setLoading(false);
     });
   }, []);

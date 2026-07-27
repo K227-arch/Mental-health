@@ -28,15 +28,18 @@ export default function StudentChatPage() {
   const [counsellorLastSeen, setCounsellorLastSeen] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Check counsellor online status every 30s
+  // Check counsellor online status — poll every 15s
   useEffect(() => {
     const check = () => {
-      fetch("/api/presence?role=counsellor").then(r => r.ok ? r.json() : null).then(d => {
-        if (d) { setCounsellorOnline(d.online); setCounsellorLastSeen(d.lastSeen); }
-      });
+      fetch("/api/presence?role=counsellor")
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d !== null) { setCounsellorOnline(!!d.online); setCounsellorLastSeen(d.lastSeen || null); }
+        })
+        .catch(() => {});
     };
     check();
-    const interval = setInterval(check, 30000);
+    const interval = setInterval(check, 15000);
     return () => clearInterval(interval);
   }, []);
 
