@@ -96,6 +96,17 @@ export default function SignInPage() {
         document.cookie = `insforge_access_token=${data.accessToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
       }
 
+      // Verify actual role from DB and redirect accordingly
+      try {
+        const meRes = await fetch("/api/auth/me");
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          const actualRole = meData?.user?.role;
+          if (actualRole === "administrator") { router.push("/admin"); return; }
+          if (actualRole === "counsellor") { router.push("/counsellor"); return; }
+        }
+      } catch {}
+
       router.push(finalRedirect);
     } catch {
       setError("Network error. Please try again.");
@@ -129,36 +140,48 @@ export default function SignInPage() {
     <div className="min-h-screen flex bg-surface relative overflow-hidden">
       {/* Left Panel — Branding */}
       <div className={`hidden lg:flex lg:w-1/2 relative items-center justify-center p-12 ${
-        role === "counsellor"
+        role === "administrator"
+          ? "bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900"
+          : role === "counsellor"
           ? "bg-gradient-to-br from-secondary via-secondary-container to-primary"
           : "bg-gradient-to-br from-primary via-primary-container to-secondary"
       }`}>
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-20 w-72 h-72 bg-white/20 rounded-full blur-3xl" />
           <div className="absolute bottom-20 right-20 w-96 h-96 bg-secondary/30 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-white/10 rounded-full blur-2xl" />
         </div>
 
         <div className="relative z-10 max-w-md text-center">
-          <img
-            src="/logo.jpeg"
-            alt="Selfcare Hub"
-            className="w-20 h-20 object-contain rounded-2xl mx-auto mb-4 shadow-lg border border-white/20 bg-white/90"
-          />
+          <img src="/logo.jpeg" alt="Selfcare Hub" className="w-20 h-20 object-contain rounded-2xl mx-auto mb-4 shadow-lg border border-white/20 bg-white/90" />
           <p className="text-white/70 text-xs font-medium uppercase tracking-widest mb-6">
-            {role === "counsellor" ? t("auth.portal.counsellor") : t("auth.portal.student")}
+            {role === "administrator" ? "Admin Portal" : role === "counsellor" ? t("auth.portal.counsellor") : t("auth.portal.student")}
           </p>
           <h1 className="text-4xl font-black text-white mb-4 leading-tight">
-            {role === "counsellor" ? t("auth.signin.heroCounsellor") : t("auth.signin.heroStudent")}
+            {role === "administrator" ? "System Administrator" : role === "counsellor" ? t("auth.signin.heroCounsellor") : t("auth.signin.heroStudent")}
           </h1>
           <p className="text-white/80 text-lg leading-relaxed mb-8">
-            {role === "counsellor"
-              ? t("auth.signin.descCounsellor")
-              : t("auth.signin.descStudent")}
+            {role === "administrator"
+              ? "Oversee platform operations, manage counsellors, and monitor student wellbeing across the institution."
+              : role === "counsellor" ? t("auth.signin.descCounsellor") : t("auth.signin.descStudent")}
           </p>
 
           <div className="space-y-4 text-left">
-            {role === "counsellor" ? (
+            {role === "administrator" ? (
+              <>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                  <span className="material-symbols-outlined text-yellow-300 text-[22px]">admin_panel_settings</span>
+                  <span className="text-white/90 text-sm">Full platform oversight and control</span>
+                </div>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                  <span className="material-symbols-outlined text-yellow-300 text-[22px]">notifications_active</span>
+                  <span className="text-white/90 text-sm">Alert counsellors on pending tasks</span>
+                </div>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                  <span className="material-symbols-outlined text-yellow-300 text-[22px]">monitoring</span>
+                  <span className="text-white/90 text-sm">Analytics, reports & system health</span>
+                </div>
+              </>
+            ) : role === "counsellor" ? (
               <>
                 <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
                   <span className="material-symbols-outlined text-secondary-container text-[22px]">monitoring</span>

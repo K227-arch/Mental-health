@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import Navbar from "../../components/Navbar";
 import StudentSidebar from "../../components/StudentSidebar";
 import { useTranslation } from "../../lib/i18n";
@@ -224,48 +225,59 @@ export default function StudentChatPage() {
       <Navbar variant="student" />
       <div className="flex flex-1 pt-16 pb-16 md:pb-0">
         <StudentSidebar />
-        <div className="flex-1 flex flex-col max-w-3xl w-full mx-auto" style={{ height: "calc(100svh - 64px - 56px)", maxHeight: "calc(100svh - 64px)" }}>
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-outline-variant">
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg font-bold text-on-surface flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-[22px]">forum</span>
-              {t("chat.title")}
-            </h1>
-            <div className="flex items-center gap-2">
-              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${counsellorOnline ? "bg-green-500 animate-pulse" : "bg-on-surface-variant/30"}`} />
-              <span className={`text-xs font-medium ${counsellorOnline ? "text-green-700" : "text-on-surface-variant"}`}>
-                {counsellorOnline ? "Online" : "Offline"}
-              </span>
+        <div className="flex-1 flex flex-col w-full mx-auto max-w-3xl" style={{ height: "calc(100svh - 64px - 56px)", maxHeight: "calc(100svh - 64px)" }}>
+
+          {/* Chat Header — improved UI */}
+          <div className="px-4 md:px-6 py-3 border-b border-outline-variant bg-surface-container-lowest shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center">
+                    <span className="material-symbols-outlined icon-fill text-primary text-[20px]">support_agent</span>
+                  </div>
+                  <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-surface ${counsellorOnline ? "bg-green-500" : "bg-on-surface-variant/40"}`} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-on-surface">Your Counsellor</h2>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className={`text-xs font-medium ${counsellorOnline ? "text-green-600" : "text-on-surface-variant"}`}>
+                      {counsellorOnline ? "● Online" : "○ Offline"}
+                    </span>
+                    {!counsellorOnline && counsellorLastSeen && (
+                      <span className="text-[10px] text-on-surface-variant">
+                        · Last seen {new Date(counsellorLastSeen).toLocaleString([], { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <Link href="/dashboard/crisis" className="text-xs text-error font-medium flex items-center gap-1 hover:underline">
+                <span className="material-symbols-outlined text-[14px]">emergency</span>
+                Crisis Help
+              </Link>
             </div>
+            {!counsellorOnline && (
+              <p className="text-[10px] text-on-surface-variant/70 mt-2 italic">
+                Kindly be patient — the counsellor will respond when they are back online.
+              </p>
+            )}
           </div>
-          {!counsellorOnline && counsellorLastSeen && (
-            <p className="text-[10px] text-on-surface-variant mt-1">
-              Last seen: {new Date(counsellorLastSeen).toLocaleString([], { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
-            </p>
-          )}
-        </div>
 
         {!session ? (
           <div className="flex-1 flex items-center justify-center text-center px-6">
             <div>
-              <span className="material-symbols-outlined text-[48px] text-on-surface-variant/30 block mb-3">forum</span>
+              <div className="w-20 h-20 rounded-full bg-primary-container flex items-center justify-center mx-auto mb-4">
+                <span className="material-symbols-outlined icon-fill text-primary text-[40px]">support_agent</span>
+              </div>
               <h2 className="text-lg font-semibold text-on-surface mb-2">{t("chat.noSession")}</h2>
-              <p className="text-sm text-on-surface-variant max-w-sm mx-auto mb-5">
-                {t("chat.noSessionDesc")}
-              </p>
+              <p className="text-sm text-on-surface-variant max-w-sm mx-auto mb-5">{t("chat.noSessionDesc")}</p>
               <button
                 onClick={async () => {
                   if (!user?.id) return;
                   const res = await fetch("/api/sessions", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      studentId: user.id,
-                      counsellorId: "counsellor-system",
-                      riskLevel: "Minimal",
-                      studentName: user.name || "Student",
-                    }),
+                    body: JSON.stringify({ studentId: user.id, counsellorId: "counsellor-system", riskLevel: "Minimal", studentName: user.name || "Student" }),
                   });
                   if (res.ok) {
                     const data = await res.json();
@@ -283,29 +295,33 @@ export default function StudentChatPage() {
         ) : (
           <>
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-3" style={{ minHeight: 0 }}>
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-3" style={{ minHeight: 0 }}>
               {messages.length === 0 ? (
                 <div className="text-center text-on-surface-variant text-sm mt-16">
-                  <span className="material-symbols-outlined text-[40px] opacity-30 block mb-2">chat</span>
-                  <p>{t("chat.noMessages")}</p>
-                  <p className="text-xs text-on-surface-variant/70 mt-3 max-w-xs mx-auto italic">Kindly be patient if you do not receive an immediate response. Sometimes, the counselor is not on but will respond shortly.</p>
+                  <span className="material-symbols-outlined text-[40px] opacity-30 block mb-2">chat_bubble_outline</span>
+                  <p className="font-medium">No messages yet</p>
+                  <p className="text-xs text-on-surface-variant/70 mt-3 max-w-xs mx-auto italic">
+                    Start the conversation. Your counsellor will respond as soon as they are online.
+                  </p>
                 </div>
               ) : (
                 messages.map((msg, idx) => (
-                  <div
-                    key={`${msg.id}-${idx}`}
-                    className={`max-w-[75%] px-4 py-3 rounded-2xl text-sm ${
+                  <div key={`${msg.id}-${idx}`} className={`flex items-end gap-2 ${msg.sender_role === "student" ? "flex-row-reverse" : "flex-row"}`}>
+                    {msg.sender_role !== "student" && (
+                      <div className="w-7 h-7 rounded-full bg-primary-container flex items-center justify-center shrink-0 mb-1">
+                        <span className="material-symbols-outlined text-primary text-[14px]">support_agent</span>
+                      </div>
+                    )}
+                    <div className={`max-w-[75%] px-4 py-3 rounded-2xl text-sm shadow-sm ${
                       msg.sender_role === "student"
-                        ? "ml-auto bg-primary text-on-primary rounded-br-sm"
-                        : "mr-auto bg-surface-container text-on-surface rounded-bl-sm"
-                    }`}
-                  >
-                    {renderMessageContent(msg.content)}
-                    <span className={`text-[10px] mt-1 block ${
-                      msg.sender_role === "student" ? "text-on-primary/60 text-right" : "text-on-surface-variant"
+                        ? "bg-primary text-on-primary rounded-br-sm"
+                        : "bg-surface-container-lowest border border-outline-variant/20 text-on-surface rounded-bl-sm"
                     }`}>
-                      {formatTime(msg.created_at)}
-                    </span>
+                      {renderMessageContent(msg.content)}
+                      <span className={`text-[10px] mt-1 block ${msg.sender_role === "student" ? "text-on-primary/60 text-right" : "text-on-surface-variant"}`}>
+                        {formatTime(msg.created_at)}
+                      </span>
+                    </div>
                   </div>
                 ))
               )}
@@ -313,21 +329,17 @@ export default function StudentChatPage() {
             </div>
 
             {/* Input */}
-            <div className="px-3 md:px-6 py-3 md:py-4 border-t border-outline-variant shrink-0">
+            <div className="px-3 md:px-6 py-3 border-t border-outline-variant shrink-0 bg-surface-container-lowest/50">
               {micError && (
-                <div className="mb-3 p-3 bg-error-container/80 text-on-error-container text-xs rounded-xl flex items-center gap-2 animate-fade-in">
+                <div className="mb-3 p-3 bg-error-container/80 text-on-error-container text-xs rounded-xl flex items-center gap-2">
                   <span className="material-symbols-outlined text-[16px]">mic_off</span>
                   {micError}
                 </div>
               )}
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-end">
                 <button
                   onClick={recording ? stopVoiceRecording : startVoiceRecording}
-                  className={`px-3 py-3 rounded-xl font-medium text-sm transition-all flex items-center gap-1 ${
-                    recording
-                      ? "bg-error text-on-error animate-pulse"
-                      : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
-                  }`}
+                  className={`p-3 rounded-xl transition-all shrink-0 ${recording ? "bg-error text-on-error animate-pulse" : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"}`}
                   title={recording ? "Stop recording" : "Record voice note"}
                 >
                   <span className="material-symbols-outlined text-[18px]">{recording ? "stop" : "mic"}</span>
@@ -337,16 +349,16 @@ export default function StudentChatPage() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-                  placeholder={recording ? t("chat.recording") : t("chat.typeMessage")}
+                  placeholder={recording ? t("chat.recording") : "Type a message..."}
                   disabled={recording}
-                  className="flex-1 px-4 py-3 bg-surface-container-low border border-outline-variant/40 rounded-xl text-sm text-on-surface focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none placeholder:text-on-surface-variant/40 disabled:opacity-50"
+                  className="flex-1 px-4 py-3 bg-surface-container-low border border-outline-variant/40 rounded-xl text-sm text-on-surface focus:ring-2 focus:ring-primary/30 outline-none placeholder:text-on-surface-variant/40 disabled:opacity-50"
                 />
                 <button
                   onClick={sendMessage}
                   disabled={!input.trim() || sending || recording}
-                  className="px-4 py-3 bg-primary text-on-primary rounded-xl font-medium text-sm hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-1"
+                  className="p-3 bg-primary text-on-primary rounded-xl hover:opacity-90 disabled:opacity-50 transition-opacity shrink-0"
                 >
-                  <span className="material-symbols-outlined text-[18px]">send</span>
+                  <span className="material-symbols-outlined text-[20px]" style={{ marginLeft: "1px" }}>send</span>
                 </button>
               </div>
             </div>
