@@ -297,11 +297,10 @@ export default function WellnessPage() {
                         if (completedExercises.includes(ex.id)) {
                           setCompletedExercises((prev) => prev.filter((e) => e !== ex.id));
                         } else if (ex.id === "4") {
-                          // Journaling: open journal modal + start timer
+                          // Journaling: open journal modal only (no timer)
                           setJournalOpen(true);
                           setJournalText("");
                           setJournalSent(false);
-                          startExercise(ex);
                         } else {
                           startExercise(ex);
                         }

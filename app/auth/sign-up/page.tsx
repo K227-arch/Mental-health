@@ -154,7 +154,9 @@ export default function SignUpPage() {
     <div className="min-h-screen flex bg-surface relative overflow-hidden">
       {/* Left Panel — Branding */}
       <div className={`hidden lg:flex lg:w-1/2 relative items-center justify-center p-12 ${
-        role === "counsellor"
+        role === "administrator"
+          ? "bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900"
+          : role === "counsellor"
           ? "bg-gradient-to-br from-secondary via-primary-container to-primary"
           : "bg-gradient-to-br from-secondary via-primary-container to-primary"
       }`}>
@@ -165,51 +167,31 @@ export default function SignUpPage() {
         </div>
 
         <div className="relative z-10 max-w-md text-center">
-          <img
-            src="/logo.jpeg"
-            alt="Selfcare Hub"
-            className="w-20 h-20 object-contain rounded-2xl mx-auto mb-4 shadow-lg border border-white/20 bg-white/90"
-          />
+          <img src="/logo.jpeg" alt="Selfcare Hub" className="w-20 h-20 object-contain rounded-2xl mx-auto mb-4 shadow-lg border border-white/20 bg-white/90" />
           <p className="text-white/70 text-xs font-medium uppercase tracking-widest mb-6">
-            {role === "counsellor" ? t("auth.portal.counsellor") : t("auth.portal.student")}
+            {role === "administrator" ? "Admin Portal" : role === "counsellor" ? t("auth.portal.counsellor") : t("auth.portal.student")}
           </p>
           <h1 className="text-4xl font-black text-white mb-4 leading-tight">
-            {role === "counsellor" ? t("auth.signup.heroCounsellor") : t("auth.signup.heroStudent")}
+            {role === "administrator" ? "Create Admin Account" : role === "counsellor" ? t("auth.signup.heroCounsellor") : t("auth.signup.heroStudent")}
           </h1>
           <p className="text-white/80 text-lg leading-relaxed mb-8">
-            {role === "counsellor"
-              ? t("auth.signup.descCounsellor")
-              : t("auth.signup.descStudent")}
+            {role === "administrator"
+              ? "Set up your administrator account to oversee the platform and manage mental health professionals."
+              : role === "counsellor" ? t("auth.signup.descCounsellor") : t("auth.signup.descStudent")}
           </p>
-
-          {role === "counsellor" ? (
-            <div className="space-y-4 text-left">
+          {role === "administrator" && (
+            <div className="space-y-3 text-left">
               <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
-                <span className="material-symbols-outlined text-secondary-container text-[22px]">groups</span>
-                <span className="text-white/90 text-sm">Monitor student caseload in one place</span>
-              </div>
-              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
-                <span className="material-symbols-outlined text-secondary-container text-[22px]">notifications_active</span>
-                <span className="text-white/90 text-sm">Instant alerts for high-risk students</span>
+                <span className="material-symbols-outlined text-yellow-300 text-[22px]">admin_panel_settings</span>
+                <span className="text-white/90 text-sm">Full platform oversight</span>
               </div>
               <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
-                <span className="material-symbols-outlined text-secondary-container text-[22px]">analytics</span>
-                <span className="text-white/90 text-sm">AI-powered screening insights and trends</span>
+                <span className="material-symbols-outlined text-yellow-300 text-[22px]">notifications_active</span>
+                <span className="text-white/90 text-sm">Alert counsellors on tasks</span>
               </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-4 mt-8">
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10 text-center">
-                <div className="text-2xl font-black text-white">5K+</div>
-                <div className="text-xs text-white/70 mt-1">Students</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10 text-center">
-                <div className="text-2xl font-black text-white">24/7</div>
-                <div className="text-xs text-white/70 mt-1">Available</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10 text-center">
-                <div className="text-2xl font-black text-white">100%</div>
-                <div className="text-xs text-white/70 mt-1">Private</div>
+              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                <span className="material-symbols-outlined text-yellow-300 text-[22px]">monitoring</span>
+                <span className="text-white/90 text-sm">Analytics & reports</span>
               </div>
             </div>
           )}
@@ -255,38 +237,6 @@ export default function SignUpPage() {
                 </button>
               ))}
             </div>
-
-            {/* For students: collect reg number and faculty BEFORE Google sign-in */}
-            {role === "student" && (
-              <div className="space-y-3.5 mb-5 p-4 bg-surface-container-low rounded-xl border border-outline-variant/40">
-                <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Required before continuing</p>
-                <div>
-                  <label htmlFor="regNum-pre" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">Registration Number</label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none"><span className="material-symbols-outlined text-[18px]">badge</span></span>
-                    <input id="regNum-pre" type="text" value={registrationNumber} onChange={e => setRegistrationNumber(e.target.value)} placeholder="e.g. 2100701234"
-                      className="w-full pl-10 pr-4 py-2.5 bg-surface-container-lowest border border-outline-variant/40 text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all placeholder:text-on-surface-variant/40" />
-                  </div>
-                </div>
-                <div>
-                  <label htmlFor="faculty-pre" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">Faculty</label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none"><span className="material-symbols-outlined text-[18px]">school</span></span>
-                    <select id="faculty-pre" value={faculty} onChange={e => setFaculty(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 bg-surface-container-lowest border border-outline-variant/40 text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-none">
-                      <option value="">Select Faculty</option>
-                      <option>Computing & IT</option><option>Engineering</option><option>Science</option>
-                      <option>Business</option><option>Arts & Humanities</option><option>Education</option>
-                      <option>Law</option><option>Medicine</option><option>Social Sciences</option><option>Other</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <input id="consent-pre" type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} className="mt-0.5 w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30 accent-primary" />
-                  <label htmlFor="consent-pre" className="text-xs text-on-surface-variant cursor-pointer">The following information will be kept strictly confidential. You are free to withdraw at any point. <strong>Consent</strong></label>
-                </div>
-              </div>
-            )}
 
             {/* OAuth */}
             <button

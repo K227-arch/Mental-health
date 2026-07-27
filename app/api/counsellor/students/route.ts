@@ -125,6 +125,7 @@ export async function GET() {
         anonymousId: profile.anonymous_id || profile.id?.slice(0, 8),
         faculty: profile.faculty || "Not specified",
         year: profile.year_of_study || 0,
+        registrationNumber: profile.registration_number || null,
         role: profile.role || "student",
         riskLevel: session?.risk_level || latestScreening?.risk_level || riskLevel,
         phq9Score,

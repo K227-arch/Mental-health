@@ -10,6 +10,7 @@ interface StudentRecord {
   email: string;
   faculty: string;
   year: number;
+  registrationNumber: string | null;
   riskLevel: string;
   lastActive: string;
   phq9Score: number;
@@ -53,6 +54,7 @@ export default function StudentsManagementPage() {
           email: s.email || "",
           faculty: s.faculty || "Not specified",
           year: s.year || 0,
+          registrationNumber: s.registrationNumber || null,
           riskLevel: s.riskLevel || "Minimal",
           lastActive: s.lastActive || "Never",
           phq9Score: s.phq9Score || 0,
@@ -166,6 +168,7 @@ export default function StudentsManagementPage() {
                         <div>
                           <p className="font-medium text-on-surface">{student.name}</p>
                           {student.email && <p className="text-[10px] text-on-surface-variant">{student.email}</p>}
+                          {student.registrationNumber && <p className="text-[10px] text-primary font-medium">Reg: {student.registrationNumber}</p>}
                         </div>
                       </div>
                     </td>
@@ -223,7 +226,10 @@ export default function StudentsManagementPage() {
               </div>
               <div>
                 <h2 className="text-lg font-bold text-on-surface">{selectedStudent.name}</h2>
-                <p className="text-sm text-on-surface-variant">{selectedStudent.faculty}{selectedStudent.year > 0 ? `` : ""}</p>
+                <p className="text-sm text-on-surface-variant">{selectedStudent.faculty}</p>
+                {selectedStudent.registrationNumber && (
+                  <p className="text-xs text-primary font-semibold mt-0.5">Reg No: {selectedStudent.registrationNumber}</p>
+                )}
               </div>
             </div>
             <button onClick={() => setSelectedStudent(null)} className="p-2 rounded-full hover:bg-surface-container transition-colors">
