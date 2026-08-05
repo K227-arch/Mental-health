@@ -12,23 +12,35 @@ export default function AdminCounsellors() {
   const [promoting, setPromoting] = useState<string | null>(null);
 
   const loadData = () => {
-    fetch("/api/counsellor/students").then(r => r.ok ? r.json() : { students: [] }).then(d => {
-      const all = d.students || [];
-      setCounsellors(all.filter((s: any) => s.role === "counsellor"));
-      setAllUsers(all);
+    // Fetch from dedicated counsellor_profiles table
+    fetch("/api/counsellor/list").then(r => r.ok ? r.json() : { counsellors: [] }).then(d => {
+      setCounsellors(d.counsellors || []);
       setLoading(false);
+    });
+    // Also fetch all users for role promotion
+    fetch("/api/counsellor/students").then(r => r.ok ? r.json() : { students: [] }).then(d => {
+      setAllUsers(d.students || []);
     });
   };
 
   useEffect(() => { loadData(); }, []);
 
-  const promoteToRole = async (userId: string, role: string) => {
+  const promoteToRole = async (userId: string, role: string, name: string, email: string) => {
     setPromoting(userId);
+    // Update student_profiles role
     await fetch("/api/admin/profiles", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId, role }),
     });
+    // Also insert into dedicated counsellor_profiles table
+    if (role === "counsellor") {
+      await fetch("/api/counsellor/list", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, name, email, role }),
+      }).catch(() => {});
+    }
     setPromoting(null);
     loadData();
   };
@@ -83,7 +95,7 @@ export default function AdminCounsellors() {
                 <p className="text-sm font-medium text-on-surface">{u.name}</p>
                 <p className="text-xs text-on-surface-variant">{u.email} · {u.role}</p>
               </div>
-              <button onClick={() => promoteToRole(u.id, "counsellor")} disabled={promoting === u.id}
+              <button onClick={() => promoteToRole(u.id, "counsellor", u.name, u.email)} disabled={promoting === u.id}
                 className="px-3 py-1.5 bg-secondary text-on-secondary rounded-lg text-xs font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity shrink-0">
                 {promoting === u.id ? "..." : "Make Counsellor"}
               </button>
