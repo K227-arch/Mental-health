@@ -70,6 +70,29 @@ export async function GET(request: NextRequest) {
       if (profiles[0]?.name && profiles[0].name.trim()) userName = profiles[0].name;
       if (profiles[0]?.avatar_url) avatarUrl = profiles[0].avatar_url;
     }
+
+    // If role is still student, also check counsellor_profiles and admin_profiles
+    if (role === "student") {
+      const { data: counsellorProfile } = await insforgeAdmin.database
+        .from("counsellor_profiles")
+        .select("role, name")
+        .eq("id", userId)
+        .limit(1);
+      if (counsellorProfile?.[0]) {
+        role = "counsellor";
+        if (counsellorProfile[0].name?.trim()) userName = counsellorProfile[0].name;
+      } else {
+        const { data: adminProfile } = await insforgeAdmin.database
+          .from("admin_profiles")
+          .select("role, name")
+          .eq("id", userId)
+          .limit(1);
+        if (adminProfile?.[0]) {
+          role = "administrator";
+          if (adminProfile[0].name?.trim()) userName = adminProfile[0].name;
+        }
+      }
+    }
   } catch { /* DB error — continue with defaults */ }
 
   const response = NextResponse.json({
