@@ -44,16 +44,36 @@ export async function GET(request: NextRequest) {
     const facultyCookie = request.cookies.get("insforge_faculty")?.value || null;
 
     if (data?.user?.id) {
+      const userId = data.user.id;
+      const userEmail = data.user.email || "";
+      const userName = data.user.profile?.name || userEmail.split("@")[0] || "User";
+      const baseProfile = {
+        id: userId,
+        email: userEmail,
+        name: userName,
+        role: signupRole,
+        anonymous_id: userId.slice(0, 8),
+      };
       try {
-        await insforgeAdmin.database.from("student_profiles").upsert([{
-          id: data.user.id,
-          email: data.user.email || "",
-          name: data.user.profile?.name || data.user.email?.split("@")[0] || "User",
-          role: signupRole,
-          anonymous_id: data.user.id.slice(0, 8),
-          registration_number: regNumber,
-          faculty: facultyCookie,
-        }]);
+        if (signupRole === "counsellor") {
+          // Counsellors go into counsellor_profiles AND student_profiles (for session refs)
+          await insforgeAdmin.database.from("counsellor_profiles").upsert([{
+            ...baseProfile,
+            faculty: facultyCookie,
+          }]);
+          await insforgeAdmin.database.from("student_profiles").upsert([baseProfile]);
+        } else if (signupRole === "administrator") {
+          // Admins go into admin_profiles AND student_profiles
+          await insforgeAdmin.database.from("admin_profiles").upsert([baseProfile]);
+          await insforgeAdmin.database.from("student_profiles").upsert([baseProfile]);
+        } else {
+          // Students go into student_profiles only
+          await insforgeAdmin.database.from("student_profiles").upsert([{
+            ...baseProfile,
+            registration_number: regNumber,
+            faculty: facultyCookie,
+          }]);
+        }
       } catch { /* non-blocking */ }
     }
 
