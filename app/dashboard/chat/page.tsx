@@ -230,28 +230,16 @@ export default function StudentChatPage() {
         <StudentSidebar />
         <div className="flex-1 flex flex-col w-full mx-auto max-w-3xl" style={{ height: "calc(100svh - 64px - 56px)", maxHeight: "calc(100svh - 64px)" }}>
 
-          {/* Chat Header — improved UI */}
+          {/* Chat Header */}
           <div className="px-4 md:px-6 py-3 border-b border-outline-variant bg-surface-container-lowest shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center">
-                    <span className="material-symbols-outlined icon-fill text-primary text-[20px]">support_agent</span>
-                  </div>
-                  <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-surface ${counsellorOnline ? "bg-green-500" : "bg-on-surface-variant/40"}`} />
+                <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center">
+                  <span className="material-symbols-outlined icon-fill text-primary text-[20px]">support_agent</span>
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-on-surface">Your Counsellor</h2>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className={`text-xs font-medium ${counsellorOnline ? "text-green-600" : "text-on-surface-variant"}`}>
-                      {counsellorOnline ? "● Online" : "○ Offline"}
-                    </span>
-                    {!counsellorOnline && counsellorLastSeen && (
-                      <span className="text-[10px] text-on-surface-variant">
-                        · Last seen {new Date(counsellorLastSeen).toLocaleString([], { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
-                      </span>
-                    )}
-                  </div>
+                  <p className="text-xs text-on-surface-variant mt-0.5">Secure, confidential session</p>
                 </div>
               </div>
               <Link href="/dashboard/crisis" className="text-xs text-error font-medium flex items-center gap-1 hover:underline">
