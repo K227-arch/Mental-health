@@ -52,18 +52,36 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ online, lastSeen: ts || null });
     }
 
-    // Check any user with given role
-    const { data: profiles } = await insforgeAdmin.database
-      .from("student_profiles")
-      .select("id")
-      .eq("role", role)
-      .limit(50);
+    // Check any user with given role — counsellors are in counsellor_profiles, admins in admin_profiles, students in student_profiles
+    let profileIds: string[] = [];
 
-    if (!profiles?.length) {
+    if (role === "counsellor") {
+      const { data: cProfiles } = await insforgeAdmin.database
+        .from("counsellor_profiles")
+        .select("id")
+        .limit(50);
+      profileIds = (cProfiles || []).map((p: any) => p.id);
+    } else if (role === "administrator") {
+      const { data: aProfiles } = await insforgeAdmin.database
+        .from("admin_profiles")
+        .select("id")
+        .limit(50);
+      profileIds = (aProfiles || []).map((p: any) => p.id);
+    } else {
+      // students
+      const { data: sProfiles } = await insforgeAdmin.database
+        .from("student_profiles")
+        .select("id")
+        .eq("role", "student")
+        .limit(50);
+      profileIds = (sProfiles || []).map((p: any) => p.id);
+    }
+
+    if (!profileIds.length) {
       return NextResponse.json({ online: false, lastSeen: null });
     }
 
-    const presenceIds = profiles.map((p: any) => `online-${p.id}`);
+    const presenceIds = profileIds.map((id: string) => `online-${id}`);
 
     const { data: records } = await insforgeAdmin.database
       .from("notifications")
