@@ -46,52 +46,57 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ user: null }, { status: 401 });
   }
 
-  // Fetch or create profile from DB — DB name always takes priority
+  // Role resolution: check dedicated tables first (counsellor_profiles, admin_profiles),
+  // then fall back to student_profiles. This ensures counsellors/admins are always
+  // identified correctly even if they also have a backfilled row in student_profiles.
   let role = "student";
   try {
-    const { data: profiles } = await insforgeAdmin.database
-      .from("student_profiles")
-      .select("role, name, avatar_url")
-      .eq("id", userId)
-      .limit(1);
+    const [counsellorRes, adminRes, studentRes] = await Promise.all([
+      insforgeAdmin.database
+        .from("counsellor_profiles")
+        .select("role, name, avatar_url")
+        .eq("id", userId)
+        .limit(1),
+      insforgeAdmin.database
+        .from("admin_profiles")
+        .select("role, name, avatar_url")
+        .eq("id", userId)
+        .limit(1),
+      insforgeAdmin.database
+        .from("student_profiles")
+        .select("role, name, avatar_url")
+        .eq("id", userId)
+        .limit(1),
+    ]);
 
-    if (!profiles || profiles.length === 0) {
-      // @ts-ignore - InsForge SDK type issue on Vercel
+    const counsellorProfile = counsellorRes.data?.[0];
+    const adminProfile = adminRes.data?.[0];
+    const studentProfile = studentRes.data?.[0];
+
+    if (counsellorProfile) {
+      // Dedicated counsellor table takes highest priority
+      role = "counsellor";
+      if (counsellorProfile.name?.trim()) userName = counsellorProfile.name;
+      if (counsellorProfile.avatar_url) avatarUrl = counsellorProfile.avatar_url;
+    } else if (adminProfile) {
+      // Dedicated admin table takes second priority
+      role = "administrator";
+      if (adminProfile.name?.trim()) userName = adminProfile.name;
+      if (adminProfile.avatar_url) avatarUrl = adminProfile.avatar_url;
+    } else if (studentProfile) {
+      // Student table — use whatever role is stored there
+      role = studentProfile.role || "student";
+      if (studentProfile.name?.trim()) userName = studentProfile.name;
+      if (studentProfile.avatar_url) avatarUrl = studentProfile.avatar_url;
+    } else {
+      // New user — create a student profile
       await insforgeAdmin.database.from("student_profiles").insert([{
         id: userId,
         name: userName || userEmail?.split("@")[0] || "Student",
         email: userEmail || "",
         role: "student",
         anonymous_id: userId.slice(0, 8),
-      }]);
-    } else {
-      if (profiles[0]?.role) role = profiles[0].role;
-      // DB name ALWAYS wins — overrides anything from JWT token
-      if (profiles[0]?.name && profiles[0].name.trim()) userName = profiles[0].name;
-      if (profiles[0]?.avatar_url) avatarUrl = profiles[0].avatar_url;
-    }
-
-    // If role is still student, also check counsellor_profiles and admin_profiles
-    if (role === "student") {
-      const { data: counsellorProfile } = await insforgeAdmin.database
-        .from("counsellor_profiles")
-        .select("role, name")
-        .eq("id", userId)
-        .limit(1);
-      if (counsellorProfile?.[0]) {
-        role = "counsellor";
-        if (counsellorProfile[0].name?.trim()) userName = counsellorProfile[0].name;
-      } else {
-        const { data: adminProfile } = await insforgeAdmin.database
-          .from("admin_profiles")
-          .select("role, name")
-          .eq("id", userId)
-          .limit(1);
-        if (adminProfile?.[0]) {
-          role = "administrator";
-          if (adminProfile[0].name?.trim()) userName = adminProfile[0].name;
-        }
-      }
+      }]).catch(() => {}); // non-blocking, ignore duplicate errors
     }
   } catch { /* DB error — continue with defaults */ }
 

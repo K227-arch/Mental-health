@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { insforge } from "@/lib/insforge";
 
 const ADMIN_EMAIL = "keithtwesigye74@gmail.com";
 
@@ -30,20 +29,27 @@ export default function AdminDashboard() {
   }, []);
 
   const loadData = async () => {
-    // Load students count
-    const studentsRes = await fetch("/api/counsellor/students");
-    if (studentsRes.ok) {
-      const data = await studentsRes.json();
-      const students = data.students || [];
-      const criticalCount = students.filter((s: any) => s.riskLevel === "Critical").length;
-      setCounsellors(students.filter((s: any) => s.role === "counsellor"));
-      setStats({
-        students: students.filter((s: any) => s.role !== "counsellor").length,
-        counsellors: students.filter((s: any) => s.role === "counsellor").length,
-        criticalAlerts: criticalCount,
-        pendingTasks: criticalCount + students.filter((s: any) => s.q9Flagged).length,
-      });
-    }
+    // Load students count from counsellor/students (now returns only real students)
+    const [studentsRes, counsellorsRes] = await Promise.all([
+      fetch("/api/counsellor/students"),
+      fetch("/api/counsellor/list"),
+    ]);
+
+    const studentsData = studentsRes.ok ? await studentsRes.json() : { students: [] };
+    const counsellorsData = counsellorsRes.ok ? await counsellorsRes.json() : { counsellors: [] };
+
+    const students = studentsData.students || [];
+    const counsellors = counsellorsData.counsellors || [];
+    const criticalCount = students.filter((s: any) => s.riskLevel === "Critical").length;
+
+    setCounsellors(counsellors);
+    setStats({
+      students: students.length,
+      counsellors: counsellors.length,
+      criticalAlerts: criticalCount,
+      pendingTasks: criticalCount + students.filter((s: any) => s.q9Flagged).length,
+    });
+
     // Load notifications (admin-specific only, not counsellor ones)
     const notifRes = await fetch("/api/notifications?userId=admin-system");
     if (notifRes.ok) {

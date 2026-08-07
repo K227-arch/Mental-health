@@ -215,21 +215,14 @@ function buildCounsellorSummary(
 
 async function sendToCounsellor(report: CounsellorReport) {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_INSFORGE_URL;
-    const anonKey = process.env.INSFORGE_API_KEY || process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY;
-    if (!baseUrl || !anonKey) return;
-
-    // Use internal fetch to notifications API
-    await fetch(`${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/notifications`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: "counsellor-system",
-        title: report.title,
-        body: `[${report.module}] ${report.body}`,
-        type: report.type,
-        link: "/counsellor",
-      }),
+    // Use InsForge admin client directly — avoids HTTP round-trip and works in production
+    const { insforgeAdmin } = await import("@/lib/insforge");
+    await insforgeAdmin.database.from("notifications").insert({
+      user_id: "counsellor-system",
+      title: report.title,
+      body: `[${report.module}] ${report.body}`,
+      type: report.type,
+      link: "/counsellor",
     });
   } catch {
     // Non-blocking — don't fail the chat response if notification fails

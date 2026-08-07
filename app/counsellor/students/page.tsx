@@ -48,6 +48,7 @@ export default function StudentsManagementPage() {
     fetch("/api/counsellor/students")
       .then((r) => r.ok ? r.json() : { students: [] })
       .then((data) => {
+        // API now returns only genuine students
         const mapped: StudentRecord[] = (data.students || []).map((s: any) => ({
           id: s.id,
           name: s.name || s.id?.slice(0, 8),

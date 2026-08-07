@@ -16,11 +16,11 @@ export default function AdminCounsellors() {
     const [counsellorRes, usersRes, sessionsRes] = await Promise.all([
       fetch("/api/counsellor/list").then(r => r.ok ? r.json() : { counsellors: [] }),
       fetch("/api/counsellor/students").then(r => r.ok ? r.json() : { students: [] }),
-      fetch("/api/sessions").then(r => r.ok ? r.json() : { data: [] }),
+      fetch("/api/sessions?counsellorId=all").then(r => r.ok ? r.json() : { sessions: [] }),
     ]);
     setCounsellors(counsellorRes.counsellors || []);
     setAllUsers(usersRes.students || []);
-    setSessions(sessionsRes.data || []);
+    setSessions(sessionsRes.sessions || []);
     setLoading(false);
   };
 
@@ -28,18 +28,12 @@ export default function AdminCounsellors() {
 
   const promoteToRole = async (userId: string, role: string, name: string, email: string) => {
     setPromoting(userId);
+    // PATCH now handles inserting into counsellor_profiles / admin_profiles automatically
     await fetch("/api/admin/profiles", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId, role }),
     });
-    if (role === "counsellor") {
-      await fetch("/api/counsellor/list", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, name, email, role }),
-      }).catch(() => {});
-    }
     setPromoting(null);
     loadData();
   };

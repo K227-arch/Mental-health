@@ -3,17 +3,30 @@ import { insforgeAdmin as insforge } from "@/lib/insforge";
 
 export async function GET() {
   try {
-    // Fetch all student profiles
-    const { data: profiles, error: profilesError } = await insforge.database
-      .from("student_profiles")
-      .select()
-      .order("created_at", { ascending: false });
+    // Fetch only actual students — exclude anyone who is in counsellor_profiles or admin_profiles
+    const [studentsRes, counsellorIdsRes, adminIdsRes] = await Promise.all([
+      insforge.database
+        .from("student_profiles")
+        .select()
+        .order("created_at", { ascending: false }),
+      insforge.database
+        .from("counsellor_profiles")
+        .select("id"),
+      insforge.database
+        .from("admin_profiles")
+        .select("id"),
+    ]);
 
-    if (profilesError) {
-      return NextResponse.json({ error: profilesError.message }, { status: 500 });
-    }
+    const counsellorIds = new Set((counsellorIdsRes.data || []).map((p: any) => p.id));
+    const adminIds = new Set((adminIdsRes.data || []).map((p: any) => p.id));
 
-    const allProfiles = profiles || [];
+    // Filter: keep only genuine students (not in counsellor/admin tables, and role != counsellor/administrator)
+    const allProfiles = (studentsRes.data || []).filter((p: any) =>
+      !counsellorIds.has(p.id) &&
+      !adminIds.has(p.id) &&
+      p.role !== "counsellor" &&
+      p.role !== "administrator"
+    );
 
     // Get latest screening results for each student
     const studentIds = allProfiles.map((p: any) => p.id);

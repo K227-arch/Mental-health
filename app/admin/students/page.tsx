@@ -18,7 +18,8 @@ export default function AdminStudents() {
 
   useEffect(() => {
     fetch("/api/counsellor/students").then(r => r.ok ? r.json() : { students: [] }).then(d => {
-      setStudents((d.students || []).filter((s: any) => s.role !== "counsellor" && s.role !== "administrator"));
+      // API now returns only real students (no counsellors/admins)
+      setStudents(d.students || []);
       setLoading(false);
     });
   }, []);
