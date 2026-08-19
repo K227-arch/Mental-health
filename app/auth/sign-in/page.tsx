@@ -75,7 +75,12 @@ export default function SignInPage() {
       const { data, error: signInError } = await insforge.auth.signInWithPassword({ email, password });
 
       if (signInError) {
-        setError(signInError.message || "Invalid email or password");
+        const msg = signInError.message || "Invalid email or password";
+        if (msg.toLowerCase().includes("invalid") || msg.toLowerCase().includes("credentials") || msg.toLowerCase().includes("not found") || msg.toLowerCase().includes("no user")) {
+          setError("No account found with these credentials. Please sign up first if you haven't created an account yet.");
+        } else {
+          setError(msg);
+        }
         setLoading(false);
         return;
       }
@@ -303,7 +308,14 @@ export default function SignInPage() {
               {error && (
                 <div className="flex items-start gap-2 p-3 bg-error-container/80 text-on-error-container text-sm rounded-xl animate-fade-in">
                   <span className="material-symbols-outlined text-[18px] shrink-0 mt-0.5">error</span>
-                  <span>{error}</span>
+                  <div>
+                    <span>{error}</span>
+                    {error.includes("sign up first") && (
+                      <a href={`/auth/sign-up${role === "counsellor" ? "?role=counsellor" : ""}`} className="block mt-1 text-primary font-semibold hover:underline text-xs">
+                        Create an account →
+                      </a>
+                    )}
+                  </div>
                 </div>
               )}
 
