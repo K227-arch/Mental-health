@@ -5,8 +5,6 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
     const userId = searchParams.get("userId");
-    const limitParam = searchParams.get("limit");
-    const limit = limitParam ? Math.min(parseInt(limitParam, 10) || 20, 200) : 20;
 
     if (!userId) {
       return NextResponse.json({ error: "userId required" }, { status: 400 });
@@ -17,7 +15,7 @@ export async function GET(request: NextRequest) {
       .select()
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-      .limit(limit);
+      .limit(20);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
 import Navbar from "../../components/Navbar";
 import StudentSidebar from "../../components/StudentSidebar";
 import { useTranslation } from "../../lib/i18n";
@@ -24,24 +23,7 @@ export default function StudentChatPage() {
   const [recording, setRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [micError, setMicError] = useState<string | null>(null);
-  const [counsellorOnline, setCounsellorOnline] = useState(false);
-  const [counsellorLastSeen, setCounsellorLastSeen] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Check counsellor online status — poll every 15s
-  useEffect(() => {
-    const check = () => {
-      fetch("/api/presence?role=counsellor")
-        .then(r => r.ok ? r.json() : null)
-        .then(d => {
-          if (d !== null) { setCounsellorOnline(!!d.online); setCounsellorLastSeen(d.lastSeen || null); }
-        })
-        .catch(() => {});
-    };
-    check();
-    const interval = setInterval(check, 15000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -108,25 +90,6 @@ export default function StudentChatPage() {
 
   const formatTime = (dateStr: string) =>
     new Date(dateStr).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
-  const renderMessageContent = (content: string) => {
-    const voiceMatch = content.match(/🎤 Voice note: (https?:\/\/\S+)/);
-    if (voiceMatch) {
-      const url = voiceMatch[1];
-      return (
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-2 text-xs font-medium opacity-80">
-            <span className="material-symbols-outlined text-[16px]">mic</span>
-            Voice Note
-          </div>
-          <audio controls src={url} className="w-full max-w-[220px] h-8" />
-        </div>
-      );
-    }
-    const videoMatch = content.match(/🎥\s*\[Video [^\]]+\]/);
-    if (videoMatch) return <span className="flex items-center gap-1.5 text-xs opacity-80"><span className="material-symbols-outlined text-[16px]">videocam</span>Video shared</span>;
-    return <p className="whitespace-pre-wrap">{content}</p>;
-  };
 
   const startVoiceRecording = async () => {
     try {
@@ -228,47 +191,36 @@ export default function StudentChatPage() {
       <Navbar variant="student" />
       <div className="flex flex-1 pt-16 pb-16 md:pb-0">
         <StudentSidebar />
-        <div className="flex-1 flex flex-col w-full mx-auto max-w-3xl" style={{ height: "calc(100svh - 64px - 56px)", maxHeight: "calc(100svh - 64px)" }}>
-
-          {/* Chat Header */}
-          <div className="px-4 md:px-6 py-3 border-b border-outline-variant bg-surface-container-lowest shrink-0">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center">
-                  <span className="material-symbols-outlined icon-fill text-primary text-[20px]">support_agent</span>
-                </div>
-                <div>
-                  <h2 className="text-sm font-bold text-on-surface">Your Counsellor</h2>
-                  <p className="text-xs text-on-surface-variant mt-0.5">Secure, confidential session</p>
-                </div>
-              </div>
-              <Link href="/dashboard/crisis" className="text-xs text-error font-medium flex items-center gap-1 hover:underline">
-                <span className="material-symbols-outlined text-[14px]">emergency</span>
-                Crisis Help
-              </Link>
-            </div>
-            {!counsellorOnline && (
-              <p className="text-[10px] text-on-surface-variant/70 mt-2 italic">
-                Kindly be patient — the counsellor will respond when they are back online.
-              </p>
-            )}
-          </div>
+        <div className="flex-1 flex flex-col max-w-3xl w-full mx-auto" style={{ height: "calc(100svh - 64px - 56px)", maxHeight: "calc(100svh - 64px)" }}>
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-outline-variant">
+          <h1 className="text-lg font-bold text-on-surface flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary text-[22px]">forum</span>
+            {t("chat.title")}
+          </h1>
+          <p className="text-xs text-on-surface-variant">{t("chat.subtitle")}</p>
+        </div>
 
         {!session ? (
           <div className="flex-1 flex items-center justify-center text-center px-6">
             <div>
-              <div className="w-20 h-20 rounded-full bg-primary-container flex items-center justify-center mx-auto mb-4">
-                <span className="material-symbols-outlined icon-fill text-primary text-[40px]">support_agent</span>
-              </div>
+              <span className="material-symbols-outlined text-[48px] text-on-surface-variant/30 block mb-3">forum</span>
               <h2 className="text-lg font-semibold text-on-surface mb-2">{t("chat.noSession")}</h2>
-              <p className="text-sm text-on-surface-variant max-w-sm mx-auto mb-5">{t("chat.noSessionDesc")}</p>
+              <p className="text-sm text-on-surface-variant max-w-sm mx-auto mb-5">
+                {t("chat.noSessionDesc")}
+              </p>
               <button
                 onClick={async () => {
                   if (!user?.id) return;
                   const res = await fetch("/api/sessions", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ studentId: user.id, counsellorId: "counsellor-system", riskLevel: "Minimal", studentName: user.name || "Student" }),
+                    body: JSON.stringify({
+                      studentId: user.id,
+                      counsellorId: "counsellor-system",
+                      riskLevel: "Minimal",
+                      studentName: user.name || "Student",
+                    }),
                   });
                   if (res.ok) {
                     const data = await res.json();
@@ -286,33 +238,28 @@ export default function StudentChatPage() {
         ) : (
           <>
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-3" style={{ minHeight: 0 }}>
+            <div className="flex-1 overflow-y-auto p-6 space-y-3" style={{ minHeight: 0 }}>
               {messages.length === 0 ? (
                 <div className="text-center text-on-surface-variant text-sm mt-16">
-                  <span className="material-symbols-outlined text-[40px] opacity-30 block mb-2">chat_bubble_outline</span>
-                  <p className="font-medium">No messages yet</p>
-                  <p className="text-xs text-on-surface-variant/70 mt-3 max-w-xs mx-auto italic">
-                    Start the conversation. Your counsellor will respond as soon as they are online.
-                  </p>
+                  <span className="material-symbols-outlined text-[40px] opacity-30 block mb-2">chat</span>
+                  <p>{t("chat.noMessages")}</p>
                 </div>
               ) : (
                 messages.map((msg, idx) => (
-                  <div key={`${msg.id}-${idx}`} className={`flex items-end gap-2 ${msg.sender_role === "student" ? "flex-row-reverse" : "flex-row"}`}>
-                    {msg.sender_role !== "student" && (
-                      <div className="w-7 h-7 rounded-full bg-primary-container flex items-center justify-center shrink-0 mb-1">
-                        <span className="material-symbols-outlined text-primary text-[14px]">support_agent</span>
-                      </div>
-                    )}
-                    <div className={`max-w-[75%] px-4 py-3 rounded-2xl text-sm shadow-sm ${
+                  <div
+                    key={`${msg.id}-${idx}`}
+                    className={`max-w-[75%] px-4 py-3 rounded-2xl text-sm ${
                       msg.sender_role === "student"
-                        ? "bg-surface-container-high text-on-surface rounded-br-sm border border-outline-variant/30"
-                        : "bg-surface-container-lowest border border-outline-variant/20 text-on-surface rounded-bl-sm"
+                        ? "ml-auto bg-primary text-on-primary rounded-br-sm"
+                        : "mr-auto bg-surface-container text-on-surface rounded-bl-sm"
+                    }`}
+                  >
+                    <p>{msg.content}</p>
+                    <span className={`text-[10px] mt-1 block ${
+                      msg.sender_role === "student" ? "text-on-primary/60 text-right" : "text-on-surface-variant"
                     }`}>
-                      {renderMessageContent(msg.content)}
-                      <span className={`text-[10px] mt-1 block ${msg.sender_role === "student" ? "text-on-surface-variant/60 text-right" : "text-on-surface-variant"}`}>
-                        {formatTime(msg.created_at)}
-                      </span>
-                    </div>
+                      {formatTime(msg.created_at)}
+                    </span>
                   </div>
                 ))
               )}
@@ -320,17 +267,21 @@ export default function StudentChatPage() {
             </div>
 
             {/* Input */}
-            <div className="px-3 md:px-6 py-3 border-t border-outline-variant shrink-0 bg-surface-container-lowest/50">
+            <div className="px-3 md:px-6 py-3 md:py-4 border-t border-outline-variant shrink-0">
               {micError && (
-                <div className="mb-3 p-3 bg-error-container/80 text-on-error-container text-xs rounded-xl flex items-center gap-2">
+                <div className="mb-3 p-3 bg-error-container/80 text-on-error-container text-xs rounded-xl flex items-center gap-2 animate-fade-in">
                   <span className="material-symbols-outlined text-[16px]">mic_off</span>
                   {micError}
                 </div>
               )}
-              <div className="flex gap-2 items-end">
+              <div className="flex gap-2">
                 <button
                   onClick={recording ? stopVoiceRecording : startVoiceRecording}
-                  className={`p-3 rounded-xl transition-all shrink-0 ${recording ? "bg-error text-on-error animate-pulse" : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"}`}
+                  className={`px-3 py-3 rounded-xl font-medium text-sm transition-all flex items-center gap-1 ${
+                    recording
+                      ? "bg-error text-on-error animate-pulse"
+                      : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
+                  }`}
                   title={recording ? "Stop recording" : "Record voice note"}
                 >
                   <span className="material-symbols-outlined text-[18px]">{recording ? "stop" : "mic"}</span>
@@ -340,16 +291,16 @@ export default function StudentChatPage() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-                  placeholder={recording ? t("chat.recording") : "Type a message..."}
+                  placeholder={recording ? t("chat.recording") : t("chat.typeMessage")}
                   disabled={recording}
-                  className="flex-1 px-4 py-3 bg-surface-container-low border border-outline-variant/40 rounded-xl text-sm text-on-surface focus:ring-2 focus:ring-primary/30 outline-none placeholder:text-on-surface-variant/40 disabled:opacity-50"
+                  className="flex-1 px-4 py-3 bg-surface-container-low border border-outline-variant/40 rounded-xl text-sm text-on-surface focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none placeholder:text-on-surface-variant/40 disabled:opacity-50"
                 />
                 <button
                   onClick={sendMessage}
                   disabled={!input.trim() || sending || recording}
-                  className="p-3 bg-primary text-on-primary rounded-xl hover:opacity-90 disabled:opacity-50 transition-opacity shrink-0"
+                  className="px-4 py-3 bg-primary text-on-primary rounded-xl font-medium text-sm hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-1"
                 >
-                  <span className="material-symbols-outlined text-[20px]" style={{ marginLeft: "1px" }}>send</span>
+                  <span className="material-symbols-outlined text-[18px]">send</span>
                 </button>
               </div>
             </div>

@@ -25,7 +25,7 @@ const sections = [
   {
     title: "Contact",
     content:
-      "For questions about these terms, please contact us at legal@Selfcareai.app or write to: Selfcare Hub Legal, University Wellness Center, Kampala, Uganda. For technical support, reach out through the in-app help system or email support@Selfcareai.app. We aim to respond to all inquiries within 48 hours.",
+      "For questions about these terms, please contact us at legal@mindcareai.app or write to: Selfcare Hub Legal, University Wellness Center, Kampala, Uganda. For technical support, reach out through the in-app help system or email support@mindcareai.app. We aim to respond to all inquiries within 48 hours.",
   },
 ];
 
@@ -62,7 +62,7 @@ export default function TermsOfService() {
               How we serve you
             </h1>
             <p className="text-on-surface-variant text-sm">
-              Last updated: July 2026
+              Last updated: January 2025
             </p>
           </div>
 

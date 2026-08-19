@@ -9,10 +9,11 @@ import { useTranslation } from "../../lib/i18n";
 export default function SignUpPage() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [role, setRole] = useState<"student" | "counsellor" | "administrator">("student");
+  const [role, setRole] = useState<"student" | "counsellor">("student");
   const [name, setName] = useState("");
-  const [registrationNumber, setRegistrationNumber] = useState("");
+  const [studentId, setStudentId] = useState("");
   const [faculty, setFaculty] = useState("");
+  const [yearOfStudy, setYearOfStudy] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -48,7 +49,7 @@ export default function SignUpPage() {
     }
 
     setLoading(true);
-    const redirectTarget = role === "administrator" ? "/admin" : role === "counsellor" ? "/counsellor" : "/dashboard";
+    const redirectTarget = role === "counsellor" ? "/counsellor" : "/dashboard";
 
     try {
       const { data, error: signUpError } = await insforge.auth.signUp({
@@ -84,9 +85,10 @@ export default function SignUpPage() {
             userId: data.user.id,
             name,
             email,
-            role: role === "counsellor" ? "counsellor" : role === "administrator" ? "administrator" : "student",
+            role: redirectTarget === "/counsellor" ? "counsellor" : "student",
+            studentId: role === "student" ? studentId : undefined,
             faculty: role === "student" ? faculty : undefined,
-            registrationNumber: role === "student" ? registrationNumber : undefined,
+            yearOfStudy: role === "student" ? parseInt(yearOfStudy) : undefined,
           }),
         }).catch(() => {});
       }
@@ -100,30 +102,9 @@ export default function SignUpPage() {
 
   const handleOAuth = async (provider: string) => {
     setError(null);
-
-    // For students: require registration number, faculty, and consent before Google sign-in
-    if (role === "student") {
-      if (!registrationNumber.trim()) {
-        setError("Please enter your Registration Number before signing in with Google.");
-        return;
-      }
-      if (!faculty) {
-        setError("Please select your Faculty before signing in with Google.");
-        return;
-      }
-      if (!consent) {
-        setError("You must give consent before continuing.");
-        return;
-      }
-      // Save to cookies so the callback route can use them to complete profile
-      document.cookie = `insforge_reg_number=${encodeURIComponent(registrationNumber.trim())}; path=/; max-age=600; SameSite=Lax`;
-      document.cookie = `insforge_faculty=${encodeURIComponent(faculty)}; path=/; max-age=600; SameSite=Lax`;
-    }
-
     setOauthLoading(provider);
-    const redirect = role === "administrator" ? "/admin" : role === "counsellor" ? "/counsellor" : "/dashboard";
+    const redirect = role === "counsellor" ? "/counsellor" : "/dashboard";
     document.cookie = `insforge_redirect=${redirect}; path=/; max-age=600; SameSite=Lax`;
-    document.cookie = `insforge_signup_role=${role}; path=/; max-age=600; SameSite=Lax`;
     const { data, error } = await insforge.auth.signInWithOAuth(provider as any, {
       redirectTo: `${window.location.origin}/api/auth/callback`,
       skipBrowserRedirect: true,
@@ -154,9 +135,7 @@ export default function SignUpPage() {
     <div className="min-h-screen flex bg-surface relative overflow-hidden">
       {/* Left Panel — Branding */}
       <div className={`hidden lg:flex lg:w-1/2 relative items-center justify-center p-12 ${
-        role === "administrator"
-          ? "bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900"
-          : role === "counsellor"
+        role === "counsellor"
           ? "bg-gradient-to-br from-secondary via-primary-container to-primary"
           : "bg-gradient-to-br from-secondary via-primary-container to-primary"
       }`}>
@@ -167,31 +146,51 @@ export default function SignUpPage() {
         </div>
 
         <div className="relative z-10 max-w-md text-center">
-          <img src="/logo.jpeg" alt="Selfcare Hub" className="w-20 h-20 object-contain rounded-2xl mx-auto mb-4 shadow-lg border border-white/20 bg-white/90" />
+          <img
+            src="/logo.jpeg"
+            alt="Selfcare Hub"
+            className="w-20 h-20 object-contain rounded-2xl mx-auto mb-4 shadow-lg border border-white/20 bg-white/90"
+          />
           <p className="text-white/70 text-xs font-medium uppercase tracking-widest mb-6">
-            {role === "administrator" ? "Admin Portal" : role === "counsellor" ? t("auth.portal.counsellor") : t("auth.portal.student")}
+            {role === "counsellor" ? t("auth.portal.counsellor") : t("auth.portal.student")}
           </p>
           <h1 className="text-4xl font-black text-white mb-4 leading-tight">
-            {role === "administrator" ? "Create Admin Account" : role === "counsellor" ? t("auth.signup.heroCounsellor") : t("auth.signup.heroStudent")}
+            {role === "counsellor" ? t("auth.signup.heroCounsellor") : t("auth.signup.heroStudent")}
           </h1>
           <p className="text-white/80 text-lg leading-relaxed mb-8">
-            {role === "administrator"
-              ? "Set up your administrator account to oversee the platform and manage mental health professionals."
-              : role === "counsellor" ? t("auth.signup.descCounsellor") : t("auth.signup.descStudent")}
+            {role === "counsellor"
+              ? t("auth.signup.descCounsellor")
+              : t("auth.signup.descStudent")}
           </p>
-          {role === "administrator" && (
-            <div className="space-y-3 text-left">
+
+          {role === "counsellor" ? (
+            <div className="space-y-4 text-left">
               <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
-                <span className="material-symbols-outlined text-yellow-300 text-[22px]">admin_panel_settings</span>
-                <span className="text-white/90 text-sm">Full platform oversight</span>
+                <span className="material-symbols-outlined text-secondary-container text-[22px]">groups</span>
+                <span className="text-white/90 text-sm">Monitor student caseload in one place</span>
               </div>
               <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
-                <span className="material-symbols-outlined text-yellow-300 text-[22px]">notifications_active</span>
-                <span className="text-white/90 text-sm">Alert counsellors on tasks</span>
+                <span className="material-symbols-outlined text-secondary-container text-[22px]">notifications_active</span>
+                <span className="text-white/90 text-sm">Instant alerts for high-risk students</span>
               </div>
               <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
-                <span className="material-symbols-outlined text-yellow-300 text-[22px]">monitoring</span>
-                <span className="text-white/90 text-sm">Analytics & reports</span>
+                <span className="material-symbols-outlined text-secondary-container text-[22px]">analytics</span>
+                <span className="text-white/90 text-sm">AI-powered screening insights and trends</span>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-4 mt-8">
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10 text-center">
+                <div className="text-2xl font-black text-white">5K+</div>
+                <div className="text-xs text-white/70 mt-1">Students</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10 text-center">
+                <div className="text-2xl font-black text-white">24/7</div>
+                <div className="text-xs text-white/70 mt-1">Available</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10 text-center">
+                <div className="text-2xl font-black text-white">100%</div>
+                <div className="text-xs text-white/70 mt-1">Private</div>
               </div>
             </div>
           )}
@@ -220,23 +219,9 @@ export default function SignUpPage() {
           {/* Form Card */}
           <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-7 shadow-lg shadow-primary/5">
             <h1 className="text-lg font-bold text-on-surface mb-1">{t("auth.signup.title")}</h1>
-            <p className="text-xs text-on-surface-variant mb-4">
-              {role === "counsellor" ? t("auth.signup.counsellorSubtitle") : role === "administrator" ? "Create an administrator account" : t("auth.signup.subtitle")}
+            <p className="text-xs text-on-surface-variant mb-5">
+              {role === "counsellor" ? t("auth.signup.counsellorSubtitle") : t("auth.signup.subtitle")}
             </p>
-
-            {/* Role selector */}
-            <div className="flex rounded-xl overflow-hidden border border-outline-variant/50 mb-5 text-xs font-semibold">
-              {(["student", "counsellor", "administrator"] as const).map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setRole(r)}
-                  className={`flex-1 py-2 transition-colors capitalize ${role === r ? "bg-primary text-on-primary" : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"}`}
-                >
-                  {r === "administrator" ? "Admin" : r.charAt(0).toUpperCase() + r.slice(1)}
-                </button>
-              ))}
-            </div>
 
             {/* OAuth */}
             <button
@@ -288,51 +273,78 @@ export default function SignUpPage() {
               {role === "student" && (
                 <>
                   <div>
-                    <label htmlFor="registrationNumber" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
-                      Registration Number
+                    <label htmlFor="studentId" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
+                      Student ID
                     </label>
                     <div className="relative">
                       <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
                         <span className="material-symbols-outlined text-[18px]">badge</span>
                       </span>
                       <input
-                        id="registrationNumber"
+                        id="studentId"
                         type="text"
-                        value={registrationNumber}
-                        onChange={(e) => setRegistrationNumber(e.target.value)}
+                        value={studentId}
+                        onChange={(e) => setStudentId(e.target.value)}
                         placeholder="e.g. 2100701234"
                         required
                         className="w-full pl-10 pr-4 py-2.5 bg-surface-container-low border border-outline-variant/40 text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all placeholder:text-on-surface-variant/40"
                       />
                     </div>
                   </div>
-                  <div>
-                    <label htmlFor="faculty" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
-                      Faculty
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
-                        <span className="material-symbols-outlined text-[18px]">school</span>
-                      </span>
-                      <select
-                        id="faculty"
-                        value={faculty}
-                        onChange={(e) => setFaculty(e.target.value)}
-                        required
-                        className="w-full pl-10 pr-4 py-2.5 bg-surface-container-low border border-outline-variant/40 text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-none"
-                      >
-                        <option value="">Select</option>
-                        <option value="Computing & IT">Computing & IT</option>
-                        <option value="Engineering">Engineering</option>
-                        <option value="Science">Science</option>
-                        <option value="Business">Business</option>
-                        <option value="Arts & Humanities">Arts & Humanities</option>
-                        <option value="Education">Education</option>
-                        <option value="Law">Law</option>
-                        <option value="Medicine">Medicine</option>
-                        <option value="Social Sciences">Social Sciences</option>
-                        <option value="Other">Other</option>
-                      </select>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="faculty" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
+                        Faculty
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
+                          <span className="material-symbols-outlined text-[18px]">school</span>
+                        </span>
+                        <select
+                          id="faculty"
+                          value={faculty}
+                          onChange={(e) => setFaculty(e.target.value)}
+                          required
+                          className="w-full pl-10 pr-4 py-2.5 bg-surface-container-low border border-outline-variant/40 text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-none"
+                        >
+                          <option value="">Select</option>
+                          <option value="Computing & IT">Computing & IT</option>
+                          <option value="Engineering">Engineering</option>
+                          <option value="Science">Science</option>
+                          <option value="Business">Business</option>
+                          <option value="Arts & Humanities">Arts & Humanities</option>
+                          <option value="Education">Education</option>
+                          <option value="Law">Law</option>
+                          <option value="Medicine">Medicine</option>
+                          <option value="Social Sciences">Social Sciences</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label htmlFor="yearOfStudy" className="block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wide">
+                        Year
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none">
+                          <span className="material-symbols-outlined text-[18px]">calendar_month</span>
+                        </span>
+                        <select
+                          id="yearOfStudy"
+                          value={yearOfStudy}
+                          onChange={(e) => setYearOfStudy(e.target.value)}
+                          required
+                          className="w-full pl-10 pr-4 py-2.5 bg-surface-container-low border border-outline-variant/40 text-on-surface text-sm rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-none"
+                        >
+                          <option value="">Select</option>
+                          <option value="1">Year 1</option>
+                          <option value="2">Year 2</option>
+                          <option value="3">Year 3</option>
+                          <option value="4">Year 4</option>
+                          <option value="5">Year 5+</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                 </>
@@ -439,7 +451,7 @@ export default function SignUpPage() {
               {role === "student" && (
                 <div className="bg-surface-container-low border border-outline-variant/40 rounded-xl p-4 space-y-2.5">
                   <p className="text-xs text-on-surface-variant leading-relaxed">
-                    The following information will be kept strictly confidential. You are free to withdraw at any point if not comfortable continuing.
+                    The following information will be kept strictly confidential and used solely for research classification purposes. You are free to withdraw at any point if not comfortable continuing.
                   </p>
                   <div className="flex items-start gap-2.5">
                     <input
@@ -450,7 +462,7 @@ export default function SignUpPage() {
                       className="mt-0.5 w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30 accent-primary"
                     />
                     <label htmlFor="consent" className="text-sm font-medium text-on-surface cursor-pointer leading-snug">
-                      Consent
+                      I consent to participate in this interview.
                     </label>
                   </div>
                 </div>

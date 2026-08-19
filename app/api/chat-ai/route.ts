@@ -19,8 +19,8 @@ function getAIClient(): { client: OpenAI; model: string } | null {
         baseURL: "https://openrouter.ai/api/v1",
         apiKey: process.env.OPENROUTER_API_KEY,
         defaultHeaders: {
-          "HTTP-Referer": "https://Selfcare-ai-mu.vercel.app",
-          "X-Title": "Selfcare",
+          "HTTP-Referer": "https://mindcare-ai-mu.vercel.app",
+          "X-Title": "MindCare AI",
         },
       }),
       model: "openai/gpt-4o-mini",
@@ -95,7 +95,7 @@ function buildSystemPrompt(stage: ConversationStage, nlpContext?: NlpContext): s
 - Sentiment: ${nlpContext.sentimentBreakdown ? `${(nlpContext.sentimentBreakdown.negative * 100).toFixed(0)}% negative` : "unknown"}
 - Recommendation: ${nlpContext.recommendation || "none"}` : "";
 
-  const base = `You are Selfcare, a compassionate AI mental health support assistant at a university student wellness platform. You are NOT a therapist — you provide empathetic support, psychoeducation, and crisis referrals.
+  const base = `You are MindCare, a compassionate AI mental health support assistant at a university student wellness platform. You are NOT a therapist — you provide empathetic support, psychoeducation, and crisis referrals.
 
 Rules:
 - Validate emotions before offering advice
@@ -215,14 +215,21 @@ function buildCounsellorSummary(
 
 async function sendToCounsellor(report: CounsellorReport) {
   try {
-    // Use InsForge admin client directly — avoids HTTP round-trip and works in production
-    const { insforgeAdmin } = await import("@/lib/insforge");
-    await insforgeAdmin.database.from("notifications").insert({
-      user_id: "counsellor-system",
-      title: report.title,
-      body: `[${report.module}] ${report.body}`,
-      type: report.type,
-      link: "/counsellor",
+    const baseUrl = process.env.NEXT_PUBLIC_INSFORGE_URL;
+    const anonKey = process.env.INSFORGE_API_KEY || process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY;
+    if (!baseUrl || !anonKey) return;
+
+    // Use internal fetch to notifications API
+    await fetch(`${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/notifications`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: "counsellor-system",
+        title: report.title,
+        body: `[${report.module}] ${report.body}`,
+        type: report.type,
+        link: "/counsellor",
+      }),
     });
   } catch {
     // Non-blocking — don't fail the chat response if notification fails

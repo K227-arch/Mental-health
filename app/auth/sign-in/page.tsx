@@ -3,14 +3,13 @@
 import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import clsx from "clsx";
 import { insforge } from "@/lib/insforge";
 import { useTranslation } from "../../lib/i18n";
 
 export default function SignInPage() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [role, setRole] = useState<"student" | "counsellor" | "administrator">("student");
+  const [role, setRole] = useState<"student" | "counsellor">("student");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -65,7 +64,7 @@ export default function SignInPage() {
     setError(null);
     setLoading(true);
 
-    const redirectTarget = role === "administrator" ? "/admin" : role === "counsellor" ? "/counsellor" : "/dashboard";
+    const redirectTarget = role === "counsellor" ? "/counsellor" : "/dashboard";
 
     // Check if there's a redirect param from middleware
     const params = new URLSearchParams(window.location.search);
@@ -96,17 +95,6 @@ export default function SignInPage() {
         document.cookie = `insforge_access_token=${data.accessToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
       }
 
-      // Verify actual role from DB and redirect accordingly
-      try {
-        const meRes = await fetch("/api/auth/me");
-        if (meRes.ok) {
-          const meData = await meRes.json();
-          const actualRole = meData?.user?.role;
-          if (actualRole === "administrator") { router.push("/admin"); return; }
-          if (actualRole === "counsellor") { router.push("/counsellor"); return; }
-        }
-      } catch {}
-
       router.push(finalRedirect);
     } catch {
       setError("Network error. Please try again.");
@@ -117,7 +105,7 @@ export default function SignInPage() {
   const handleOAuth = async (provider: string) => {
     setError(null);
     setOauthLoading(provider);
-    const redirect = role === "administrator" ? "/admin" : role === "counsellor" ? "/counsellor" : "/dashboard";
+    const redirect = role === "counsellor" ? "/counsellor" : "/dashboard";
     document.cookie = `insforge_redirect=${redirect}; path=/; max-age=600; SameSite=Lax`;
     const { data, error } = await insforge.auth.signInWithOAuth(provider as any, {
       redirectTo: `${window.location.origin}/api/auth/callback`,
@@ -140,48 +128,36 @@ export default function SignInPage() {
     <div className="min-h-screen flex bg-surface relative overflow-hidden">
       {/* Left Panel — Branding */}
       <div className={`hidden lg:flex lg:w-1/2 relative items-center justify-center p-12 ${
-        role === "administrator"
-          ? "bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900"
-          : role === "counsellor"
+        role === "counsellor"
           ? "bg-gradient-to-br from-secondary via-secondary-container to-primary"
           : "bg-gradient-to-br from-primary via-primary-container to-secondary"
       }`}>
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-20 w-72 h-72 bg-white/20 rounded-full blur-3xl" />
           <div className="absolute bottom-20 right-20 w-96 h-96 bg-secondary/30 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-white/10 rounded-full blur-2xl" />
         </div>
 
         <div className="relative z-10 max-w-md text-center">
-          <img src="/logo.jpeg" alt="Selfcare Hub" className="w-20 h-20 object-contain rounded-2xl mx-auto mb-4 shadow-lg border border-white/20 bg-white/90" />
+          <img
+            src="/logo.jpeg"
+            alt="Selfcare Hub"
+            className="w-20 h-20 object-contain rounded-2xl mx-auto mb-4 shadow-lg border border-white/20 bg-white/90"
+          />
           <p className="text-white/70 text-xs font-medium uppercase tracking-widest mb-6">
-            {role === "administrator" ? "Admin Portal" : role === "counsellor" ? t("auth.portal.counsellor") : t("auth.portal.student")}
+            {role === "counsellor" ? t("auth.portal.counsellor") : t("auth.portal.student")}
           </p>
           <h1 className="text-4xl font-black text-white mb-4 leading-tight">
-            {role === "administrator" ? "System Administrator" : role === "counsellor" ? t("auth.signin.heroCounsellor") : t("auth.signin.heroStudent")}
+            {role === "counsellor" ? t("auth.signin.heroCounsellor") : t("auth.signin.heroStudent")}
           </h1>
           <p className="text-white/80 text-lg leading-relaxed mb-8">
-            {role === "administrator"
-              ? "Oversee platform operations, manage counsellors, and monitor student wellbeing across the institution."
-              : role === "counsellor" ? t("auth.signin.descCounsellor") : t("auth.signin.descStudent")}
+            {role === "counsellor"
+              ? t("auth.signin.descCounsellor")
+              : t("auth.signin.descStudent")}
           </p>
 
           <div className="space-y-4 text-left">
-            {role === "administrator" ? (
-              <>
-                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
-                  <span className="material-symbols-outlined text-yellow-300 text-[22px]">admin_panel_settings</span>
-                  <span className="text-white/90 text-sm">Full platform oversight and control</span>
-                </div>
-                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
-                  <span className="material-symbols-outlined text-yellow-300 text-[22px]">notifications_active</span>
-                  <span className="text-white/90 text-sm">Alert counsellors on pending tasks</span>
-                </div>
-                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
-                  <span className="material-symbols-outlined text-yellow-300 text-[22px]">monitoring</span>
-                  <span className="text-white/90 text-sm">Analytics, reports & system health</span>
-                </div>
-              </>
-            ) : role === "counsellor" ? (
+            {role === "counsellor" ? (
               <>
                 <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
                   <span className="material-symbols-outlined text-secondary-container text-[22px]">monitoring</span>
@@ -233,28 +209,9 @@ export default function SignInPage() {
           {/* Form Card */}
           <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-7 shadow-lg shadow-primary/5">
             <h1 className="text-lg font-bold text-on-surface mb-1">{t("auth.signin.title")}</h1>
-            <p className="text-xs text-on-surface-variant mb-4">
+            <p className="text-xs text-on-surface-variant mb-6">
               {role === "counsellor" ? t("auth.signin.counsellorSubtitle") : t("auth.signin.subtitle")}
             </p>
-
-            {/* Role selector */}
-            <div className="flex rounded-xl overflow-hidden border border-outline-variant/50 mb-5 text-xs font-semibold">
-              {(["student", "counsellor", "administrator"] as const).map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setRole(r)}
-                  className={clsx(
-                    "flex-1 py-2 transition-colors capitalize",
-                    role === r
-                      ? "bg-primary text-on-primary"
-                      : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
-                  )}
-                >
-                  {r === "administrator" ? "Admin" : r.charAt(0).toUpperCase() + r.slice(1)}
-                </button>
-              ))}
-            </div>
 
             {/* OAuth */}
             <button

@@ -61,17 +61,13 @@ export default function ScreeningPage() {
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [cameraRecording, setCameraRecording] = useState(false);
   const [cameraRecorder, setCameraRecorder] = useState<MediaRecorder | null>(null);
-  // Phase: "rapport" = initial greeting, "phq9" = answering questions, "functional" = Q10 impairment, "followup" = post-assessment questions, "chat" = free AI conversation
-  const [phase, setPhase] = useState<"rapport" | "phq9" | "functional" | "followup" | "chat">("rapport");
+  // Phase: "rapport" = initial greeting, "phq9" = answering questions, "functional" = Q10 impairment, "chat" = free AI conversation
+  const [phase, setPhase] = useState<"rapport" | "phq9" | "functional" | "chat">("rapport");
   const [conversationStage, setConversationStage] = useState<"rapport" | "exploration" | "stressors" | "risk" | "intervention">("rapport");
   const [functionalImpairment, setFunctionalImpairment] = useState<number | null>(null);
   const [nlpContextRef, setNlpContextRef] = useState<object | null>(null);
   const [checkingLastScreening, setCheckingLastScreening] = useState(true);
   const [daysUntilNextScreening, setDaysUntilNextScreening] = useState<number | null>(null);
-  const [followupStep, setFollowupStep] = useState(0);
-  const [starRating, setStarRating] = useState(0);
-  const [chatHistory, setChatHistory] = useState<{ id: string; title: string; date: string; messages: Message[] }[]>([]);
-  const [historyOpen, setHistoryOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const cameraPreviewRef = useRef<HTMLVideoElement>(null);
@@ -80,96 +76,10 @@ export default function ScreeningPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Persist in-progress assessment state so student can resume after navigating away
-  useEffect(() => {
-    // Don't save if still checking or in chat phase (chat is saved separately)
-    if (checkingLastScreening || phase === "chat") return;
-    try {
-      const state = { phase, currentQuestion, answers, messages, conversationStage, done, totalScore, freeTextInputs };
-      sessionStorage.setItem("selfcare_assessment_progress", JSON.stringify(state));
-    } catch {}
-  }, [phase, currentQuestion, answers, messages, conversationStage, done, totalScore, freeTextInputs, checkingLastScreening]);
-
-  // Restore in-progress assessment on mount
-  useEffect(() => {
-    try {
-      const saved = sessionStorage.getItem("selfcare_assessment_progress");
-      if (!saved) return;
-      const state = JSON.parse(saved);
-      // Only restore if assessment was in progress (not chat, not completed)
-      if (state.phase && state.phase !== "chat" && !state.done && state.messages?.length > 1) {
-        setPhase(state.phase);
-        setCurrentQuestion(state.currentQuestion || 0);
-        setAnswers(state.answers || []);
-        setMessages(state.messages);
-        setConversationStage(state.conversationStage || "rapport");
-        setFreeTextInputs(state.freeTextInputs || []);
-        setCheckingLastScreening(false);
-      }
-    } catch {}
-  }, []);
-
   // Set initial message time on client only (avoids hydration mismatch)
   useEffect(() => {
     setMessages((prev) => prev.map((m) => m.id === "1" && !m.time ? { ...m, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) } : m));
   }, []);
-
-  // Load chat history from localStorage
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("Selfcare_chat_history");
-      if (saved) setChatHistory(JSON.parse(saved));
-    } catch {}
-  }, []);
-
-  // Save current conversation to history when it has enough messages
-  // Track how many user messages have been saved to detect new ones
-  const [lastSavedMsgCount, setLastSavedMsgCount] = useState(0);
-
-  const saveToHistory = () => {
-    if (phase !== "chat") return;
-    // Find user messages that haven't been saved yet
-    const userMessages = messages.filter((m) => m.role === "user");
-    if (userMessages.length === 0 || userMessages.length <= lastSavedMsgCount) return;
-
-    // Save latest user message + AI response as a new history entry
-    const latestUserMsg = userMessages[userMessages.length - 1];
-    const title = latestUserMsg.content.slice(0, 40) + (latestUserMsg.content.length > 40 ? "..." : "");
-    const id = `chat-${latestUserMsg.id}`;
-
-    // Get the messages around this question (user msg + AI response after it)
-    const msgIndex = messages.findIndex((m) => m.id === latestUserMsg.id);
-    const contextMessages = messages.slice(Math.max(0, msgIndex - 1), msgIndex + 2);
-
-    const newEntry = { id, title, date: new Date().toISOString(), messages: contextMessages };
-
-    setChatHistory((prev) => {
-      const withoutDuplicate = prev.filter((h) => h.id !== id);
-      const updated = [newEntry, ...withoutDuplicate].slice(0, 30);
-      localStorage.setItem("Selfcare_chat_history", JSON.stringify(updated));
-      return updated;
-    });
-
-    setLastSavedMsgCount(userMessages.length);
-  };
-
-  // Save each time a new user message is sent in chat phase
-  useEffect(() => {
-    if (phase !== "chat") return;
-    const userMsgCount = messages.filter((m) => m.role === "user").length;
-    if (userMsgCount > lastSavedMsgCount) {
-      // Small delay to ensure AI response is included
-      const timeout = setTimeout(saveToHistory, 1500);
-      return () => clearTimeout(timeout);
-    }
-  }, [messages, phase]);
-
-  const loadHistorySession = (session: { id: string; title: string; date: string; messages: Message[] }) => {
-    setMessages(session.messages);
-    setPhase("chat");
-    setConversationStage("exploration");
-    setHistoryOpen(false);
-  };
 
   useEffect(() => {
     if (cameraPreviewRef.current && cameraStream) {
@@ -189,12 +99,12 @@ export default function ScreeningPage() {
         if (!userId) { setCheckingLastScreening(false); return; }
 
         // Load saved chat messages from localStorage
-        const savedMessages = localStorage.getItem(`Selfcare_chat_messages_${userId}`);
-        const savedPhase = localStorage.getItem(`Selfcare_chat_phase_${userId}`);
-        const savedStage = localStorage.getItem(`Selfcare_chat_stage_${userId}`);
+        const savedMessages = localStorage.getItem(`mindcare_chat_messages_${userId}`);
+        const savedPhase = localStorage.getItem(`mindcare_chat_phase_${userId}`);
+        const savedStage = localStorage.getItem(`mindcare_chat_stage_${userId}`);
 
         // Check localStorage for last screening timestamp (fast check)
-        const lastScreeningStr = localStorage.getItem(`Selfcare_last_screening_${userId}`);
+        const lastScreeningStr = localStorage.getItem(`mindcare_last_screening_${userId}`);
         if (lastScreeningStr) {
           const lastDate = new Date(lastScreeningStr);
           const now = new Date();
@@ -248,9 +158,9 @@ export default function ScreeningPage() {
         if (!userId) return;
         // Save only last 50 messages to avoid localStorage bloat
         const toSave = messages.slice(-50);
-        localStorage.setItem(`Selfcare_chat_messages_${userId}`, JSON.stringify(toSave));
-        localStorage.setItem(`Selfcare_chat_phase_${userId}`, phase);
-        localStorage.setItem(`Selfcare_chat_stage_${userId}`, conversationStage);
+        localStorage.setItem(`mindcare_chat_messages_${userId}`, JSON.stringify(toSave));
+        localStorage.setItem(`mindcare_chat_phase_${userId}`, phase);
+        localStorage.setItem(`mindcare_chat_stage_${userId}`, conversationStage);
       } catch {}
     })();
   }, [messages, phase, conversationStage]);
@@ -263,7 +173,7 @@ export default function ScreeningPage() {
     setTotalScore(0);
     setNlpAnalysis(null);
     const questions = selectedModel.questions;
-    addMessage("ai", `Thank you so much for sharing that with me — it means a lot. 💚\n\nI'd love to understand a little better how you've been doing. Let's take a gentle look together over the last two weeks.\n\nOver the last two weeks, how often have you been bothered by:\n\n**${questions[0].text}**\n\nPlease select how often below.`);
+    addMessage("ai", `Thank you for sharing. Let\u2019s check in a bit more closely.\n\nOver the last two weeks, how often have you been bothered by:\n\n**${questions[0].text}**\n\nPlease select how often below.`);
   };
 
   const startAssessment = () => {
@@ -486,37 +396,9 @@ export default function ScreeningPage() {
     setTimeout(() => {
       if (currentQuestion + 1 < questions.length) {
         const nextQ = questions[currentQuestion + 1];
-
-        // Varied empathetic responses based on answer severity and question number
-        const empathyResponses = {
-          high: [ // score 2-3 (More than half / Nearly every day)
-            "Ohhhh nooo, that is so bad to hear… what happened exactly? Do you mind sharing?",
-            "I'm so sorry to hear that. That must be really weighing on you.",
-            "Sorry about that. Sometimes, days seem to be different. But healing and becoming happy and peaceful is the goal.",
-            "Feeling bad is normal, but you deserve peace, contentment, and appreciation. Be grateful for whatever comes your way.",
-            "That must be weighing on you. But be strong and stay positive — have faith for the best always.",
-          ],
-          moderate: [ // score 1 (Several days)
-            "I see. Let's keep exploring how you've been feeling.",
-            "Got it — even occasional struggles matter.",
-            "Thanks for sharing. Every feeling is valid.",
-            "I understand. Let's continue checking in.",
-          ],
-          low: [ // score 0 (Not at all)
-            "That's good to hear.",
-            "Glad that hasn't been bothering you.",
-            "That's positive — let's keep going.",
-            "Good. Let's check on a few more things.",
-          ],
-        };
-
-        const category = optionIndex >= 2 ? "high" : optionIndex === 1 ? "moderate" : "low";
-        const responses = empathyResponses[category];
-        const empathy = responses[currentQuestion % responses.length];
-
         addMessage(
           "ai",
-          `${empathy}\n\nOver the last two weeks, how often have you been bothered by:\n\n**${nextQ.text}**`
+          `Thank you for sharing that.\n\nOver the last two weeks, how often have you been bothered by:\n\n**${nextQ.text}**`
         );
         setCurrentQuestion((prev) => prev + 1);
       } else {
@@ -543,7 +425,7 @@ export default function ScreeningPage() {
           setPhase("functional");
           addMessage(
             "ai",
-            `I appreciate your honesty throughout this check-in.\n\nOne last question — if you checked off any problems above, how difficult have these problems made it for you to do your work, take care of things at home, or get along with other people?`
+            `Thank you for sharing that.\n\nOne more question — if you checked off any problems above, how difficult have these problems made it for you to do your work, take care of things at home, or get along with other people?`
           );
         } else {
           // Non-PHQ-9: complete immediately
@@ -554,20 +436,18 @@ export default function ScreeningPage() {
   };
 
   const completeAssessment = (finalAnswers: number[]) => {
-    // Clear assessment progress since it's complete
-    try { sessionStorage.removeItem("selfcare_assessment_progress"); } catch {}
     const score = finalAnswers.reduce((a, b) => a + b, 0);
     setTotalScore(score);
     setDone(true);
     const severity = selectedModel.getSeverity(score);
     addMessage(
       "ai",
-      `Thank you so much for being open and honest with me through this. That takes real courage. 💚\n\nBased on what you've shared, here's what I noticed: **${severity.label}**.\n\n${
+      `Thank you for completing the assessment.\n\nYou're doing great by checking in. Based on your responses, here's what I noticed: **${severity.label}**.\n\n${
         score >= selectedModel.maxScore * 0.7
-          ? "I want you to know that help is available and you are not alone. Your counselor will be notified securely. Please consider reaching out to crisis support if you need immediate help — you deserve care and support."
+          ? "I want you to know that help is available. Your counselor will be notified securely. Please consider reaching out to crisis support if you need immediate help."
           : score >= selectedModel.maxScore * 0.5
-          ? "Your wellbeing matters deeply. I would recommend connecting with a counselor to talk through what you've been experiencing — you don't have to carry this alone."
-          : "You're doing okay — and you're doing the right thing by checking in. Keep going, small steps make a big difference."
+          ? "Your wellbeing matters. I recommend scheduling a session with a counselor to discuss what you're experiencing."
+          : "You're doing okay, but keep checking in. Small steps make a big difference."
       }`
     );
     saveScreeningResult(finalAnswers, score, severity.label);
@@ -576,16 +456,21 @@ export default function ScreeningPage() {
     try {
       fetch("/api/auth/me").then((r) => r.ok ? r.json() : null).then((d) => {
         const uid = d?.user?.id;
-        if (uid) localStorage.setItem(`Selfcare_last_screening_${uid}`, new Date().toISOString());
+        if (uid) localStorage.setItem(`mindcare_last_screening_${uid}`, new Date().toISOString());
       });
     } catch {}
 
     runNlpAnalysis(finalAnswers, score).then(() => {
       setTimeout(() => {
-        // Enter followup phase — post-assessment questions
-        setPhase("followup");
-        setFollowupStep(0);
-        addMessage("ai", followupQuestions[0]);
+        // Clear assessment messages and start fresh chat
+        setMessages([{
+          id: `chat-start-${Date.now()}`,
+          role: "ai",
+          content: "Your check-in is complete. I'm now here to chat — tell me more about what's on your mind, or let's explore what you've been experiencing. What emotions have been most present for you recently? 💚",
+          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        }]);
+        setPhase("chat");
+        setConversationStage("exploration");
       }, 2000);
     });
   };
@@ -608,65 +493,10 @@ export default function ScreeningPage() {
       }),
     }).catch(() => {});
 
-    // Complete assessment scoring, then enter followup phase
+    // Now complete the assessment
     setTimeout(() => {
       completeAssessment(answers);
     }, 500);
-  };
-
-  const followupQuestions = [
-    "Thank you for trusting me this much and opening up to me. What could have triggered what you've shared with me? Is it a life change (poverty, prolonged sickness, lack of jobs, etc.), disagreement/disappointment, shyness, or isolation (a feeling of being alone)?",
-    "How long have you been feeling this way — days, weeks, months, or years?",
-    "What would you wish to achieve at the end of the day?",
-    "Thank you for your time. Would you recommend anyone to use this platform? (Give stars 1–5)",
-  ];
-
-  const handleFollowupTextSubmit = (text: string) => {
-    if (!text.trim()) return;
-    addMessage("user", text);
-    setFreeTextInputs((prev) => [...prev, text]);
-    const nextStep = followupStep + 1;
-    setFollowupStep(nextStep);
-    if (nextStep < followupQuestions.length) {
-      setTimeout(() => {
-        addMessage("ai", followupQuestions[nextStep]);
-      }, 600);
-    } else {
-      // All followup done — move to chat
-      setTimeout(() => {
-        setMessages([{
-          id: `chat-start-${Date.now()}`,
-          role: "ai",
-          content: "Your check-in is complete. I'm now here to chat — tell me more about what's on your mind, or let's explore what you've been experiencing. What emotions have been most present for you recently? 💚",
-          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        }]);
-        setPhase("chat");
-        setConversationStage("exploration");
-      }, 1000);
-    }
-  };
-
-  const handleStarRating = (stars: number) => {
-    setStarRating(stars);
-    addMessage("user", `${"⭐".repeat(stars)} (${stars}/5 stars)`);
-    setFollowupStep((prev) => {
-      const nextStep = prev + 1;
-      // After star rating — move to chat
-      setTimeout(() => {
-        addMessage("ai", "Thank you so much! Your feedback means the world to us. 💚");
-        setTimeout(() => {
-          setMessages([{
-            id: `chat-start-${Date.now()}`,
-            role: "ai",
-            content: "Your check-in is complete. I'm now here to chat — tell me more about what's on your mind, or let's explore what you've been experiencing. What emotions have been most present for you recently? 💚",
-            time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          }]);
-          setPhase("chat");
-          setConversationStage("exploration");
-        }, 1500);
-      }, 600);
-      return nextStep;
-    });
   };
 
   const handleTextSubmit = () => {
@@ -682,8 +512,6 @@ export default function ScreeningPage() {
       setTimeout(() => {
         transitionToPhq9();
       }, 600);
-    } else if (phase === "followup") {
-      handleFollowupTextSubmit(userMsg);
     } else if (phase === "chat") {
       // In chat phase, get AI response
       getAIResponse(userMsg);
@@ -692,7 +520,7 @@ export default function ScreeningPage() {
       // Acknowledge it and gently remind them to select an option.
       setTimeout(() => {
         if (!done && currentQuestion < selectedModel.questions.length) {
-          addMessage("ai", `I hear you — that's important context. Please select one of the options below to indicate how often you've experienced this.`);
+          addMessage("ai", `Thank you for sharing that — I hear you. Please select one of the options below to indicate how often you've experienced this over the last two weeks.`);
         }
       }, 500);
     }
@@ -971,55 +799,8 @@ export default function ScreeningPage() {
         {/* Sidebar */}
         <StudentSidebar />
 
-        {/* Chat History Sidebar — like ChatGPT */}
-        {historyOpen && (
-          <>
-            <div className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm md:hidden" onClick={() => setHistoryOpen(false)} />
-            <aside className="fixed md:relative left-0 top-16 bottom-0 z-40 w-72 bg-surface-container-lowest border-r border-outline-variant flex flex-col shadow-xl md:shadow-none animate-slide-in">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-outline-variant">
-                <h3 className="text-sm font-semibold text-on-surface">Chat History</h3>
-                <button onClick={() => setHistoryOpen(false)} className="p-1.5 rounded-lg hover:bg-surface-container transition-colors">
-                  <span className="material-symbols-outlined text-[18px] text-on-surface-variant">close</span>
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-2 space-y-1">
-                {chatHistory.length === 0 ? (
-                  <div className="text-center py-10 text-on-surface-variant/50">
-                    <span className="material-symbols-outlined text-[32px] block mb-2 opacity-30">chat_bubble_outline</span>
-                    <p className="text-xs">No previous chats yet</p>
-                  </div>
-                ) : (
-                  chatHistory.map((session) => (
-                    <button
-                      key={session.id}
-                      onClick={() => loadHistorySession(session)}
-                      className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-surface-container transition-colors group"
-                    >
-                      <p className="text-sm text-on-surface truncate font-medium">{session.title}</p>
-                      <p className="text-[10px] text-on-surface-variant mt-0.5">
-                        {new Date(session.date).toLocaleDateString()} · {session.messages.length} messages
-                      </p>
-                    </button>
-                  ))
-                )}
-              </div>
-            </aside>
-          </>
-        )}
-
         {/* Main Content */}
         <main className="flex-1 flex flex-col relative z-10 overflow-hidden pb-16 md:pb-0" style={{ height: "calc(100svh - 64px)" }}>
-          {/* History toggle button */}
-          <div className="flex items-center gap-2 px-3 md:px-6 py-2 border-b border-outline-variant/30 shrink-0">
-            <button
-              onClick={() => setHistoryOpen(!historyOpen)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
-            >
-              <span className="material-symbols-outlined text-[18px]">history</span>
-              History
-            </button>
-          </div>
-
           <div className="flex-1 w-full max-w-3xl mx-auto flex flex-col px-3 md:px-6 min-h-0">
 
             {/* Chat interface - PHQ-9 then AI chat */}
@@ -1153,13 +934,9 @@ export default function ScreeningPage() {
                   <button
                     key={i}
                     onClick={() => {
-                      setInput(sug);
-                      setTimeout(() => {
-                        setInput("");
-                        addMessage("user", sug);
-                        setFreeTextInputs((prev) => [...prev, sug]);
-                        setTimeout(() => transitionToPhq9(), 600);
-                      }, 400);
+                      addMessage("user", sug);
+                      setFreeTextInputs((prev) => [...prev, sug]);
+                      setTimeout(() => transitionToPhq9(), 600);
                     }}
                     className="px-3.5 py-2 bg-surface-container-low hover:bg-primary-container hover:text-on-primary-container border border-outline-variant/50 rounded-full text-xs font-medium transition-all whitespace-nowrap shrink-0"
                   >
@@ -1173,10 +950,7 @@ export default function ScreeningPage() {
                 {selectedModel.questions[currentQuestion].options.map((opt, i) => (
                   <button
                     key={i}
-                    onClick={() => {
-                      setInput(opt);
-                      setTimeout(() => { setInput(""); handleOptionSelect(i); }, 400);
-                    }}
+                    onClick={() => handleOptionSelect(i)}
                     className="px-3.5 py-2 bg-surface-container-low hover:bg-secondary-container hover:text-on-secondary-container border border-outline-variant/50 rounded-full text-xs font-medium transition-all whitespace-nowrap shrink-0"
                   >
                     {opt}
@@ -1189,28 +963,10 @@ export default function ScreeningPage() {
                 {["Not difficult at all", "Somewhat difficult", "Very difficult", "Extremely difficult"].map((opt, i) => (
                   <button
                     key={i}
-                    onClick={() => {
-                      setInput(opt);
-                      setTimeout(() => { setInput(""); handleFunctionalSelect(i); }, 400);
-                    }}
+                    onClick={() => handleFunctionalSelect(i)}
                     className="px-3.5 py-2 bg-surface-container-low hover:bg-secondary-container hover:text-on-secondary-container border border-outline-variant/50 rounded-full text-xs font-medium transition-all whitespace-nowrap shrink-0"
                   >
                     {opt}
-                  </button>
-                ))}
-              </div>
-            )}
-            {phase === "followup" && followupStep === followupQuestions.length - 1 && starRating === 0 && (
-              <div className="flex items-center justify-center gap-2 pb-1">
-                <span className="text-xs text-on-surface-variant mr-1">Your rating:</span>
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    onClick={() => handleStarRating(star)}
-                    className="text-2xl hover:scale-110 transition-transform text-yellow-400 hover:text-yellow-500"
-                    title={`${star} star${star > 1 ? "s" : ""}`}
-                  >
-                    ⭐
                   </button>
                 ))}
               </div>
@@ -1238,17 +994,16 @@ export default function ScreeningPage() {
               <div className="flex-1">
                 <textarea
                   value={input}
-                  onChange={(e) => { if (phase === "chat" || phase === "followup") setInput(e.target.value); }}
+                  onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey && (phase === "chat" || phase === "followup")) {
+                    if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
                       handleTextSubmit();
                     }
                   }}
-                  placeholder={phase === "chat" || phase === "followup" ? "Type your message..." : "Select an option above..."}
+                  placeholder="Type your response or select an option above..."
                   rows={1}
-                  disabled={phase !== "chat" && phase !== "followup"}
-                  className={`w-full border-none focus:outline-none focus:ring-2 focus:ring-primary rounded-xl py-3 px-4 text-on-surface text-sm resize-none min-h-[48px] max-h-[120px] ${phase !== "chat" && phase !== "followup" ? "bg-surface-container opacity-60 cursor-not-allowed" : "bg-surface-container-low"}`}
+                  className="w-full bg-surface-container-low border-none focus:outline-none focus:ring-2 focus:ring-primary rounded-xl py-3 px-4 text-on-surface text-sm resize-none min-h-[48px] max-h-[120px]"
                   style={{ fieldSizing: "content" } as React.CSSProperties}
                 />
               </div>

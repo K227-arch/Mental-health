@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import StudentSidebar from "../components/StudentSidebar";
@@ -82,7 +82,7 @@ const exercises = [
   {
     id: "4",
     title: "Journaling Prompt",
-    duration: "5 min",
+    duration: "10 min",
     icon: "edit_note",
     description: "Write freely about: What went well today? What am I grateful for?",
     color: "bg-surface-container-high text-on-surface",
@@ -91,112 +91,8 @@ const exercises = [
 
 export default function WellnessPage() {
   const { t } = useTranslation();
-  const [activeSection, setActiveSection] = useState<"exercises" | "shared" | "inspiration" | "hope">("exercises");
+  const [activeSection, setActiveSection] = useState<"exercises" | "resources" | "shared" | "inspiration" | "hope">("exercises");
   const [completedExercises, setCompletedExercises] = useState<string[]>([]);
-  const [activeTimer, setActiveTimer] = useState<{ id: string; title: string; totalSeconds: number; remaining: number; running: boolean } | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const [journalOpen, setJournalOpen] = useState(false);
-  const [journalText, setJournalText] = useState("");
-  const [journalSending, setJournalSending] = useState(false);
-  const [journalSent, setJournalSent] = useState(false);
-
-  const parseDurationToSeconds = (duration: string): number => {
-    const match = duration.match(/(\d+)/);
-    return match ? parseInt(match[1]) * 60 : 300;
-  };
-
-  const startExercise = (ex: { id: string; title: string; duration: string }) => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    const totalSeconds = parseDurationToSeconds(ex.duration);
-    setActiveTimer({ id: ex.id, title: ex.title, totalSeconds, remaining: totalSeconds, running: true });
-  };
-
-  useEffect(() => {
-    if (!activeTimer?.running) return;
-    timerRef.current = setInterval(() => {
-      setActiveTimer((prev) => {
-        if (!prev) return null;
-        const next = prev.remaining - 1;
-        if (next <= 0) {
-          clearInterval(timerRef.current!);
-          // Mark as completed when timer runs out
-          setCompletedExercises((c) => c.includes(prev.id) ? c : [...c, prev.id]);
-          return { ...prev, remaining: 0, running: false };
-        }
-        return { ...prev, remaining: next };
-      });
-    }, 1000);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [activeTimer?.running, activeTimer?.id]);
-
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
-    const s = (seconds % 60).toString().padStart(2, "0");
-    return `${m}:${s}`;
-  };
-
-  const progressPct = activeTimer ? ((activeTimer.totalSeconds - activeTimer.remaining) / activeTimer.totalSeconds) * 100 : 0;
-
-  const sendJournal = async () => {
-    if (!journalText.trim()) return;
-    setJournalSending(true);
-    try {
-      // Get user info
-      const meRes = await fetch("/api/auth/me");
-      const meData = meRes.ok ? await meRes.json() : null;
-      const userId = meData?.user?.id;
-      const userName = meData?.user?.name || "Student";
-
-      // Send journal to counsellor via notification
-      await fetch("/api/notifications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: "counsellor-system",
-          title: `📓 Journal Entry from ${userName}`,
-          body: journalText.trim().slice(0, 300) + (journalText.length > 300 ? "..." : ""),
-          type: "info",
-          link: "/counsellor/students",
-        }),
-      });
-
-      // Also store as a message in the counsellor session if one exists
-      if (userId) {
-        const sessRes = await fetch(`/api/sessions?studentId=${userId}`);
-        if (sessRes.ok) {
-          const sessData = await sessRes.json();
-          const session = sessData.sessions?.[0];
-          if (session?.id) {
-            await fetch("/api/messages", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                sessionId: session.id,
-                senderId: userId,
-                senderRole: "student",
-                content: `📓 Journal Entry:\n\n${journalText.trim()}`,
-              }),
-            });
-          }
-        }
-      }
-
-      setJournalSent(true);
-      setCompletedExercises(prev => prev.includes("4") ? prev : [...prev, "4"]);
-      // Close after 2 seconds
-      setTimeout(() => {
-        setJournalOpen(false);
-        setJournalText("");
-        setJournalSent(false);
-        if (activeTimer?.id === "4") { if (timerRef.current) clearInterval(timerRef.current); setActiveTimer(null); }
-      }, 2000);
-    } catch {
-      // Still mark as sent
-      setJournalSent(true);
-    } finally {
-      setJournalSending(false);
-    }
-  };
   const [sharedResources, setSharedResources] = useState<any[]>([]);
   const [loadingShared, setLoadingShared] = useState(false);
   const [hopeIndex, setHopeIndex] = useState(0);
@@ -255,7 +151,7 @@ export default function WellnessPage() {
         <div className="px-4 md:px-20 py-10 max-w-6xl mx-auto">
           {/* Tabs */}
           <div className="flex flex-wrap gap-2 mb-8 bg-surface-container-low rounded-xl p-1.5 w-fit">
-            {(["exercises", "shared", "inspiration", "hope"] as const).map((tab) => (
+            {(["exercises", "resources", "shared", "inspiration", "hope"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveSection(tab)}
@@ -265,7 +161,7 @@ export default function WellnessPage() {
                     : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
-                {tab === "hope" ? "Hope Gallery" : tab === "shared" ? `Resources (${sharedResources.length})` : tab === "inspiration" ? "Inspiration" : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                {tab === "hope" ? "Hope Gallery" : tab === "shared" ? `Shared (${sharedResources.length})` : tab === "inspiration" ? "Inspiration" : tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
             ))}
           </div>
@@ -293,18 +189,11 @@ export default function WellnessPage() {
                       <p className="text-sm text-on-surface-variant leading-relaxed">{ex.description}</p>
                     </div>
                     <button
-                      onClick={() => {
-                        if (completedExercises.includes(ex.id)) {
-                          setCompletedExercises((prev) => prev.filter((e) => e !== ex.id));
-                        } else if (ex.id === "4") {
-                          // Journaling: open journal modal only (no timer)
-                          setJournalOpen(true);
-                          setJournalText("");
-                          setJournalSent(false);
-                        } else {
-                          startExercise(ex);
-                        }
-                      }}
+                      onClick={() =>
+                        setCompletedExercises((prev) =>
+                          prev.includes(ex.id) ? prev.filter((e) => e !== ex.id) : [...prev, ex.id]
+                        )
+                      }
                       className={`mt-auto flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
                         completedExercises.includes(ex.id)
                           ? "bg-secondary-container text-on-secondary-container"
@@ -312,9 +201,9 @@ export default function WellnessPage() {
                       }`}
                     >
                       <span className="material-symbols-outlined text-[18px]">
-                        {completedExercises.includes(ex.id) ? "check_circle" : ex.id === "4" ? "edit_note" : "play_circle"}
+                        {completedExercises.includes(ex.id) ? "check_circle" : "play_circle"}
                       </span>
-                      {completedExercises.includes(ex.id) ? t("wellness.completed") : ex.id === "4" ? "Write Journal" : t("wellness.startExercise")}
+                      {completedExercises.includes(ex.id) ? t("wellness.completed") : t("wellness.startExercise")}
                     </button>
                   </div>
                 ))}
@@ -367,11 +256,11 @@ export default function WellnessPage() {
             </div>
           )}
 
-          {/* Resources shared by counsellor */}
+          {/* Shared by Counsellor */}
           {activeSection === "shared" && (
             <div className="animate-fade-in">
-              <h2 className="text-xl font-bold text-on-surface mb-2">Resources from Your Counsellor</h2>
-              <p className="text-on-surface-variant text-sm mb-6">Resources your counsellor has personally shared with you.</p>
+              <h2 className="text-xl font-bold text-on-surface mb-2">{t("wellness.sharedTitle")}</h2>
+              <p className="text-on-surface-variant text-sm mb-6">{t("wellness.sharedSubtitle")}</p>
 
               {loadingShared ? (
                 <div className="text-center py-12 text-on-surface-variant">
@@ -380,47 +269,48 @@ export default function WellnessPage() {
               ) : sharedResources.length === 0 ? (
                 <div className="text-center py-16 bg-surface-container-lowest border border-outline-variant rounded-xl">
                   <span className="material-symbols-outlined text-[48px] text-on-surface-variant/30 block mb-3">library_books</span>
-                  <p className="text-sm font-semibold text-on-surface mb-1">No resources yet</p>
-                  <p className="text-xs text-on-surface-variant/70">Your counsellor will share resources here when they have recommendations for you.</p>
+                  <p className="text-sm text-on-surface-variant">{t("wellness.noShared")}</p>
+                  <p className="text-xs text-on-surface-variant/60 mt-1">{t("wellness.noSharedDesc")}</p>
                 </div>
               ) : (
-                <>
-                  <div className="flex items-center gap-2 mb-4 px-4 py-3 bg-secondary-container/20 border border-secondary/20 rounded-xl">
-                    <span className="material-symbols-outlined text-secondary text-[20px]">support_agent</span>
-                    <p className="text-sm text-on-surface">{sharedResources.length} resource{sharedResources.length !== 1 ? "s" : ""} shared by your counsellor</p>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {sharedResources.map((resource: any) => (
-                      <div key={resource.id} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col">
-                        <div className="flex items-start justify-between mb-3">
-                          <span className="text-[10px] px-2 py-0.5 rounded uppercase tracking-wider font-semibold bg-secondary-container text-on-secondary-container">
-                            {resource.category}
-                          </span>
-                          <span className="material-symbols-outlined text-[18px] text-secondary">
-                            {resource.type === "video" ? "play_circle" : resource.type === "exercise" ? "self_improvement" : resource.type === "worksheet" ? "assignment" : "article"}
-                          </span>
-                        </div>
-                        <h3 className="text-sm font-bold text-on-surface mb-2">{resource.title}</h3>
-                        <p className="text-xs text-on-surface-variant mb-4 flex-1 leading-relaxed">{resource.description}</p>
-                        <div className="flex items-center justify-between pt-3 border-t border-outline-variant">
-                          <span className="text-[10px] text-on-surface-variant flex items-center gap-1">
-                            <span className="material-symbols-outlined text-[12px]">schedule</span>
-                            {resource.read_time || "5 min"}
-                          </span>
-                          {resource.content_url ? (
-                            <a href={resource.content_url} target="_blank" rel="noopener noreferrer"
-                              className="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
-                              Open
-                              <span className="material-symbols-outlined text-[14px]">open_in_new</span>
-                            </a>
-                          ) : (
-                            <span className="text-xs text-on-surface-variant">No link</span>
-                          )}
-                        </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {sharedResources.map((resource: any) => (
+                    <div
+                      key={resource.id}
+                      className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <span className="text-[10px] px-2 py-0.5 rounded uppercase tracking-wider font-semibold bg-secondary-container text-on-secondary-container">
+                          {resource.category}
+                        </span>
+                        <span className="material-symbols-outlined text-[18px] text-secondary">
+                          {resource.type === "video" ? "play_circle" : resource.type === "exercise" ? "self_improvement" : "article"}
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                </>
+                      <h3 className="text-sm font-bold text-on-surface mb-2">{resource.title}</h3>
+                      <p className="text-xs text-on-surface-variant mb-4 flex-1 leading-relaxed">{resource.description}</p>
+                      <div className="flex items-center justify-between pt-3 border-t border-outline-variant">
+                        <span className="text-[10px] text-on-surface-variant flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[12px]">schedule</span>
+                          {resource.read_time || "5 min"}
+                        </span>
+                        {resource.content_url ? (
+                          <a
+                            href={resource.content_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
+                          >
+                            Open
+                            <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+                          </a>
+                        ) : (
+                          <span className="text-xs text-on-surface-variant">No attachment</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           )}
@@ -431,7 +321,7 @@ export default function WellnessPage() {
               <h2 className="text-xl font-bold text-on-surface mb-2">{t("wellness.inspirationTitle")}</h2>
               <p className="text-on-surface-variant text-sm mb-6">{t("wellness.inspirationSubtitle")}</p>
               
-              {/* Meditation Videos — real YouTube embeds */}
+              {/* Meditation Videos */}
               <div className="mb-8">
                 <h3 className="text-base font-semibold text-on-surface mb-4 flex items-center gap-2">
                   <span className="material-symbols-outlined text-primary">self_improvement</span>
@@ -439,24 +329,77 @@ export default function WellnessPage() {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[
-                    { title: "5-Minute Guided Meditation", duration: "5:00", desc: "A quick meditation to calm your mind", youtubeId: "inpok4MKVLM" },
-                    { title: "Deep Sleep Relaxation", duration: "15:00", desc: "Soothing sounds to help you fall asleep", youtubeId: "1ZYbU82GVz4" },
-                    { title: "Breathing for Anxiety", duration: "8:00", desc: "4-7-8 breathing technique guided session", youtubeId: "tybOi4hjZFQ" },
+                    { title: "5-Minute Guided Meditation", duration: "5:00", thumbnail: "🧘", desc: "A quick meditation to calm your mind" },
+                    { title: "Deep Sleep Relaxation", duration: "15:00", thumbnail: "🌙", desc: "Ultrasonic sounds to help you fall asleep" },
+                    { title: "Breathing for Anxiety", duration: "8:00", thumbnail: "💨", desc: "4-7-8 breathing technique guided session" },
                   ].map((video) => (
                     <div key={video.title} className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden hover:shadow-md transition-shadow">
-                      <div className="aspect-video w-full">
-                        <iframe
-                          src={`https://www.youtube.com/embed/${video.youtubeId}?rel=0&modestbranding=1`}
-                          title={video.title}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                          className="w-full h-full rounded-t-xl"
-                        />
+                      <div className="aspect-video bg-gradient-to-br from-primary-container to-secondary-container flex items-center justify-center relative">
+                        <span className="text-5xl">{video.thumbnail}</span>
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+                          <span className="material-symbols-outlined icon-fill text-white text-[48px]">play_circle</span>
+                        </div>
+                        <span className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-0.5 rounded">{video.duration}</span>
                       </div>
                       <div className="p-3">
                         <h4 className="text-sm font-semibold text-on-surface">{video.title}</h4>
                         <p className="text-xs text-on-surface-variant mt-0.5">{video.desc}</p>
                       </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Music & Sounds */}
+              <div className="mb-8">
+                <h3 className="text-base font-semibold text-on-surface mb-4 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-secondary">music_note</span>
+                  Healing Music & Sounds
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {[
+                    { title: "Lo-Fi Study Beats", icon: "headphones", desc: "Calming beats for focus and relaxation" },
+                    { title: "Nature Sounds — Rain", icon: "water_drop", desc: "Gentle rain sounds for sleep" },
+                    { title: "Ultrasonic Brain Healing", icon: "psychology", desc: "Binaural beats for brain health" },
+                    { title: "Piano Ambient", icon: "piano", desc: "Soft piano for emotional release" },
+                  ].map((track) => (
+                    <div key={track.title} className="flex items-center gap-3 p-3 bg-surface-container-lowest border border-outline-variant rounded-xl hover:bg-surface-container-low transition-colors cursor-pointer">
+                      <div className="w-10 h-10 rounded-lg bg-secondary-container flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-on-secondary-container text-[20px]">{track.icon}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-medium text-on-surface truncate">{track.title}</h4>
+                        <p className="text-xs text-on-surface-variant truncate">{track.desc}</p>
+                      </div>
+                      <span className="material-symbols-outlined text-primary text-[24px] shrink-0">play_circle</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Books & Reading */}
+              <div className="mb-8">
+                <h3 className="text-base font-semibold text-on-surface mb-4 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary">menu_book</span>
+                  Books & Mental Health Tips
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[
+                    { title: "Feeling Good — David Burns", category: "CBT", desc: "The classic guide to conquering depression" },
+                    { title: "The Anxiety & Phobia Workbook", category: "Anxiety", desc: "Step-by-step strategies for managing anxiety" },
+                    { title: "Why Has Nobody Told Me This Before?", category: "Self-Help", desc: "Practical tools for everyday mental health" },
+                    { title: "Lost Connections — Johann Hari", category: "Depression", desc: "Understanding the real causes of depression" },
+                    { title: "The Body Keeps the Score", category: "Trauma", desc: "How trauma reshapes the body and brain" },
+                    { title: "Mindfulness in Plain English", category: "Meditation", desc: "A practical guide to mindfulness meditation" },
+                  ].map((book) => (
+                    <div key={book.title} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 hover:shadow-md transition-shadow">
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-primary-container text-on-primary-container font-semibold uppercase">{book.category}</span>
+                      <h4 className="text-sm font-semibold text-on-surface mt-2 mb-1">{book.title}</h4>
+                      <p className="text-xs text-on-surface-variant">{book.desc}</p>
+                      <button className="mt-3 flex items-center gap-1 text-xs text-primary font-medium hover:underline">
+                        <span className="material-symbols-outlined text-[14px]">download</span>
+                        Download
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -556,124 +499,6 @@ export default function WellnessPage() {
         </div>
         </main>
       </div>
-
-      {/* Journal Modal */}
-      {journalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 w-full max-w-lg shadow-xl animate-fade-in">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-lg font-bold text-on-surface flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary text-[22px]">edit_note</span>
-                  Journal Entry
-                </h2>
-                <p className="text-xs text-on-surface-variant mt-0.5">Write freely — this will be shared with your counsellor.</p>
-              </div>
-              {/* Mini timer */}
-              {activeTimer?.id === "4" && (
-                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-black tabular-nums ${activeTimer.remaining <= 60 ? "bg-error-container text-error" : "bg-primary-container text-primary"}`}>
-                  <span className="material-symbols-outlined text-[16px]">timer</span>
-                  {formatTime(activeTimer.remaining)}
-                </div>
-              )}
-            </div>
-
-            {journalSent ? (
-              <div className="text-center py-8">
-                <span className="material-symbols-outlined icon-fill text-secondary text-[48px] block mb-3">check_circle</span>
-                <p className="text-sm font-semibold text-on-surface">Journal sent to your counsellor!</p>
-                <p className="text-xs text-on-surface-variant mt-1">They will review it and follow up with you.</p>
-              </div>
-            ) : (
-              <>
-                <div className="mb-4 bg-surface-container-low rounded-xl p-3 text-xs text-on-surface-variant space-y-1">
-                  <p className="font-semibold text-on-surface">Prompts to guide you:</p>
-                  <p>• What went well today?</p>
-                  <p>• What am I grateful for?</p>
-                  <p>• What's been on my mind lately?</p>
-                  <p>• How am I really feeling right now?</p>
-                </div>
-                <textarea
-                  value={journalText}
-                  onChange={e => setJournalText(e.target.value)}
-                  placeholder="Start writing here... your thoughts, feelings, or anything on your mind."
-                  rows={8}
-                  className="w-full bg-surface-container-low border border-outline-variant/40 rounded-xl p-4 text-sm text-on-surface focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none resize-none placeholder:text-on-surface-variant/40 mb-4"
-                />
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => { setJournalOpen(false); if (timerRef.current) clearInterval(timerRef.current); setActiveTimer(null); }}
-                    className="flex-1 px-4 py-2.5 border border-outline-variant text-on-surface-variant rounded-xl text-sm font-medium hover:bg-surface-container transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={sendJournal}
-                    disabled={!journalText.trim() || journalSending}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-on-primary rounded-xl text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">{journalSending ? "progress_activity" : "send"}</span>
-                    {journalSending ? "Sending..." : "Send to Counsellor"}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Timer Modal */}
-      {activeTimer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-8 w-full max-w-sm shadow-xl animate-fade-in text-center">
-            <h2 className="text-lg font-bold text-on-surface mb-1">{activeTimer.title}</h2>
-            <p className="text-xs text-on-surface-variant mb-6">
-              {activeTimer.remaining > 0 ? (activeTimer.running ? "In progress..." : "Paused") : "Complete! 🎉"}
-            </p>
-            <div className="relative w-40 h-40 mx-auto mb-6">
-              <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-                <circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" strokeWidth="8" className="text-surface-container-high" />
-                <circle
-                  cx="60" cy="60" r="54" fill="none" stroke="currentColor" strokeWidth="8"
-                  className={activeTimer.remaining === 0 ? "text-secondary" : "text-primary"}
-                  strokeLinecap="round"
-                  strokeDasharray={`${2 * Math.PI * 54}`}
-                  strokeDashoffset={`${2 * Math.PI * 54 * (1 - progressPct / 100)}`}
-                  style={{ transition: "stroke-dashoffset 1s linear" }}
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-3xl font-black text-on-surface tabular-nums">{formatTime(activeTimer.remaining)}</span>
-                <span className="text-xs text-on-surface-variant mt-1">remaining</span>
-              </div>
-            </div>
-            <div className="flex gap-3 justify-center">
-              {activeTimer.remaining > 0 && (
-                <button
-                  onClick={() => setActiveTimer((prev) => prev ? { ...prev, running: !prev.running } : null)}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTimer.running ? "bg-surface-container-high text-on-surface" : "bg-primary text-on-primary"}`}
-                >
-                  <span className="material-symbols-outlined text-[18px]">{activeTimer.running ? "pause" : "play_arrow"}</span>
-                  {activeTimer.running ? "Pause" : "Resume"}
-                </button>
-              )}
-              {activeTimer.remaining === 0 && (
-                <button onClick={() => setActiveTimer(null)} className="flex items-center gap-2 px-5 py-2.5 bg-secondary text-on-secondary rounded-xl text-sm font-semibold">
-                  <span className="material-symbols-outlined text-[18px]">check_circle</span>
-                  Done!
-                </button>
-              )}
-              <button
-                onClick={() => { if (timerRef.current) clearInterval(timerRef.current); setActiveTimer(null); }}
-                className="flex items-center gap-2 px-5 py-2.5 border border-outline-variant bg-surface text-on-surface rounded-xl text-sm font-medium hover:bg-surface-container transition-colors"
-              >
-                <span className="material-symbols-outlined text-[18px]">close</span>
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

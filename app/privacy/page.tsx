@@ -25,7 +25,7 @@ const sections = [
   {
     title: "Contact",
     content:
-      "If you have questions about this privacy policy or how we handle your data, please contact our Privacy Team at privacy@Selfcareai.app or write to: Selfcare Hub Privacy, University Wellness Center, Kampala, Uganda. For immediate concerns about your data or account, you can also reach out through the in-app support system.",
+      "If you have questions about this privacy policy or how we handle your data, please contact our Privacy Team at privacy@mindcareai.app or write to: Selfcare Hub Privacy, University Wellness Center, Kampala, Uganda. For immediate concerns about your data or account, you can also reach out through the in-app support system.",
   },
 ];
 
@@ -62,7 +62,7 @@ export default function PrivacyPolicy() {
               Your privacy matters
             </h1>
             <p className="text-on-surface-variant text-sm">
-              Last updated: July 2026
+              Last updated: January 2025
             </p>
           </div>
 

@@ -52,66 +52,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const preview = content.length > 80 ? content.slice(0, 80) + "..." : content;
+    // Also create a notification for the recipient
+    const notifUserId = senderRole === "counsellor" ? body.studentId : body.counsellorId;
+    if (notifUserId && notifUserId !== "counsellor-system") {
+      await insforge.database.from("notifications").insert({
+        user_id: notifUserId,
+        title: senderRole === "counsellor" ? "New Message from Counsellor" : "New Message from Student",
+        body: content.length > 50 ? content.slice(0, 50) + "..." : content,
+        type: "message",
+        link: senderRole === "counsellor" ? "/dashboard/chat" : "/counsellor/chat",
+      });
+    }
 
-    if (senderRole === "student") {
-      // Notify the counsellor-system broadcast channel (all counsellors see it)
+    // If student sends and counsellorId is "counsellor-system", notify all counsellors via system
+    if (senderRole === "student" && (!body.counsellorId || body.counsellorId === "counsellor-system")) {
       await insforge.database.from("notifications").insert({
         user_id: "counsellor-system",
-        title: "💬 New Student Message",
-        body: preview,
+        title: "New Student Message",
+        body: content.length > 50 ? content.slice(0, 50) + "..." : content,
         type: "message",
         link: "/counsellor/chat",
-      }).catch(() => {});
-
-      // Also notify the specific counsellor assigned to this session (if not system)
-      const { data: session } = await insforge.database
-        .from("counsellor_sessions")
-        .select("counsellor_id")
-        .eq("id", sessionId)
-        .single()
-        .catch(() => ({ data: null }));
-
-      const counsellorId = session?.counsellor_id;
-      if (counsellorId && counsellorId !== "counsellor-system" && counsellorId !== "system-assigned") {
-        await insforge.database.from("notifications").insert({
-          user_id: counsellorId,
-          title: "💬 New Message from Student",
-          body: preview,
-          type: "message",
-          link: "/counsellor/chat",
-        }).catch(() => {});
-      }
-    } else if (senderRole === "counsellor") {
-      // Notify the student who owns this session
-      const studentId = body.studentId;
-      if (studentId) {
-        await insforge.database.from("notifications").insert({
-          user_id: studentId,
-          title: "💬 New Message from Your Counsellor",
-          body: preview,
-          type: "message",
-          link: "/dashboard/chat",
-        }).catch(() => {});
-      } else {
-        // Look up student from session
-        const { data: session } = await insforge.database
-          .from("counsellor_sessions")
-          .select("student_id")
-          .eq("id", sessionId)
-          .single()
-          .catch(() => ({ data: null }));
-
-        if (session?.student_id) {
-          await insforge.database.from("notifications").insert({
-            user_id: session.student_id,
-            title: "💬 New Message from Your Counsellor",
-            body: preview,
-            type: "message",
-            link: "/dashboard/chat",
-          }).catch(() => {});
-        }
-      }
+      });
     }
 
     return NextResponse.json({ message: data?.[0] }, { status: 201 });

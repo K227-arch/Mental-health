@@ -150,17 +150,11 @@ export default function DashboardPage() {
         formData.append("userId", user?.id || "anonymous");
         formData.append("type", "audio");
         try {
-          const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
-          const uploadData = uploadRes.ok ? await uploadRes.json() : null;
-          const fileUrl = uploadData?.url || uploadData?.key || "";
-          setUploadSuccess("Voice message sent to counsellor ✓");
-          // Notify counsellor
-          fetch("/api/notifications", { method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: "counsellor-system", title: `🎤 Voice Note from ${user?.name || "Student"}`,
-              body: `New audio recording shared. Listen: ${fileUrl}`, type: "info", link: "/counsellor/media" }) }).catch(() => {});
+          await fetch("/api/upload", { method: "POST", body: formData });
+          setUploadSuccess("Voice message saved ✓");
           setChatMessages((prev) => [...prev, { role: "user", text: "🎤 [Voice message recorded]" }]);
           setTimeout(() => {
-            setChatMessages((prev) => [...prev, { role: "bot", text: "Thanks for sharing. Your recording has been sent to your counsellor securely. 💚" }]);
+            setChatMessages((prev) => [...prev, { role: "bot", text: "Thanks for sharing. Your recording has been saved securely. A counsellor will review it. 💚" }]);
           }, 800);
         } catch { setUploadSuccess("Saved locally."); }
         setTimeout(() => setUploadSuccess(null), 4000);
@@ -201,16 +195,11 @@ export default function DashboardPage() {
         formData.append("userId", user?.id || "anonymous");
         formData.append("type", "video");
         try {
-          const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
-          const uploadData = uploadRes.ok ? await uploadRes.json() : null;
-          const fileUrl = uploadData?.url || uploadData?.key || "";
-          setUploadSuccess("Video sent to counsellor ✓");
-          fetch("/api/notifications", { method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: "counsellor-system", title: `🎥 Video from ${user?.name || "Student"}`,
-              body: `New video recording shared. Watch: ${fileUrl}`, type: "info", link: "/counsellor/media" }) }).catch(() => {});
+          await fetch("/api/upload", { method: "POST", body: formData });
+          setUploadSuccess("Video saved ✓");
           setChatMessages((prev) => [...prev, { role: "user", text: "📹 [Video recorded]" }]);
           setTimeout(() => {
-            setChatMessages((prev) => [...prev, { role: "bot", text: "Your video has been sent to your counsellor securely. 🌟" }]);
+            setChatMessages((prev) => [...prev, { role: "bot", text: "Your video has been saved securely. Thank you for checking in this way. 🌟" }]);
           }, 800);
         } catch { setUploadSuccess("Saved locally."); }
         setTimeout(() => setUploadSuccess(null), 4000);
@@ -241,16 +230,11 @@ export default function DashboardPage() {
     formData.append("userId", user?.id || "anonymous");
     formData.append("type", "video");
     try {
-      const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
-      const uploadData = uploadRes.ok ? await uploadRes.json() : null;
-      const fileUrl = uploadData?.url || uploadData?.key || "";
-      setUploadSuccess("Video sent to counsellor ✓");
-      fetch("/api/notifications", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: "counsellor-system", title: `🎥 Video from ${user?.name || "Student"}`,
-          body: `${file.name} uploaded. Watch: ${fileUrl}`, type: "info", link: "/counsellor/media" }) }).catch(() => {});
+      await fetch("/api/upload", { method: "POST", body: formData });
+      setUploadSuccess("Video uploaded ✓");
       setChatMessages((prev) => [...prev, { role: "user", text: `📹 [Video uploaded: ${file.name}]` }]);
       setTimeout(() => {
-        setChatMessages((prev) => [...prev, { role: "bot", text: "Your video has been sent to your counsellor. It will be reviewed securely. 🌟" }]);
+        setChatMessages((prev) => [...prev, { role: "bot", text: "Your video has been uploaded. It will be reviewed securely. 🌟" }]);
       }, 800);
     } catch { setUploadSuccess("Saved locally."); }
     setTimeout(() => setUploadSuccess(null), 4000);

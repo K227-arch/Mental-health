@@ -3,30 +3,17 @@ import { insforgeAdmin as insforge } from "@/lib/insforge";
 
 export async function GET() {
   try {
-    // Fetch only actual students — exclude anyone who is in counsellor_profiles or admin_profiles
-    const [studentsRes, counsellorIdsRes, adminIdsRes] = await Promise.all([
-      insforge.database
-        .from("student_profiles")
-        .select()
-        .order("created_at", { ascending: false }),
-      insforge.database
-        .from("counsellor_profiles")
-        .select("id"),
-      insforge.database
-        .from("admin_profiles")
-        .select("id"),
-    ]);
+    // Fetch all student profiles
+    const { data: profiles, error: profilesError } = await insforge.database
+      .from("student_profiles")
+      .select()
+      .order("created_at", { ascending: false });
 
-    const counsellorIds = new Set((counsellorIdsRes.data || []).map((p: any) => p.id));
-    const adminIds = new Set((adminIdsRes.data || []).map((p: any) => p.id));
+    if (profilesError) {
+      return NextResponse.json({ error: profilesError.message }, { status: 500 });
+    }
 
-    // Filter: keep only genuine students (not in counsellor/admin tables, and role != counsellor/administrator)
-    const allProfiles = (studentsRes.data || []).filter((p: any) =>
-      !counsellorIds.has(p.id) &&
-      !adminIds.has(p.id) &&
-      p.role !== "counsellor" &&
-      p.role !== "administrator"
-    );
+    const allProfiles = profiles || [];
 
     // Get latest screening results for each student
     const studentIds = allProfiles.map((p: any) => p.id);
@@ -63,43 +50,11 @@ export async function GET() {
       sessions = data || [];
     }
 
-    // Get flagged messages
-    let flaggedMessages: any[] = [];
-    if (studentIds.length > 0) {
-      const { data } = await insforge.database
-        .from("messages")
-        .select()
-        .in("sender_id", studentIds)
-        .eq("is_flagged", true)
-        .order("created_at", { ascending: false })
-        .limit(100);
-      flaggedMessages = data || [];
-    }
-
-    // Get notifications (analysis results sent by AI modules)
-    let notifications: any[] = [];
-    const { data: notifData } = await insforge.database
-      .from("notifications")
-      .select()
-      .eq("user_id", "counsellor-system")
-      .order("created_at", { ascending: false })
-      .limit(200);
-    notifications = notifData || [];
-
-    // Build student data with full analysis
+    // Build student data
     const students = allProfiles.map((profile: any) => {
       const latestScreening = screenings.find((s: any) => s.user_id === profile.id);
-      const allScreenings = screenings.filter((s: any) => s.user_id === profile.id);
       const latestMood = moods.find((m: any) => m.user_id === profile.id);
       const session = sessions.find((s: any) => s.student_id === profile.id);
-      const studentFlaggedMsgs = flaggedMessages.filter((m: any) => m.sender_id === profile.id);
-
-      // Find AI analysis notifications for this student
-      const studentNotifs = notifications.filter((n: any) =>
-        n.body?.includes(profile.id?.slice(0, 8)) ||
-        n.link?.includes(profile.id) ||
-        (session?.id && n.link?.includes(session.id))
-      );
 
       const phq9Score = latestScreening?.score || 0;
       const assessmentType = latestScreening?.assessment_type || "none";
@@ -107,28 +62,6 @@ export async function GET() {
       if (phq9Score >= 20) riskLevel = "Critical";
       else if (phq9Score >= 15) riskLevel = "High";
       else if (phq9Score >= 10) riskLevel = "Moderate";
-
-      // Extract Q9 score from responses if available
-      const responses = latestScreening?.responses;
-      let q9Score = 0;
-      let q9Flagged = false;
-      if (Array.isArray(responses) && responses.length >= 9) {
-        q9Score = responses[8] || 0;
-        q9Flagged = q9Score >= 1;
-      }
-
-      // Extract NLP analysis from notifications
-      const nlpNotif = studentNotifs.find((n: any) => n.title?.includes("AI Analysis") || n.title?.includes("NLP"));
-      const crisisNotif = studentNotifs.find((n: any) => n.title?.includes("Crisis") || n.title?.includes("Question 9"));
-      const stageNotif = studentNotifs.find((n: any) => n.title?.includes("Stage"));
-
-      // Build risk indicators
-      const riskIndicators: string[] = [];
-      if (q9Flagged) riskIndicators.push(`Self-harm ideation: Q9 score ${q9Score}/3 — immediate follow-up required`);
-      if (studentFlaggedMsgs.length > 0) riskIndicators.push(`${studentFlaggedMsgs.length} flagged message(s) containing crisis keywords`);
-      if (crisisNotif) riskIndicators.push("Crisis detection triggered in AI chat");
-      if (phq9Score >= 20) riskIndicators.push("Severe depression indicated (PHQ-9 ≥ 20)");
-      else if (phq9Score >= 15) riskIndicators.push("Moderately severe depression (PHQ-9 ≥ 15)");
 
       return {
         id: profile.id,
@@ -138,11 +71,9 @@ export async function GET() {
         anonymousId: profile.anonymous_id || profile.id?.slice(0, 8),
         faculty: profile.faculty || "Not specified",
         year: profile.year_of_study || 0,
-        registrationNumber: profile.registration_number || null,
         role: profile.role || "student",
         riskLevel: session?.risk_level || latestScreening?.risk_level || riskLevel,
         phq9Score,
-        phq9MaxScore: 27,
         assessmentType,
         severity: latestScreening?.severity || "No screening yet",
         moodScore: latestMood?.mood_score || null,
@@ -151,27 +82,6 @@ export async function GET() {
         status: session?.status || "no session",
         notes: session?.notes || "",
         aiSummary: session?.ai_summary || "",
-        // Enhanced analysis data
-        q9Score,
-        q9Flagged,
-        riskIndicators,
-        flaggedMessages: studentFlaggedMsgs.slice(0, 5).map((m: any) => ({
-          content: m.content,
-          date: m.created_at,
-        })),
-        nlpAnalysis: nlpNotif?.body || null,
-        crisisAlert: crisisNotif?.body || null,
-        stageInfo: stageNotif?.body || null,
-        totalScreenings: allScreenings.length,
-        recommendation: phq9Score >= 20
-          ? "Immediate professional intervention required. Contact student directly."
-          : phq9Score >= 15
-          ? "Schedule urgent session. Consider referral to specialist."
-          : phq9Score >= 10
-          ? "Monitor closely. Recommend regular check-ins and wellness resources."
-          : phq9Score >= 5
-          ? "Low-moderate concern. Encourage continued self-care and periodic screening."
-          : "Student managing well. Continue routine check-ins.",
       };
     });
 

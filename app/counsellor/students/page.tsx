@@ -10,23 +10,12 @@ interface StudentRecord {
   email: string;
   faculty: string;
   year: number;
-  registrationNumber: string | null;
   riskLevel: string;
   lastActive: string;
   phq9Score: number;
-  phq9MaxScore: number;
   assessmentType: string;
   severity: string;
   hasVideo: boolean;
-  q9Score: number;
-  q9Flagged: boolean;
-  riskIndicators: string[];
-  flaggedMessages: { content: string; date: string }[];
-  nlpAnalysis: string | null;
-  crisisAlert: string | null;
-  stageInfo: string | null;
-  recommendation: string;
-  totalScreenings: number;
 }
 
 const riskBadgeColors: Record<string, string> = {
@@ -48,30 +37,18 @@ export default function StudentsManagementPage() {
     fetch("/api/counsellor/students")
       .then((r) => r.ok ? r.json() : { students: [] })
       .then((data) => {
-        // API now returns only genuine students
         const mapped: StudentRecord[] = (data.students || []).map((s: any) => ({
           id: s.id,
           name: s.name || s.id?.slice(0, 8),
           email: s.email || "",
           faculty: s.faculty || "Not specified",
           year: s.year || 0,
-          registrationNumber: s.registrationNumber || null,
           riskLevel: s.riskLevel || "Minimal",
           lastActive: s.lastActive || "Never",
           phq9Score: s.phq9Score || 0,
-          phq9MaxScore: s.phq9MaxScore || 27,
           assessmentType: s.assessmentType || "none",
           severity: s.severity || "No screening",
           hasVideo: false,
-          q9Score: s.q9Score || 0,
-          q9Flagged: s.q9Flagged || false,
-          riskIndicators: s.riskIndicators || [],
-          flaggedMessages: s.flaggedMessages || [],
-          nlpAnalysis: s.nlpAnalysis || null,
-          crisisAlert: s.crisisAlert || null,
-          stageInfo: s.stageInfo || null,
-          recommendation: s.recommendation || "",
-          totalScreenings: s.totalScreenings || 0,
         }));
         setStudents(mapped);
         setLoading(false);
@@ -169,12 +146,11 @@ export default function StudentsManagementPage() {
                         <div>
                           <p className="font-medium text-on-surface">{student.name}</p>
                           {student.email && <p className="text-[10px] text-on-surface-variant">{student.email}</p>}
-                          {student.registrationNumber && <p className="text-[10px] text-primary font-medium">Reg: {student.registrationNumber}</p>}
                         </div>
                       </div>
                     </td>
                     <td className="py-3 px-4 text-on-surface-variant">
-                      {student.faculty}{student.year > 0 ? `` : ""}
+                      {student.faculty}{student.year > 0 ? `, Yr ${student.year}` : ""}
                     </td>
                     <td className="py-3 px-4 text-center">
                       <span className={clsx("text-[10px] px-2 py-0.5 rounded-full uppercase font-semibold", riskBadgeColors[student.riskLevel] || riskBadgeColors["Minimal"])}>
@@ -216,21 +192,17 @@ export default function StudentsManagementPage() {
         </div>
       )}
 
-      {/* Student Detail Panel — Full Analysis */}
+      {/* Student Detail Panel */}
       {selectedStudent && (
-        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm animate-fade-in space-y-5">
-          {/* Header */}
-          <div className="flex items-start justify-between">
+        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm animate-fade-in">
+          <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center">
                 <span className="text-lg font-bold text-on-primary-container">{selectedStudent.name.slice(0, 2).toUpperCase()}</span>
               </div>
               <div>
                 <h2 className="text-lg font-bold text-on-surface">{selectedStudent.name}</h2>
-                <p className="text-sm text-on-surface-variant">{selectedStudent.faculty}</p>
-                {selectedStudent.registrationNumber && (
-                  <p className="text-xs text-primary font-semibold mt-0.5">Reg No: {selectedStudent.registrationNumber}</p>
-                )}
+                <p className="text-sm text-on-surface-variant">{selectedStudent.faculty}{selectedStudent.year > 0 ? `, Year ${selectedStudent.year}` : ""}</p>
               </div>
             </div>
             <button onClick={() => setSelectedStudent(null)} className="p-2 rounded-full hover:bg-surface-container transition-colors">
@@ -238,123 +210,39 @@ export default function StudentsManagementPage() {
             </button>
           </div>
 
-          {/* PHQ-9 Score + Risk Level + Q9 Flag */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <div className="bg-surface-container-low rounded-xl p-4 border border-outline-variant/30">
-              <div className="text-xs text-on-surface-variant mb-1">PHQ-9 Score</div>
-              <div className="text-2xl font-black text-primary">{selectedStudent.phq9Score}<span className="text-sm font-normal text-on-surface-variant">/{selectedStudent.phq9MaxScore}</span></div>
-              <div className="text-xs text-on-surface-variant mt-0.5">{selectedStudent.severity}</div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-surface-container-low rounded-xl p-4 border border-outline-variant/30">
               <div className="text-xs text-on-surface-variant mb-1">Risk Level</div>
-              <span className={clsx("text-xs px-2.5 py-1 rounded-full uppercase font-semibold", riskBadgeColors[selectedStudent.riskLevel] || riskBadgeColors["Minimal"])}>
+              <span className={clsx("text-xs px-2 py-0.5 rounded-full uppercase font-semibold", riskBadgeColors[selectedStudent.riskLevel] || riskBadgeColors["Minimal"])}>
                 {selectedStudent.riskLevel}
               </span>
             </div>
-            <div className={clsx("rounded-xl p-4 border", selectedStudent.q9Flagged ? "bg-error-container/30 border-error/30" : "bg-surface-container-low border-outline-variant/30")}>
-              <div className="text-xs text-on-surface-variant mb-1">Question 9 (Self-harm)</div>
-              <div className={clsx("text-sm font-semibold", selectedStudent.q9Flagged ? "text-error" : "text-on-surface")}>
-                {selectedStudent.q9Flagged ? `⚠️ Score: ${selectedStudent.q9Score}/3 — FLAGGED` : `Score: ${selectedStudent.q9Score}/3 — Clear`}
+            <div className="bg-surface-container-low rounded-xl p-4 border border-outline-variant/30">
+              <div className="text-xs text-on-surface-variant mb-1">Latest Assessment</div>
+              <div className="text-sm font-semibold text-on-surface">
+                {selectedStudent.assessmentType !== "none" ? `${selectedStudent.assessmentType.toUpperCase()} — Score: ${selectedStudent.phq9Score}` : "No assessments"}
               </div>
-              {selectedStudent.q9Flagged && <div className="text-[10px] text-error mt-1">Immediate follow-up required</div>}
+              <div className="text-xs text-on-surface-variant mt-0.5">{selectedStudent.severity}</div>
             </div>
             <div className="bg-surface-container-low rounded-xl p-4 border border-outline-variant/30">
-              <div className="text-xs text-on-surface-variant mb-1">Total Screenings</div>
-              <div className="text-xl font-bold text-on-surface">{selectedStudent.totalScreenings}</div>
-              <div className="text-xs text-on-surface-variant mt-0.5">Assessment{selectedStudent.totalScreenings !== 1 ? "s" : ""} completed</div>
+              <div className="text-xs text-on-surface-variant mb-1">Last Activity</div>
+              <div className="text-sm font-semibold text-on-surface">
+                {selectedStudent.lastActive !== "Never" ? new Date(selectedStudent.lastActive).toLocaleString() : "Never active"}
+              </div>
             </div>
           </div>
 
-          {/* Risk Indicators — Self-harm, Crisis, Emergency */}
-          {selectedStudent.riskIndicators.length > 0 && (
-            <div className="bg-error-container/20 border border-error/20 rounded-xl p-4">
-              <h3 className="text-sm font-semibold text-error mb-2 flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px]">warning</span>
-                Risk Indicators & Safety Alerts
-              </h3>
-              <div className="space-y-1.5">
-                {selectedStudent.riskIndicators.map((r, i) => (
-                  <div key={i} className="flex items-start gap-2 text-sm text-on-surface">
-                    <span className="text-error mt-0.5 shrink-0">•</span>
-                    {r}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Flagged Messages */}
-          {selectedStudent.flaggedMessages.length > 0 && (
-            <div className="bg-error-container/10 border border-error/10 rounded-xl p-4">
-              <h3 className="text-sm font-semibold text-on-surface mb-2 flex items-center gap-2">
-                <span className="material-symbols-outlined text-error text-[18px]">flag</span>
-                Flagged Messages (Crisis Keywords Detected)
-              </h3>
-              <div className="space-y-2">
-                {selectedStudent.flaggedMessages.map((msg, i) => (
-                  <div key={i} className="bg-surface-container-lowest rounded-lg p-3 border border-outline-variant/30">
-                    <p className="text-sm text-on-surface italic">&ldquo;{msg.content}&rdquo;</p>
-                    <p className="text-[10px] text-on-surface-variant mt-1">{new Date(msg.date).toLocaleString()}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* NLP Analysis */}
-          {selectedStudent.nlpAnalysis && (
-            <div className="bg-primary-container/10 border border-primary/10 rounded-xl p-4">
-              <h3 className="text-sm font-semibold text-on-surface mb-2 flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary text-[18px]">neurology</span>
-                NLP Analysis (AI Module)
-              </h3>
-              <p className="text-sm text-on-surface-variant leading-relaxed">{selectedStudent.nlpAnalysis}</p>
-            </div>
-          )}
-
-          {/* Crisis Alert from Suicide Detection Engine */}
-          {selectedStudent.crisisAlert && (
-            <div className="bg-error-container/30 border border-error/20 rounded-xl p-4">
-              <h3 className="text-sm font-semibold text-error mb-2 flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px]">emergency</span>
-                Suicide Detection Engine Alert
-              </h3>
-              <p className="text-sm text-on-surface leading-relaxed">{selectedStudent.crisisAlert}</p>
-            </div>
-          )}
-
-          {/* AI Recommendation */}
-          <div className="bg-secondary-container/20 border border-secondary/10 rounded-xl p-4">
-            <h3 className="text-sm font-semibold text-on-surface mb-2 flex items-center gap-2">
-              <span className="material-symbols-outlined text-secondary text-[18px]">lightbulb</span>
-              AI Recommended Action
-            </h3>
-            <p className="text-sm text-on-surface leading-relaxed">{selectedStudent.recommendation}</p>
-          </div>
-
-          {/* Stage Info (Prompt Engineering Engine) */}
-          {selectedStudent.stageInfo && (
-            <div className="bg-surface-container-low rounded-xl p-4 border border-outline-variant/30">
-              <h3 className="text-sm font-semibold text-on-surface mb-2 flex items-center gap-2">
-                <span className="material-symbols-outlined text-on-surface-variant text-[18px]">route</span>
-                Conversation Stage (Prompt Engineering)
-              </h3>
-              <p className="text-sm text-on-surface-variant">{selectedStudent.stageInfo}</p>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3 mt-4">
             <button
               onClick={() => { window.location.href = "/counsellor/chat"; }}
-              className="flex items-center gap-2 px-4 py-2.5 bg-primary text-on-primary rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
             >
               <span className="material-symbols-outlined text-[18px]">chat</span>
               Send Message
             </button>
             <button
               onClick={() => { window.location.href = "/counsellor/media"; }}
-              className="flex items-center gap-2 px-4 py-2.5 border border-outline-variant bg-surface text-on-surface rounded-lg text-sm font-medium hover:bg-surface-container transition-colors"
+              className="flex items-center gap-2 px-4 py-2 border border-outline-variant bg-surface text-on-surface rounded-lg text-sm font-medium hover:bg-surface-container transition-colors"
             >
               <span className="material-symbols-outlined text-[18px]">videocam</span>
               View Uploads
