@@ -264,9 +264,9 @@ export default function DashboardPage() {
               {isNewUser ? (
                 <div className="bg-gradient-to-r from-primary-container to-secondary-container rounded-2xl p-6 mb-6 text-center">
                   <h1 className="text-2xl md:text-3xl font-bold text-on-surface mb-2">
-                    {t("dashboard.welcome.new")} 🌱
+                    {t("dashboard.welcome.new")}{user?.name ? `, ${user.name}` : ""} 🌱
                   </h1>
-                  <p className="text-on-surface-variant">{t("dashboard.welcome.new.sub")}{user?.name ? `, ${user.name}` : ""}</p>
+                  <p className="text-on-surface-variant">{t("dashboard.welcome.new.sub")}</p>
                 </div>
               ) : (
                 <div className="mb-4">
