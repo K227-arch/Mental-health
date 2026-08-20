@@ -56,7 +56,7 @@ export default function SignUpPage() {
         email,
         password,
         name,
-        redirectTo: `${window.location.origin}/auth/sign-in`,
+        redirectTo: `${window.location.origin}/auth/verify-email?email=${encodeURIComponent(email)}&role=${role}`,
       });
 
       if (signUpError) {
@@ -65,18 +65,27 @@ export default function SignUpPage() {
         return;
       }
 
-      if (data?.requireEmailVerification) {
-        setError(null);
-        router.push(`/auth/sign-in?message=Check your email to verify your account`);
+      // Store sign-up profile data in sessionStorage for after verification
+      sessionStorage.setItem("pendingSignUp", JSON.stringify({
+        name,
+        email,
+        role: role === "counsellor" ? "counsellor" : "student",
+        studentId: role === "student" ? studentId : undefined,
+        faculty: role === "student" ? faculty : undefined,
+        yearOfStudy: role === "student" ? parseInt(yearOfStudy) : undefined,
+      }));
+
+      // If email verification is required (OTP sent), redirect to verify page
+      if (data?.requireEmailVerification || !data?.accessToken) {
+        router.push(`/auth/verify-email?email=${encodeURIComponent(email)}&role=${role}`);
         return;
       }
 
-      // Save token to cookie
+      // If no verification required (unlikely with OTP enabled), proceed directly
       if (data?.accessToken) {
         document.cookie = `insforge_access_token=${data.accessToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
       }
 
-      // Create student profile in DB
       if (data?.user?.id) {
         await fetch("/api/auth/sign-up", {
           method: "POST",
