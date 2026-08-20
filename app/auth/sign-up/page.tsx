@@ -27,6 +27,8 @@ export default function SignUpPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("role") === "counsellor") setRole("counsellor");
+    const errorParam = params.get("error");
+    if (errorParam) setError(errorParam);
   }, []);
 
   const handleSubmit = async (e: FormEvent) => {

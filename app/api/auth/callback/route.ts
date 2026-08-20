@@ -24,6 +24,46 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
+    // Get user ID from the token to check if they have a profile
+    let userId: string | null = null;
+    if (data?.accessToken) {
+      try {
+        const payload = JSON.parse(Buffer.from(data.accessToken.split(".")[1], "base64").toString());
+        userId = payload.sub || payload.user_id || null;
+      } catch { /* invalid token */ }
+    }
+
+    // Check if user has signed up (has a profile in student_profiles or counsellor_profiles)
+    if (userId) {
+      const { data: studentProfile } = await insforgeAdmin.database
+        .from("student_profiles")
+        .select("id")
+        .eq("id", userId)
+        .limit(1);
+
+      const { data: counsellorProfile } = await insforgeAdmin.database
+        .from("counsellor_profiles")
+        .select("id")
+        .eq("id", userId)
+        .limit(1);
+
+      const hasProfile =
+        (studentProfile && studentProfile.length > 0) ||
+        (counsellorProfile && counsellorProfile.length > 0);
+
+      if (!hasProfile) {
+        // User authenticated via OAuth but has no profile — they need to sign up first
+        const role = redirectTo === "/counsellor" ? "counsellor" : "student";
+        const url = new URL("/auth/sign-up", request.url);
+        url.searchParams.set("role", role);
+        url.searchParams.set("error", "Please complete your registration first. Sign up to create your account.");
+        const noProfileResponse = NextResponse.redirect(url);
+        noProfileResponse.cookies.set("insforge_code_verifier", "", { path: "/", maxAge: 0 });
+        noProfileResponse.cookies.set("insforge_redirect", "", { path: "/", maxAge: 0 });
+        return noProfileResponse;
+      }
+    }
+
     const response = NextResponse.redirect(new URL(redirectTo, request.url));
 
     // Set session cookies
