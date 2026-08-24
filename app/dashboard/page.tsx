@@ -254,7 +254,7 @@ export default function DashboardPage() {
       </div>
       <Navbar variant="student" />
 
-      <div className="flex flex-1 pt-16">
+      <div className="flex flex-1 pt-16 h-[calc(100svh-64px)] overflow-hidden">
         {/* StudentSidebar owns its own mobile bottom nav + "More" drawer. */}
         <StudentSidebar />
 

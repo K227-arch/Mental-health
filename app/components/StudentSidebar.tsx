@@ -27,7 +27,7 @@ export default function StudentSidebar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex flex-col h-[calc(100svh-64px)] sticky top-16 w-60 shrink-0 p-3 border-r border-outline-variant bg-surface-container-low overflow-y-auto">
+      <aside className="hidden md:flex flex-col h-full w-60 shrink-0 p-3 border-r border-outline-variant bg-surface-container-low overflow-y-auto">
         <div className="mb-4 px-3">
           <h2 className="text-xs text-on-surface-variant uppercase tracking-wider mb-1 mt-3">{t("sidebar.student.title")}</h2>
           <p className="text-sm font-semibold text-on-surface">{t("sidebar.student.subtitle")}</p>

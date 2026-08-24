@@ -129,7 +129,7 @@ export default function CrisisPage() {
 
       <Navbar variant="student" />
 
-      <div className="flex flex-1 pt-16">
+      <div className="flex flex-1 pt-16 h-[calc(100svh-64px)] overflow-hidden">
         {/* Sidebar */}
         <StudentSidebar />
 

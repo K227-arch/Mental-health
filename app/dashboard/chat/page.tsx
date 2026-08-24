@@ -175,7 +175,7 @@ export default function StudentChatPage() {
     return (
       <div className="min-h-screen bg-surface">
         <Navbar variant="student" />
-        <div className="flex pt-16">
+        <div className="flex pt-16 h-[calc(100svh-64px)] overflow-hidden">
           <StudentSidebar />
           <div className="flex-1 flex items-center justify-center h-[calc(100vh-64px)] text-on-surface-variant">
             <span className="material-symbols-outlined animate-spin text-[24px] mr-2">progress_activity</span>
@@ -189,7 +189,7 @@ export default function StudentChatPage() {
   return (
     <div className="min-h-screen bg-surface flex flex-col">
       <Navbar variant="student" />
-      <div className="flex flex-1 pt-16 pb-16 md:pb-0">
+      <div className="flex flex-1 pt-16 pb-16 md:pb-0 h-[calc(100svh-64px)] overflow-hidden">
         <StudentSidebar />
         <div className="flex-1 flex flex-col max-w-3xl w-full mx-auto" style={{ height: "calc(100svh - 64px - 56px)", maxHeight: "calc(100svh - 64px)" }}>
         {/* Header */}
