@@ -31,6 +31,7 @@ export default function CounsellorChat() {
   const [recording, setRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [micError, setMicError] = useState<string | null>(null);
+  const [sessionListOpen, setSessionListOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -280,12 +281,37 @@ export default function CounsellorChat() {
   }
 
   return (
-    <div className="flex h-[calc(100svh-64px)] bg-surface">
-      {/* Sidebar - Student List */}
-      <aside className="hidden sm:flex w-72 border-r border-outline-variant bg-surface-container-low flex-col overflow-hidden shrink-0">
-        <div className="p-4 border-b border-outline-variant">
-          <h2 className="text-sm font-bold text-on-surface">{t("counsellor.chat.conversations")}</h2>
-          <p className="text-xs text-on-surface-variant mt-0.5">{sessions.length} {t("counsellor.chat.activeSessions")}</p>
+    // Subtract the fixed mobile bottom nav (~56px) so the composer stays visible.
+    <div className="flex h-[calc(100svh-64px-56px)] md:h-[calc(100svh-64px)] bg-surface">
+      {/* Backdrop for the mobile session drawer */}
+      {sessionListOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+          onClick={() => setSessionListOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - Student List. Drawer below md, static from md up. */}
+      <aside
+        className={clsx(
+          "flex w-72 max-w-[85vw] border-r border-outline-variant bg-surface-container-low flex-col overflow-hidden shrink-0",
+          "fixed inset-y-0 left-0 z-50 pt-16 transition-transform duration-300 md:pt-0",
+          "md:static md:z-auto md:translate-x-0 md:transition-none",
+          sessionListOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <div className="p-4 border-b border-outline-variant flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h2 className="text-sm font-bold text-on-surface truncate">{t("counsellor.chat.conversations")}</h2>
+            <p className="text-xs text-on-surface-variant mt-0.5">{sessions.length} {t("counsellor.chat.activeSessions")}</p>
+          </div>
+          <button
+            onClick={() => setSessionListOpen(false)}
+            className="md:hidden shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container transition-colors"
+            aria-label="Close conversations"
+          >
+            <span className="material-symbols-outlined text-[20px]">close</span>
+          </button>
         </div>
         <div className="flex-1 overflow-y-auto">
           {sessions.length === 0 ? (
@@ -297,7 +323,7 @@ export default function CounsellorChat() {
             sessions.map((session) => (
               <button
                 key={session.id}
-                onClick={() => setSelectedSession(session)}
+                onClick={() => { setSelectedSession(session); setSessionListOpen(false); }}
                 className={clsx(
                   "w-full text-left px-4 py-3 border-b border-outline-variant/30 hover:bg-surface-container transition-colors",
                   selectedSession?.id === session.id && "bg-primary-container/30"
@@ -323,9 +349,16 @@ export default function CounsellorChat() {
         {selectedSession ? (
           <>
             {/* Chat Header */}
-            <div className="px-6 py-3 border-b border-outline-variant bg-surface-container-lowest flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-on-surface">{selectedSession.name}</h3>
+            <div className="px-3 md:px-6 py-3 border-b border-outline-variant bg-surface-container-lowest flex items-center gap-2">
+              <button
+                onClick={() => setSessionListOpen(true)}
+                className="md:hidden shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container transition-colors"
+                aria-label="Open conversations"
+              >
+                <span className="material-symbols-outlined text-[22px]">menu</span>
+              </button>
+              <div className="min-w-0">
+                <h3 className="text-sm font-bold text-on-surface truncate">{selectedSession.name}</h3>
                 <span className={clsx("text-[10px] px-2 py-0.5 rounded-full font-semibold", riskColor(selectedSession.riskLevel))}>
                   {selectedSession.riskLevel} Risk
                 </span>
@@ -333,7 +366,7 @@ export default function CounsellorChat() {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className="flex-1 overflow-y-auto p-3 md:p-6 space-y-4">
               {messages.length === 0 ? (
                 <div className="text-center text-on-surface-variant text-sm mt-20">
                   <span className="material-symbols-outlined text-[40px] opacity-30 block mb-2">chat</span>
@@ -344,7 +377,7 @@ export default function CounsellorChat() {
                   <div
                     key={`${msg.id}-${idx}`}
                     className={clsx(
-                      "max-w-[70%] px-4 py-3 rounded-2xl text-sm",
+                      "max-w-[85%] sm:max-w-[70%] px-4 py-3 rounded-2xl text-sm break-words",
                       msg.sender_role === "counsellor"
                         ? "ml-auto bg-primary text-on-primary rounded-br-sm"
                         : "mr-auto bg-surface-container text-on-surface rounded-bl-sm"
@@ -364,7 +397,7 @@ export default function CounsellorChat() {
             </div>
 
             {/* Input */}
-            <div className="px-6 py-4 border-t border-outline-variant bg-surface-container-lowest">
+            <div className="px-3 md:px-6 py-3 md:py-4 border-t border-outline-variant bg-surface-container-lowest">
               {micError && (
                 <div className="mb-3 p-3 bg-error-container/80 text-on-error-container text-xs rounded-xl flex items-center gap-2 animate-fade-in">
                   <span className="material-symbols-outlined text-[16px]">mic_off</span>
@@ -403,10 +436,17 @@ export default function CounsellorChat() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-on-surface-variant">
+          <div className="flex-1 flex items-center justify-center text-on-surface-variant p-6">
             <div className="text-center">
               <span className="material-symbols-outlined text-[48px] opacity-30 block mb-3">forum</span>
               <p className="text-sm">{t("counsellor.chat.selectConversation")}</p>
+              <button
+                onClick={() => setSessionListOpen(true)}
+                className="md:hidden mt-4 px-4 py-2.5 bg-primary text-on-primary rounded-xl text-sm font-medium inline-flex items-center gap-2"
+              >
+                <span className="material-symbols-outlined text-[18px]">forum</span>
+                {t("counsellor.chat.conversations")}
+              </button>
             </div>
           </div>
         )}

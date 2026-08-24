@@ -62,13 +62,13 @@ export default function SettingsPage() {
       <Navbar variant="student" />
       <div className="flex flex-1 pt-16">
         <StudentSidebar />
-        <main className="flex-1 overflow-y-auto px-6 md:px-16 max-w-2xl py-10">
-        <h1 className="text-3xl font-bold text-on-surface mb-2">{t("settings.title")}</h1>
+        <main className="flex-1 overflow-y-auto w-full max-w-2xl mx-auto px-4 sm:px-6 md:px-16 py-8 md:py-10 pb-24 md:pb-10">
+        <h1 className="text-2xl md:text-3xl font-bold text-on-surface mb-2">{t("settings.title")}</h1>
         <p className="text-on-surface-variant text-sm mb-8">{t("settings.subtitle")}</p>
 
         <div className="space-y-6">
           {/* Profile Section */}
-          <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-2xl p-6">
+          <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-2xl p-4 sm:p-6">
             <h2 className="text-lg font-semibold text-on-surface mb-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-[20px]">person</span>
               {t("settings.profile")}
@@ -96,7 +96,7 @@ export default function SettingsPage() {
                 <p className="text-xs text-on-surface-variant/60 mt-1">{t("settings.emailCannotChange")}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">{t("settings.faculty")}</label>
                   <input
@@ -124,12 +124,12 @@ export default function SettingsPage() {
           </div>
 
           {/* Language */}
-          <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-2xl p-6">
+          <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-2xl p-4 sm:p-6">
             <h2 className="text-lg font-semibold text-on-surface mb-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-[20px]">language</span>
               {t("settings.language")}
             </h2>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {languages.map((l) => (
                 <button
                   key={l.code}

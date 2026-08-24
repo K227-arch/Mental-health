@@ -138,7 +138,8 @@ export default function CounsellorAnalytics() {
             <span className="material-symbols-outlined text-error text-[18px]">warning</span>
             Risk Distribution
           </h3>
-          <div className="h-48">
+          <div className="h-48 overflow-x-auto">
+            <div className="h-full min-w-[320px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={riskDistribution} cx="50%" cy="50%" outerRadius={70} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
@@ -149,6 +150,7 @@ export default function CounsellorAnalytics() {
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
+            </div>
           </div>
         </div>
 
@@ -207,8 +209,9 @@ export default function CounsellorAnalytics() {
             <span className="material-symbols-outlined text-primary text-[18px]">donut_large</span>
             Model Usage Distribution
           </h3>
-          <div className="h-48">
+          <div className="h-48 overflow-x-auto">
             {modelUsageDistribution.length > 0 ? (
+              <div className="h-full min-w-[320px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={modelUsageDistribution} cx="50%" cy="50%" outerRadius={70} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
@@ -219,6 +222,7 @@ export default function CounsellorAnalytics() {
                   <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
+              </div>
             ) : (
               <div className="h-full flex items-center justify-center text-on-surface-variant text-sm">No assessment data yet</div>
             )}
@@ -280,19 +284,21 @@ export default function CounsellorAnalytics() {
             <span className="material-symbols-outlined text-secondary text-[18px]">leaderboard</span>
             Assessments per Model
           </h3>
-          <div className="h-48">
+          <div className="h-48 overflow-x-auto">
             {modelComparison.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={modelComparison} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="#c1c7cf40" />
-                  <XAxis type="number" tick={{ fontSize: 11 }} stroke="#72787f" />
-                  <YAxis dataKey="model" type="category" tick={{ fontSize: 10 }} stroke="#72787f" width={60} />
-                  <Tooltip />
-                  <Legend wrapperStyle={{ fontSize: "11px" }} />
-                  <Bar dataKey="assessments" fill="#006a64" name="Total" radius={[0, 4, 4, 0]} />
-                  <Bar dataKey="highRisk" fill="#ba1a1a" name="High Risk" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="h-full min-w-[320px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={modelComparison} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" stroke="#c1c7cf40" />
+                    <XAxis type="number" tick={{ fontSize: 11 }} stroke="#72787f" />
+                    <YAxis dataKey="model" type="category" tick={{ fontSize: 10 }} stroke="#72787f" width={60} />
+                    <Tooltip />
+                    <Legend wrapperStyle={{ fontSize: "11px" }} />
+                    <Bar dataKey="assessments" fill="#006a64" name="Total" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="highRisk" fill="#ba1a1a" name="High Risk" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             ) : (
               <div className="h-full flex items-center justify-center text-on-surface-variant text-sm">No assessment data yet</div>
             )}
@@ -308,15 +314,15 @@ export default function CounsellorAnalytics() {
             Model Performance Summary
           </h3>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[720px] text-sm">
               <thead>
                 <tr className="border-b border-outline-variant">
-                  <th className="text-left py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase">Model</th>
-                  <th className="text-center py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase">Assessments</th>
-                  <th className="text-center py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase">Avg Score</th>
-                  <th className="text-center py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase">Max Score</th>
-                  <th className="text-center py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase">Avg Severity</th>
-                  <th className="text-center py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase">High Risk</th>
+                  <th className="text-left py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">Model</th>
+                  <th className="text-center py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">Assessments</th>
+                  <th className="text-center py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">Avg Score</th>
+                  <th className="text-center py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">Max Score</th>
+                  <th className="text-center py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">Avg Severity</th>
+                  <th className="text-center py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">High Risk</th>
                 </tr>
               </thead>
               <tbody>
@@ -353,14 +359,14 @@ export default function CounsellorAnalytics() {
           Reports & Status
         </h3>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="border-b border-outline-variant">
-                <th className="text-left py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase">Report Type</th>
-                <th className="text-center py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase">Status</th>
-                <th className="text-center py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase">Regularity</th>
-                <th className="text-center py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase">Last Generated</th>
-                <th className="text-right py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase">Action</th>
+                <th className="text-left py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">Report Type</th>
+                <th className="text-center py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">Status</th>
+                <th className="text-center py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">Regularity</th>
+                <th className="text-center py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">Last Generated</th>
+                <th className="text-right py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">Action</th>
               </tr>
             </thead>
             <tbody>

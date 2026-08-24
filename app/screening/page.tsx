@@ -1053,7 +1053,7 @@ export default function ScreeningPage() {
       {/* Video Capture Modal */}
       {showVideoModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 w-full max-w-md shadow-xl animate-fade-in">
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-4 sm:p-6 w-full max-w-md shadow-xl animate-fade-in max-h-[90dvh] overflow-y-auto">
             <h2 className="text-lg font-bold text-on-surface mb-2 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-[22px]">videocam</span>
               Video Check-in

@@ -120,13 +120,13 @@ export default function AdminCounsellors() {
             return (
               <div key={c.id} className={clsx("bg-surface-container-lowest border rounded-xl p-5 shadow-sm cursor-pointer hover:shadow-md transition-shadow", selected?.id === c.id ? "border-primary" : "border-outline-variant")}
                 onClick={() => setSelected(selected?.id === c.id ? null : c)}>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center">
+                <div className="flex items-center gap-3 mb-3 min-w-0">
+                  <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center shrink-0">
                     <span className="text-sm font-bold text-on-primary-container">{(c.name || "?").slice(0,2).toUpperCase()}</span>
                   </div>
-                  <div>
-                    <p className="font-semibold text-on-surface text-sm">{c.name || "Counsellor"}</p>
-                    <p className="text-xs text-on-surface-variant truncate max-w-[150px]">{c.email}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-on-surface text-sm truncate">{c.name || "Counsellor"}</p>
+                    <p className="text-xs text-on-surface-variant truncate">{c.email}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">

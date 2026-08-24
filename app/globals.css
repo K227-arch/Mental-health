@@ -70,6 +70,15 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+html,
+body {
+  max-width: 100%;
+  /* Guard against decorative absolutely-positioned elements (watermarks, blobs)
+     causing a horizontal scrollbar on narrow viewports. */
+  overflow-x: hidden;
 }
 
 body {
@@ -78,6 +87,14 @@ body {
   color: var(--color-on-surface, #191c1f);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Media should never force the layout wider than its container. */
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
 }
 
 .material-symbols-outlined {

@@ -181,15 +181,15 @@ export default function CounsellorDashboard() {
     <div className="p-4 md:p-8 max-w-[1200px] mx-auto flex flex-col gap-8">
       {/* Action Feedback Toast */}
       {actionFeedback && (
-        <div className="fixed top-20 right-6 z-50 bg-secondary-container text-on-secondary-container px-5 py-3 rounded-xl shadow-lg animate-fade-in flex items-center gap-2 text-sm font-medium">
-          <span className="material-symbols-outlined text-[18px]">check_circle</span>
+        <div className="fixed top-20 left-3 right-3 md:left-auto md:right-6 z-50 bg-secondary-container text-on-secondary-container px-5 py-3 rounded-xl shadow-lg animate-fade-in flex items-center gap-2 text-sm font-medium">
+          <span className="material-symbols-outlined text-[18px] shrink-0">check_circle</span>
           {actionFeedback}
         </div>
       )}
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
         <div>
-          <h1 className="text-3xl font-bold text-on-background">{t("counsellor.dashboard.title")}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-on-background">{t("counsellor.dashboard.title")}</h1>
           <p className="text-on-surface-variant mt-1">{t("counsellor.dashboard.monitoring")}</p>
         </div>
       </div>
@@ -202,12 +202,12 @@ export default function CounsellorDashboard() {
           { label: "Active Sessions", value: String(students.filter(s => s.lastActive !== "Never").length), icon: "pending_actions", color: "#006a64" },
           { label: "Avg Score", value: students.length > 0 ? String(Math.round(students.reduce((a, s) => a + s.phq9Score, 0) / students.length)) : "0", icon: "analytics", color: "#c2185b" },
         ].map((stat) => (
-          <div key={stat.label} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 flex flex-col gap-2 shadow-sm">
-            <div className="flex justify-between items-start">
+          <div key={stat.label} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 sm:p-5 flex flex-col gap-2 shadow-sm">
+            <div className="flex justify-between items-start gap-2">
               <span className="text-xs text-on-surface-variant font-medium">{stat.label}</span>
-              <span className="material-symbols-outlined icon-fill text-[22px]" style={{ color: stat.color }}>{stat.icon}</span>
+              <span className="material-symbols-outlined icon-fill text-[22px] shrink-0" style={{ color: stat.color }}>{stat.icon}</span>
             </div>
-            <div className="text-3xl font-black text-on-background">{stat.value}</div>
+            <div className="text-2xl sm:text-3xl font-black text-on-background">{stat.value}</div>
           </div>
         ))}
       </div>
@@ -228,7 +228,7 @@ export default function CounsellorDashboard() {
           </p>
         </div>
       ) : (
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 min-h-[600px]">
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:min-h-[600px]">
         {/* Case List */}
         <div className="lg:col-span-3 flex flex-col gap-3">
           <div className="flex justify-between items-center">
@@ -245,7 +245,7 @@ export default function CounsellorDashboard() {
               <option>Minimal</option>
             </select>
           </div>
-          <div className="flex flex-col gap-2 overflow-y-auto max-h-[540px] pr-1">
+          <div className="flex flex-col gap-2 lg:overflow-y-auto lg:max-h-[540px] lg:pr-1">
             {recentStudents.map((student, idx) => {
               const colors = riskColors[student.riskLevel];
               return (
@@ -520,7 +520,7 @@ export default function CounsellorDashboard() {
       {/* Schedule Session Modal */}
       {showScheduleModal && selectedStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 w-full max-w-sm shadow-xl animate-fade-in">
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-4 sm:p-6 w-full max-w-sm shadow-xl animate-fade-in max-h-[90dvh] overflow-y-auto">
             <h2 className="text-lg font-bold text-on-surface mb-2 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-[22px]">calendar_month</span>
               Schedule Session

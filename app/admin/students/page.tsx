@@ -62,15 +62,15 @@ export default function AdminStudents() {
       ) : (
         <div className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[720px] text-sm">
               <thead>
                 <tr className="border-b border-outline-variant bg-surface-container-low">
-                  <th className="text-left py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase">Student</th>
-                  <th className="text-left py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase">Faculty</th>
-                  <th className="text-center py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase">Risk</th>
-                  <th className="text-center py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase">PHQ-9</th>
-                  <th className="text-center py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase">Q9 Flag</th>
-                  <th className="text-center py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase">Last Active</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">Student</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">Faculty</th>
+                  <th className="text-center py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">Risk</th>
+                  <th className="text-center py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">PHQ-9</th>
+                  <th className="text-center py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">Q9 Flag</th>
+                  <th className="text-center py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">Last Active</th>
                 </tr>
               </thead>
               <tbody>

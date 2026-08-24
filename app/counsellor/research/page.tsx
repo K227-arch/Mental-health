@@ -77,7 +77,8 @@ export default function ResearchInsightsPage() {
             <span className="material-symbols-outlined text-primary text-[18px]">donut_large</span>
             PHQ-9 Severity Distribution
           </h3>
-          <div className="h-52">
+          <div className="h-52 overflow-x-auto">
+            <div className="h-full min-w-[320px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={severityData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
@@ -88,6 +89,7 @@ export default function ResearchInsightsPage() {
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
+            </div>
           </div>
         </div>
 
@@ -97,16 +99,20 @@ export default function ResearchInsightsPage() {
             <span className="material-symbols-outlined text-error text-[18px]">warning</span>
             Top Depression Triggers
           </h3>
-          <div className="h-52">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={triggerData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#c1c7cf40" />
-                <XAxis type="number" tick={{ fontSize: 10 }} unit="%" />
-                <YAxis dataKey="cause" type="category" tick={{ fontSize: 9 }} width={100} />
-                <Tooltip />
-                <Bar dataKey="percentage" fill="#c2185b" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          {/* Scroll on narrow screens: the 100px category axis would otherwise
+              eat most of a phone-width chart. */}
+          <div className="overflow-x-auto">
+            <div className="h-52 min-w-[340px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={triggerData} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#c1c7cf40" />
+                  <XAxis type="number" tick={{ fontSize: 10 }} unit="%" />
+                  <YAxis dataKey="cause" type="category" tick={{ fontSize: 9 }} width={100} />
+                  <Tooltip />
+                  <Bar dataKey="percentage" fill="#c2185b" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
       </div>

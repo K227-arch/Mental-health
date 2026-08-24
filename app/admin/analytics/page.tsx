@@ -62,12 +62,14 @@ export default function AdminAnalytics() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
           <h3 className="text-sm font-bold text-on-surface mb-4 flex items-center gap-2"><span className="material-symbols-outlined text-error text-[18px]">warning</span>Risk Distribution</h3>
-          <div className="h-48">
+          <div className="h-48 overflow-x-auto">
+            <div className="h-full min-w-[320px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart><Pie data={riskDistribution} cx="50%" cy="50%" outerRadius={70} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
                 {riskDistribution.map((e: any, i: number) => <Cell key={i} fill={e.color} />)}
               </Pie><Tooltip /></PieChart>
             </ResponsiveContainer>
+            </div>
           </div>
         </div>
         <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
@@ -107,9 +109,9 @@ export default function AdminAnalytics() {
         <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm">
           <h3 className="text-sm font-bold text-on-surface mb-4 flex items-center gap-2"><span className="material-symbols-outlined text-primary text-[18px]">table_chart</span>Assessment Model Summary</h3>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[720px] text-sm">
               <thead><tr className="border-b border-outline-variant">
-                {["Model","Assessments","Avg Score","Max Score","Avg Severity %","High Risk"].map(h => <th key={h} className="text-left py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase">{h}</th>)}
+                {["Model","Assessments","Avg Score","Max Score","Avg Severity %","High Risk"].map(h => <th key={h} className="text-left py-2 px-3 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">{h}</th>)}
               </tr></thead>
               <tbody>{modelComparison.map((m: any) => (
                 <tr key={m.model} className="border-b border-outline-variant/30 hover:bg-surface-container-low">

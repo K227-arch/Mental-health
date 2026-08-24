@@ -5,8 +5,12 @@ export default function CounsellorLayout({ children }: { children: React.ReactNo
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-background relative">
       {/* Logo Watermark */}
-      <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0">
-        <img src="/logo.jpeg" alt="" className="w-[500px] h-[500px] object-contain opacity-[0.06]" />
+      <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
+        <img
+          src="/logo.jpeg"
+          alt=""
+          className="w-64 h-64 md:w-[500px] md:h-[500px] object-contain opacity-[0.06]"
+        />
       </div>
       <Navbar variant="counsellor" />
       <div className="flex flex-1 pt-16 h-full overflow-hidden relative z-10">

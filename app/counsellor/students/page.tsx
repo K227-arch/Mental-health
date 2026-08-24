@@ -116,16 +116,16 @@ export default function StudentsManagementPage() {
       ) : (
         <div className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[820px] text-sm">
               <thead>
                 <tr className="border-b border-outline-variant bg-surface-container-low">
-                  <th className="text-left py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase">Student</th>
-                  <th className="text-left py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase">Faculty</th>
-                  <th className="text-center py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase">Risk Level</th>
-                  <th className="text-center py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase">Assessment</th>
-                  <th className="text-center py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase">Score</th>
-                  <th className="text-center py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase">Last Active</th>
-                  <th className="text-right py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase">Actions</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">Student</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">Faculty</th>
+                  <th className="text-center py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">Risk Level</th>
+                  <th className="text-center py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">Assessment</th>
+                  <th className="text-center py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">Score</th>
+                  <th className="text-center py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">Last Active</th>
+                  <th className="text-right py-3 px-4 text-xs font-semibold text-on-surface-variant uppercase whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody>

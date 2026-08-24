@@ -326,7 +326,7 @@ export default function CounsellorLibrary() {
       {/* Add Resource Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 w-full max-w-md shadow-xl animate-fade-in">
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-4 sm:p-6 w-full max-w-md shadow-xl animate-fade-in max-h-[90dvh] overflow-y-auto">
             <h2 className="text-lg font-bold text-on-surface mb-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-[22px]">add_circle</span>
               Add Resource
@@ -347,7 +347,7 @@ export default function CounsellorLibrary() {
                 rows={3}
                 className="w-full px-4 py-2.5 bg-surface border border-outline-variant/50 rounded-xl text-sm text-on-surface focus:ring-2 focus:ring-primary/30 outline-none resize-none"
               />
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <select
                   value={newCategory}
                   onChange={(e) => setNewCategory(e.target.value)}
@@ -444,7 +444,7 @@ export default function CounsellorLibrary() {
       {/* Share Modal */}
       {showShareModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 w-full max-w-sm shadow-xl animate-fade-in">
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-4 sm:p-6 w-full max-w-sm shadow-xl animate-fade-in max-h-[90dvh] overflow-y-auto">
             <h2 className="text-lg font-bold text-on-surface mb-2 flex items-center gap-2">
               <span className="material-symbols-outlined text-secondary text-[22px]">share</span>
               Share Resource

@@ -123,8 +123,8 @@ export default function CrisisPage() {
   return (
     <div className="min-h-screen flex flex-col bg-surface selection:bg-primary-fixed selection:text-on-primary-fixed relative">
       {/* Logo Watermark */}
-      <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0">
-        <img src="/logo.jpeg" alt="" className="w-[500px] h-[500px] object-contain opacity-[0.06]" />
+      <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
+        <img src="/logo.jpeg" alt="" className="w-64 h-64 md:w-[500px] md:h-[500px] object-contain opacity-[0.06]" />
       </div>
 
       <Navbar variant="student" />
@@ -134,9 +134,9 @@ export default function CrisisPage() {
         <StudentSidebar />
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto relative z-10">
+        <main className="flex-1 overflow-y-auto relative z-10 pb-20 md:pb-0">
           {/* Hero Banner */}
-          <header className="relative w-full px-6 py-12 md:py-16 overflow-hidden">
+          <header className="relative w-full px-4 sm:px-6 py-10 md:py-16 overflow-hidden">
             <div className="absolute inset-0 z-0">
               <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-secondary/5 to-surface" />
             </div>

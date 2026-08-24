@@ -131,9 +131,9 @@ export default function WellnessPage() {
       <div className="flex flex-1 pt-16">
         <StudentSidebar />
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
         {/* Hero Banner */}
-        <div className="bg-gradient-to-br from-secondary-container/30 to-primary-container/20 px-6 md:px-20 py-16 text-center border-b border-outline-variant/30">
+        <div className="bg-gradient-to-br from-secondary-container/30 to-primary-container/20 px-4 sm:px-6 md:px-20 py-10 md:py-16 text-center border-b border-outline-variant/30">
           <div className="max-w-2xl mx-auto">
             <span className="inline-flex items-center gap-2 px-4 py-2 bg-secondary-container text-on-secondary-container text-sm font-semibold rounded-full mb-4">
               <span className="material-symbols-outlined text-[16px]">self_improvement</span>
@@ -149,13 +149,13 @@ export default function WellnessPage() {
         </div>
 
         <div className="px-4 md:px-20 py-10 max-w-6xl mx-auto">
-          {/* Tabs */}
-          <div className="flex flex-wrap gap-2 mb-8 bg-surface-container-low rounded-xl p-1.5 w-fit">
+          {/* Tabs — horizontal scroll strip on mobile, inline pills from sm up */}
+          <div className="flex gap-2 mb-8 bg-surface-container-low rounded-xl p-1.5 overflow-x-auto sm:overflow-visible sm:flex-wrap sm:w-fit [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {(["exercises", "resources", "shared", "inspiration", "hope"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveSection(tab)}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold capitalize transition-colors ${
+                className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold capitalize transition-colors ${
                   activeSection === tab
                     ? "bg-surface-container-lowest text-primary shadow-sm"
                     : "text-on-surface-variant hover:text-on-surface"
@@ -335,7 +335,7 @@ export default function WellnessPage() {
                   ].map((video) => (
                     <div key={video.title} className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden hover:shadow-md transition-shadow">
                       <div className="aspect-video bg-gradient-to-br from-primary-container to-secondary-container flex items-center justify-center relative">
-                        <span className="text-5xl">{video.thumbnail}</span>
+                        <span className="text-4xl sm:text-5xl">{video.thumbnail}</span>
                         <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
                           <span className="material-symbols-outlined icon-fill text-white text-[48px]">play_circle</span>
                         </div>

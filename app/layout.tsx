@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
 
@@ -7,6 +7,14 @@ export const metadata: Metadata = {
   description:
     "AI-powered mental health support and wellness management for university students.",
   keywords: "mental health, student wellness, AI screening, PHQ-9, university support",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // Required for env(safe-area-inset-*) to resolve on iOS — the mobile bottom
+  // navigation relies on it to clear the home bar.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

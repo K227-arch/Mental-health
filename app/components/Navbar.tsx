@@ -1,21 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
-import clsx from "clsx";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useTranslation } from "../lib/i18n";
 
 interface NavbarProps {
-  variant?: "student" | "counsellor";
+  variant?: "student" | "counsellor" | "admin";
 }
 
 export default function Navbar({ variant = "student" }: NavbarProps) {
   const { t } = useTranslation();
-  const pathname = usePathname();
   const router = useRouter();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<{ name?: string; email?: string; avatar_url?: string; id?: string } | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -99,35 +96,18 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
 
   return (
     <>
-      <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-surface border-b border-surface-variant shadow-sm">
+      <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center gap-2 px-3 sm:px-6 h-16 bg-surface border-b border-surface-variant shadow-sm">
         {/* Logo */}
-        <div className="flex items-center gap-3">
-          {variant === "counsellor" && (
-            <button
-              className="md:hidden p-1 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label="Toggle menu"
-            >
-              <span className="material-symbols-outlined">
-                {mobileMenuOpen ? "close" : "menu"}
-              </span>
-            </button>
-          )}
-          <Link href="/" className="flex items-center gap-2">
-            <img src="/logo.jpeg" alt="Selfcare Hub" className="w-8 h-8 object-contain rounded-lg" />
-            <span className="hidden sm:block font-bold text-2xl text-primary tracking-tight">Selfcare Hub</span>
+        <div className="flex items-center gap-3 min-w-0">
+          <Link href="/" className="flex items-center gap-2 min-w-0">
+            <img src="/logo.jpeg" alt="Selfcare Hub" className="w-8 h-8 object-contain rounded-lg shrink-0" />
+            <span className="hidden sm:block font-bold text-xl lg:text-2xl text-primary tracking-tight truncate">Selfcare Hub</span>
           </Link>
         </div>
 
-        {/* Desktop Nav Links - Student only */}
-        {variant === "student" && (
-          <nav className="hidden md:flex items-center gap-1">
-          </nav>
-        )}
-
         {/* Right Actions */}
-        <div className="flex items-center gap-2">
-          <div className="h-5 w-px bg-outline-variant mx-1" />
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          <div className="hidden sm:block h-5 w-px bg-outline-variant mx-1" />
 
           <LanguageSwitcher variant="light" />
 
@@ -258,34 +238,6 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
         </div>
       </header>
 
-      {/* Mobile Menu — counsellor only (student uses bottom nav) */}
-      {mobileMenuOpen && variant === "counsellor" && (
-        <div className="fixed top-16 left-0 right-0 z-40 bg-surface border-b border-outline-variant shadow-lg md:hidden animate-fade-in">
-          <nav className="flex flex-col p-3 gap-1">
-            {[
-              { href: "/counsellor", label: t("navbar.dashboard"), icon: "dashboard" },
-              { href: "/counsellor/analytics", label: t("navbar.analytics"), icon: "monitoring" },
-              { href: "/counsellor/chat", label: t("navbar.chat"), icon: "forum" },
-              { href: "/counsellor/library", label: t("navbar.library"), icon: "library_books" },
-            ].map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className={clsx(
-                  "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
-                  pathname === item.href
-                    ? "bg-primary-container text-on-primary-container"
-                    : "text-on-surface-variant hover:bg-surface-container"
-                )}
-              >
-                <span className="material-symbols-outlined">{item.icon}</span>
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-      )}
     </>
   );
 }
