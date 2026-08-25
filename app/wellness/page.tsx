@@ -125,10 +125,10 @@ export default function WellnessPage() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-surface">
+    <div className="h-screen flex flex-col overflow-hidden bg-surface">
       <Navbar variant="student" />
 
-      <div className="flex flex-1 pt-16 h-[calc(100svh-64px)] overflow-hidden">
+      <div className="flex flex-1 pt-16 h-full overflow-hidden">
         <StudentSidebar />
 
         <main className="flex-1 overflow-y-auto pb-20 md:pb-0">

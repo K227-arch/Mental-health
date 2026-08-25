@@ -58,9 +58,9 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="h-screen flex flex-col overflow-hidden bg-surface">
       <Navbar variant="student" />
-      <div className="flex flex-1 pt-16 h-[calc(100svh-64px)] overflow-hidden">
+      <div className="flex flex-1 pt-16 h-full overflow-hidden">
         <StudentSidebar />
         <main className="flex-1 overflow-y-auto w-full max-w-2xl mx-auto px-4 sm:px-6 md:px-16 py-8 md:py-10 pb-24 md:pb-10">
         <h1 className="text-2xl md:text-3xl font-bold text-on-surface mb-2">{t("settings.title")}</h1>

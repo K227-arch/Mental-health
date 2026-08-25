@@ -791,11 +791,11 @@ export default function ScreeningPage() {
   const progress = ((currentQuestion + (done ? 1 : 0)) / selectedModel.questions.length) * 100;
 
   return (
-    <div className="min-h-screen flex flex-col bg-surface relative overflow-hidden">
+    <div className="h-screen flex flex-col overflow-hidden bg-surface relative">
       {/* Navbar */}
       <Navbar variant="student" />
 
-      <div className="flex flex-1 pt-16 h-[calc(100svh-64px)] overflow-hidden">
+      <div className="flex flex-1 pt-16 h-full overflow-hidden">
         {/* Sidebar */}
         <StudentSidebar />
 

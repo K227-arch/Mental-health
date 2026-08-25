@@ -121,7 +121,7 @@ export default function CrisisPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-surface selection:bg-primary-fixed selection:text-on-primary-fixed relative">
+    <div className="h-screen flex flex-col overflow-hidden bg-surface selection:bg-primary-fixed selection:text-on-primary-fixed relative">
       {/* Logo Watermark */}
       <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
         <img src="/logo.jpeg" alt="" className="w-64 h-64 md:w-[500px] md:h-[500px] object-contain opacity-[0.06]" />
@@ -129,7 +129,7 @@ export default function CrisisPage() {
 
       <Navbar variant="student" />
 
-      <div className="flex flex-1 pt-16 h-[calc(100svh-64px)] overflow-hidden">
+      <div className="flex flex-1 pt-16 h-full overflow-hidden">
         {/* Sidebar */}
         <StudentSidebar />
 

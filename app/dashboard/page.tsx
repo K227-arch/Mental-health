@@ -243,7 +243,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background relative">
+    <div className="h-screen flex flex-col overflow-hidden bg-background relative">
       {/* Logo Watermark */}
       <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
         <img
@@ -254,7 +254,7 @@ export default function DashboardPage() {
       </div>
       <Navbar variant="student" />
 
-      <div className="flex flex-1 pt-16 h-[calc(100svh-64px)] overflow-hidden">
+      <div className="flex flex-1 pt-16 h-full overflow-hidden">
         {/* StudentSidebar owns its own mobile bottom nav + "More" drawer. */}
         <StudentSidebar />
 
