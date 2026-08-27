@@ -49,10 +49,14 @@ export async function GET(request: NextRequest) {
 
   // Fetch or create profile from DB
   let role = "student";
+  let studentId: string | null = null;
+  let faculty: string | null = null;
+  let yearOfStudy: number | null = null;
+  let consent = false;
   try {
     const { data: profiles } = await insforgeAdmin.database
       .from("student_profiles")
-      .select("role, name, avatar_url")
+      .select("role, name, avatar_url, student_id, faculty, year_of_study, consent")
       .eq("id", userId)
       .limit(1);
 
@@ -68,8 +72,20 @@ export async function GET(request: NextRequest) {
       if (profiles[0]?.role) role = profiles[0].role;
       if (profiles[0]?.name) userName = profiles[0].name;
       if (profiles[0]?.avatar_url) avatarUrl = profiles[0].avatar_url;
+      studentId = profiles[0]?.student_id ?? null;
+      faculty = profiles[0]?.faculty ?? null;
+      yearOfStudy = profiles[0]?.year_of_study ?? null;
+      consent = profiles[0]?.consent === true;
     }
   } catch { /* DB error — continue with defaults */ }
+
+  // A student's profile is "complete" only when they've supplied their student
+  // id, faculty, year of study, and given consent. Counsellors/admins are not
+  // subject to this requirement, so they're always considered complete.
+  const profileComplete =
+    role !== "student"
+      ? true
+      : Boolean(studentId && faculty && yearOfStudy && consent);
 
   // Banned users are treated as signed out: clear their session cookies and
   // return 403 so the client redirects them to sign-in.
@@ -86,7 +102,18 @@ export async function GET(request: NextRequest) {
   }
 
   const response = NextResponse.json({
-    user: { id: userId, name: userName, email: userEmail, avatar_url: avatarUrl, role },
+    user: {
+      id: userId,
+      name: userName,
+      email: userEmail,
+      avatar_url: avatarUrl,
+      role,
+      studentId,
+      faculty,
+      yearOfStudy,
+      consent,
+      profileComplete,
+    },
   });
 
   response.cookies.set("user_role", role, {

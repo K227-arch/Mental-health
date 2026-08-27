@@ -5,7 +5,7 @@ import { isBanned } from "@/lib/ban";
 // This route only handles profile creation after client-side sign-up
 export async function POST(request: NextRequest) {
   try {
-    const { userId, name, email, role, studentId, faculty, yearOfStudy } = await request.json();
+    const { userId, name, email, role, studentId, faculty, yearOfStudy, consent } = await request.json();
 
     if (!userId) {
       return NextResponse.json({ error: "userId required" }, { status: 400 });
@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
       student_id: studentId || null,
       faculty: faculty || null,
       year_of_study: yearOfStudy || null,
+      consent: consent === true,
     }]);
 
     return NextResponse.json({ success: true });

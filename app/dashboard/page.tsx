@@ -41,6 +41,11 @@ export default function DashboardPage() {
       if (!r.ok) return;
       return r.json().then((d) => {
         if (d?.user) {
+          // Students with an incomplete profile must finish registration first.
+          if (d.user.profileComplete === false) {
+            window.location.href = "/auth/complete-profile";
+            return;
+          }
           setUser(d.user);
           // Check if new user (just signed up recently)
           checkIfNewUser(d.user.id);

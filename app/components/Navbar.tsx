@@ -35,6 +35,15 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
         }
         if (!r.ok) return;
         if (d?.user) {
+          // Students must finish registration (student id, faculty, year,
+          // consent) before using any authed page. Send them to complete it.
+          if (
+            d.user.profileComplete === false &&
+            !window.location.pathname.startsWith("/auth/complete-profile")
+          ) {
+            window.location.href = "/auth/complete-profile";
+            return;
+          }
           setUser(d.user);
           // Fetch notifications
           if (d.user.id) {

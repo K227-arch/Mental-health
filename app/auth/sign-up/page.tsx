@@ -75,6 +75,7 @@ export default function SignUpPage() {
         studentId: role === "student" ? studentId : undefined,
         faculty: role === "student" ? faculty : undefined,
         yearOfStudy: role === "student" ? parseInt(yearOfStudy) : undefined,
+        consent: role === "student" ? consent : undefined,
       }));
 
       // If email verification is required (OTP sent), redirect to verify page
@@ -100,6 +101,7 @@ export default function SignUpPage() {
             studentId: role === "student" ? studentId : undefined,
             faculty: role === "student" ? faculty : undefined,
             yearOfStudy: role === "student" ? parseInt(yearOfStudy) : undefined,
+            consent: role === "student" ? consent : undefined,
           }),
         }).catch(() => {});
       }

@@ -33,38 +33,46 @@ export async function GET(request: NextRequest) {
       } catch { /* invalid token */ }
     }
 
-    // Check if user has signed up (has a profile in student_profiles or counsellor_profiles)
+    // Decide where to send the user after establishing the session.
+    // Counsellors/admins go to their portals. Students must have a COMPLETE
+    // profile (student id, faculty, year, consent) — otherwise they're routed
+    // to /auth/complete-profile before they can use the app.
+    let finalRedirect = redirectTo;
     if (userId) {
-      const { data: studentProfile } = await insforgeAdmin.database
-        .from("student_profiles")
-        .select("id")
-        .eq("id", userId)
-        .limit(1);
-
       const { data: counsellorProfile } = await insforgeAdmin.database
         .from("counsellor_profiles")
         .select("id")
         .eq("id", userId)
         .limit(1);
 
-      const hasProfile =
-        (studentProfile && studentProfile.length > 0) ||
-        (counsellorProfile && counsellorProfile.length > 0);
+      const { data: adminProfile } = await insforgeAdmin.database
+        .from("admin_profiles")
+        .select("id")
+        .eq("id", userId)
+        .limit(1);
 
-      if (!hasProfile) {
-        // User authenticated via OAuth but has no profile — they need to sign up first
-        const role = redirectTo === "/counsellor" ? "counsellor" : "student";
-        const url = new URL("/auth/sign-up", request.url);
-        url.searchParams.set("role", role);
-        url.searchParams.set("error", "Please complete your registration first. Sign up to create your account.");
-        const noProfileResponse = NextResponse.redirect(url);
-        noProfileResponse.cookies.set("insforge_code_verifier", "", { path: "/", maxAge: 0 });
-        noProfileResponse.cookies.set("insforge_redirect", "", { path: "/", maxAge: 0 });
-        return noProfileResponse;
+      const isCounsellor = counsellorProfile && counsellorProfile.length > 0;
+      const isAdmin = adminProfile && adminProfile.length > 0;
+
+      if (isAdmin) {
+        finalRedirect = "/admin";
+      } else if (isCounsellor) {
+        finalRedirect = "/counsellor";
+      } else {
+        // Treat as a student — check profile completeness.
+        const { data: studentProfile } = await insforgeAdmin.database
+          .from("student_profiles")
+          .select("student_id, faculty, year_of_study, consent")
+          .eq("id", userId)
+          .limit(1);
+
+        const p = studentProfile?.[0];
+        const complete = Boolean(p?.student_id && p?.faculty && p?.year_of_study && p?.consent === true);
+        finalRedirect = complete ? "/dashboard" : "/auth/complete-profile";
       }
     }
 
-    const response = NextResponse.redirect(new URL(redirectTo, request.url));
+    const response = NextResponse.redirect(new URL(finalRedirect, request.url));
 
     // Set session cookies
     if (data?.accessToken) {
