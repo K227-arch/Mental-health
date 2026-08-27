@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforgeAdmin } from "@/lib/insforge";
+import { isBanned } from "@/lib/ban";
 
 export async function GET(request: NextRequest) {
   let userId: string | null = null;
@@ -71,8 +72,8 @@ export async function GET(request: NextRequest) {
   } catch { /* DB error — continue with defaults */ }
 
   // Banned users are treated as signed out: clear their session cookies and
-  // return 401 so the client redirects them to sign-in.
-  if (role === "banned") {
+  // return 403 so the client redirects them to sign-in.
+  if (role === "banned" || (await isBanned(userId, userEmail))) {
     const banned = NextResponse.json(
       { user: null, banned: true, error: "Your account has been suspended by an administrator." },
       { status: 403 }

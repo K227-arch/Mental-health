@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { insforgeAdmin } from "@/lib/insforge";
+import { isBanned } from "@/lib/ban";
 
 // This route handles setting httpOnly cookies after client-side sign-in
 // The actual authentication is done client-side via the InsForge SDK
@@ -12,18 +12,12 @@ export async function POST(request: NextRequest) {
       try {
         const payload = JSON.parse(Buffer.from(accessToken.split(".")[1], "base64").toString());
         const userId = payload.sub || payload.user_id || null;
-        if (userId) {
-          const { data } = await insforgeAdmin.database
-            .from("student_profiles")
-            .select("role")
-            .eq("id", userId)
-            .limit(1);
-          if (data?.[0]?.role === "banned") {
-            return NextResponse.json(
-              { error: "Your account has been suspended by an administrator. Contact support if you believe this is a mistake." },
-              { status: 403 }
-            );
-          }
+        const email = payload.email || null;
+        if (await isBanned(userId, email)) {
+          return NextResponse.json(
+            { error: "Your account has been suspended by an administrator. Contact support if you believe this is a mistake." },
+            { status: 403 }
+          );
         }
       } catch { /* if we can't verify, fall through — /api/auth/me still guards */ }
     }
