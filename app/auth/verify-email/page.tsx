@@ -104,14 +104,25 @@ export default function VerifyEmailPage() {
 
       // Create profile if we have pending sign-up data
       if (signUpData && data.userId) {
-        await fetch("/api/auth/sign-up", {
+        const profileRes = await fetch("/api/auth/sign-up", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             userId: data.userId,
             ...signUpData,
           }),
-        }).catch(() => {});
+        }).catch(() => null);
+
+        // Suspended accounts cannot re-register.
+        if (profileRes && profileRes.status === 403) {
+          const body = await profileRes.json().catch(() => ({}));
+          document.cookie = "insforge_access_token=; path=/; max-age=0";
+          await fetch("/api/auth/sign-out", { method: "POST" }).catch(() => {});
+          sessionStorage.removeItem("pendingSignUp");
+          setError(body.error || "This account has been suspended and cannot be re-registered.");
+          setLoading(false);
+          return;
+        }
         sessionStorage.removeItem("pendingSignUp");
       }
 

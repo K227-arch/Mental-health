@@ -86,8 +86,9 @@ export default function SignInPage() {
       }
 
       if (data?.accessToken) {
-        // Set httpOnly cookies via server route for security
-        await fetch("/api/auth/sign-in", {
+        // Set httpOnly cookies via server route for security. This also rejects
+        // suspended accounts before any session is established.
+        const sessionRes = await fetch("/api/auth/sign-in", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -95,7 +96,17 @@ export default function SignInPage() {
             refreshToken: (data as any).refreshToken,
             redirect: finalRedirect,
           }),
-        }).catch(() => {});
+        }).catch(() => null);
+
+        if (sessionRes && sessionRes.status === 403) {
+          const body = await sessionRes.json().catch(() => ({}));
+          // Make sure the SDK session is torn down too.
+          await insforge.auth.signOut().catch(() => {});
+          setError(body.error || "Your account has been suspended by an administrator.");
+          setLoading(false);
+          return;
+        }
+
         // Also set non-httpOnly as fallback for /api/auth/me JWT decode
         document.cookie = `insforge_access_token=${data.accessToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
       }

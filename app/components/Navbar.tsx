@@ -23,8 +23,17 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
 
   useEffect(() => {
     fetch("/api/auth/me").then((r) => {
-      if (!r.ok) return;
       return r.json().then((d) => {
+        // If the account was suspended, force a sign-out and bounce to sign-in.
+        if (r.status === 403 && d?.banned) {
+          document.cookie = "insforge_access_token=; path=/; max-age=0";
+          document.cookie = "insforge_refresh_token=; path=/; max-age=0";
+          fetch("/api/auth/sign-out", { method: "POST" }).finally(() => {
+            window.location.href = "/auth/sign-in?error=" + encodeURIComponent(d.error || "Your account has been suspended.");
+          });
+          return;
+        }
+        if (!r.ok) return;
         if (d?.user) {
           setUser(d.user);
           // Fetch notifications
@@ -32,7 +41,7 @@ export default function Navbar({ variant = "student" }: NavbarProps) {
             fetchNotifications(d.user.id);
           }
         }
-      });
+      }).catch(() => {});
     });
   }, []);
 

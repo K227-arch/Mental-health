@@ -8,19 +8,23 @@ export default function AdminCounsellors() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<any | null>(null);
+  const [banned, setBanned] = useState<any[]>([]);
   const [alertMsg, setAlertMsg] = useState("");
   const [sending, setSending] = useState(false);
   const [promoting, setPromoting] = useState<string | null>(null);
+  const [banning, setBanning] = useState<string | null>(null);
 
   const loadData = async () => {
-    const [counsellorRes, usersRes, sessionsRes] = await Promise.all([
+    const [counsellorRes, usersRes, sessionsRes, bannedRes] = await Promise.all([
       fetch("/api/counsellor/list").then(r => r.ok ? r.json() : { counsellors: [] }),
       fetch("/api/counsellor/students").then(r => r.ok ? r.json() : { students: [] }),
       fetch("/api/sessions?counsellorId=all").then(r => r.ok ? r.json() : { sessions: [] }),
+      fetch("/api/admin/ban").then(r => r.ok ? r.json() : { banned: [] }),
     ]);
     setCounsellors(counsellorRes.counsellors || []);
     setAllUsers(usersRes.students || []);
     setSessions(sessionsRes.sessions || []);
+    setBanned(bannedRes.banned || []);
     setLoading(false);
   };
 
@@ -35,6 +39,33 @@ export default function AdminCounsellors() {
       body: JSON.stringify({ userId, role }),
     });
     setPromoting(null);
+    loadData();
+  };
+
+  // Reject/suspend a user: they lose counsellor access, are logged out on their
+  // next request, and cannot sign in or re-register until unbanned.
+  const rejectUser = async (userId: string, name: string) => {
+    if (!confirm(`Reject and suspend ${name || "this user"}? They will be logged out and blocked from signing in or signing up until you allow them again.`)) {
+      return;
+    }
+    setBanning(userId);
+    await fetch("/api/admin/ban", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+    setBanning(null);
+    loadData();
+  };
+
+  const unbanUser = async (userId: string) => {
+    setBanning(userId);
+    await fetch("/api/admin/ban", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+    setBanning(null);
     loadData();
   };
 
@@ -79,23 +110,29 @@ export default function AdminCounsellors() {
       </div>
 
       {/* Promote Users to Counsellor */}
-      {allUsers.filter(u => u.role !== "counsellor" && u.role !== "administrator").length > 0 && (
+      {allUsers.filter(u => u.role !== "counsellor" && u.role !== "administrator" && u.role !== "banned").length > 0 && (
         <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5">
           <h3 className="text-sm font-bold text-on-surface mb-3 flex items-center gap-2">
             <span className="material-symbols-outlined text-primary text-[18px]">manage_accounts</span>
             Promote Users to Counsellor
           </h3>
           <div className="space-y-2 max-h-56 overflow-y-auto">
-            {allUsers.filter(u => u.role !== "counsellor" && u.role !== "administrator").map((u: any) => (
+            {allUsers.filter(u => u.role !== "counsellor" && u.role !== "administrator" && u.role !== "banned").map((u: any) => (
               <div key={u.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-surface-container-low border border-outline-variant/30">
-                <div>
-                  <p className="text-sm font-medium text-on-surface">{u.name}</p>
-                  <p className="text-xs text-on-surface-variant">{u.email}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-on-surface truncate">{u.name}</p>
+                  <p className="text-xs text-on-surface-variant truncate">{u.email}</p>
                 </div>
-                <button onClick={() => promoteToRole(u.id, "counsellor", u.name, u.email)} disabled={promoting === u.id}
-                  className="px-3 py-1.5 bg-secondary text-on-secondary rounded-lg text-xs font-semibold hover:opacity-90 disabled:opacity-50 shrink-0">
-                  {promoting === u.id ? "..." : "Make Counsellor"}
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button onClick={() => promoteToRole(u.id, "counsellor", u.name, u.email)} disabled={promoting === u.id || banning === u.id}
+                    className="px-3 py-1.5 bg-secondary text-on-secondary rounded-lg text-xs font-semibold hover:opacity-90 disabled:opacity-50">
+                    {promoting === u.id ? "..." : "Make Counsellor"}
+                  </button>
+                  <button onClick={() => rejectUser(u.id, u.name)} disabled={banning === u.id || promoting === u.id}
+                    className="px-3 py-1.5 bg-error text-on-error rounded-lg text-xs font-semibold hover:opacity-90 disabled:opacity-50">
+                    {banning === u.id ? "..." : "Reject"}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -139,9 +176,44 @@ export default function AdminCounsellors() {
                     <p className="font-bold text-secondary">Active</p>
                   </div>
                 </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); rejectUser(c.id, c.name); }}
+                  disabled={banning === c.id}
+                  className="mt-3 w-full px-3 py-1.5 bg-error-container text-on-error-container rounded-lg text-xs font-semibold hover:bg-error hover:text-on-error disabled:opacity-50 transition-colors flex items-center justify-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-[16px]">block</span>
+                  {banning === c.id ? "Rejecting..." : "Reject / Suspend"}
+                </button>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Banned / Suspended Users */}
+      {banned.length > 0 && (
+        <div className="bg-surface-container-lowest border border-error/30 rounded-xl p-5">
+          <h3 className="text-sm font-bold text-on-surface mb-1 flex items-center gap-2">
+            <span className="material-symbols-outlined text-error text-[18px]">block</span>
+            Suspended Users
+          </h3>
+          <p className="text-xs text-on-surface-variant mb-3">
+            These users are logged out and cannot sign in or sign up until you allow them again.
+          </p>
+          <div className="space-y-2 max-h-56 overflow-y-auto">
+            {banned.map((b: any) => (
+              <div key={b.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-error-container/20 border border-error/20">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-on-surface truncate">{b.name || "Unnamed user"}</p>
+                  <p className="text-xs text-on-surface-variant truncate">{b.email || b.id}</p>
+                </div>
+                <button onClick={() => unbanUser(b.id)} disabled={banning === b.id}
+                  className="px-3 py-1.5 bg-secondary text-on-secondary rounded-lg text-xs font-semibold hover:opacity-90 disabled:opacity-50 shrink-0">
+                  {banning === b.id ? "..." : "Allow Again"}
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

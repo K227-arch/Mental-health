@@ -70,6 +70,20 @@ export async function GET(request: NextRequest) {
     }
   } catch { /* DB error — continue with defaults */ }
 
+  // Banned users are treated as signed out: clear their session cookies and
+  // return 401 so the client redirects them to sign-in.
+  if (role === "banned") {
+    const banned = NextResponse.json(
+      { user: null, banned: true, error: "Your account has been suspended by an administrator." },
+      { status: 403 }
+    );
+    const clear = { path: "/", maxAge: 0 };
+    banned.cookies.set("insforge_access_token", "", clear);
+    banned.cookies.set("insforge_refresh_token", "", clear);
+    banned.cookies.set("user_role", "", clear);
+    return banned;
+  }
+
   const response = NextResponse.json({
     user: { id: userId, name: userName, email: userEmail, avatar_url: avatarUrl, role },
   });
