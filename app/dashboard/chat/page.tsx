@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Navbar from "../../components/Navbar";
 import StudentSidebar from "../../components/StudentSidebar";
+import MessageContent from "../../components/MessageContent";
 import { useTranslation } from "../../lib/i18n";
 
 interface ChatMsg {
@@ -254,7 +255,7 @@ export default function StudentChatPage() {
                         : "mr-auto bg-surface-container text-on-surface rounded-bl-sm"
                     }`}
                   >
-                    <p>{msg.content}</p>
+                    <MessageContent content={msg.content} isOwn={msg.sender_role === "student"} />
                     <span className={`text-[10px] mt-1 block ${
                       msg.sender_role === "student" ? "text-on-primary/60 text-right" : "text-on-surface-variant"
                     }`}>

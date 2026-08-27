@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import clsx from "clsx";
+import MessageContent from "../../components/MessageContent";
 import { useTranslation } from "../../lib/i18n";
 
 interface ChatMsg {
@@ -383,7 +384,7 @@ export default function CounsellorChat() {
                         : "mr-auto bg-surface-container text-on-surface rounded-bl-sm"
                     )}
                   >
-                    <p>{msg.content}</p>
+                    <MessageContent content={msg.content} isOwn={msg.sender_role === "counsellor"} />
                     <span className={clsx(
                       "text-[10px] mt-1 block",
                       msg.sender_role === "counsellor" ? "text-on-primary/60 text-right" : "text-on-surface-variant"
