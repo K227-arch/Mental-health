@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforgeAdmin } from "@/lib/insforge";
+import { checkRoleConflict } from "@/lib/roles";
 
 // Get all counsellors from the dedicated counsellor_profiles table
 export async function GET() {
@@ -21,6 +22,12 @@ export async function POST(request: NextRequest) {
   try {
     const { userId, name, email, role, faculty } = await request.json();
     if (!userId) return NextResponse.json({ error: "userId required" }, { status: 400 });
+
+    // An email already registered as a student cannot become a counsellor.
+    const conflict = await checkRoleConflict(email, "counsellor");
+    if (conflict) {
+      return NextResponse.json({ error: conflict }, { status: 403 });
+    }
 
     const { data, error } = await insforgeAdmin.database
       .from("counsellor_profiles")

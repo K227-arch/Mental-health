@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforgeAdmin } from "@/lib/insforge";
+import { checkRoleConflict } from "@/lib/roles";
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("insforge_code");
@@ -24,13 +25,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // Get user ID from the token to check if they have a profile
+    // Get user ID + email from the token to check profile + role conflicts.
     let userId: string | null = null;
+    let userEmail: string | null = null;
     if (data?.accessToken) {
       try {
         const payload = JSON.parse(Buffer.from(data.accessToken.split(".")[1], "base64").toString());
         userId = payload.sub || payload.user_id || null;
+        userEmail = payload.email || null;
       } catch { /* invalid token */ }
+    }
+
+    // Enforce role separation for OAuth: if the user came in via the counsellor
+    // portal but the email is already a student (or vice versa), refuse and send
+    // them back to the correct sign-in with a message. Do NOT set session cookies.
+    const intendedRole = redirectTo === "/counsellor" ? "counsellor" : "student";
+    const roleConflict = await checkRoleConflict(userEmail, intendedRole);
+    if (roleConflict) {
+      const url = new URL("/auth/sign-in", request.url);
+      if (intendedRole === "counsellor") url.searchParams.set("role", "counsellor");
+      url.searchParams.set("error", roleConflict);
+      const conflictResponse = NextResponse.redirect(url);
+      conflictResponse.cookies.set("insforge_code_verifier", "", { path: "/", maxAge: 0 });
+      conflictResponse.cookies.set("insforge_redirect", "", { path: "/", maxAge: 0 });
+      return conflictResponse;
     }
 
     // Decide where to send the user after establishing the session.
