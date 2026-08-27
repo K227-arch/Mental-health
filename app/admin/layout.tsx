@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import Navbar from "../components/Navbar";
 import AdminSidebar from "../components/AdminSidebar";
+
+// Authenticated admin console — keep out of search indexes.
+export const metadata: Metadata = {
+  title: "Admin Portal",
+  robots: { index: false, follow: false },
+};
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -1,5 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Footer from "../components/Footer";
+
+export const metadata: Metadata = {
+  title: "Terms of Service",
+  description:
+    "The terms governing your use of Selfcare Hub — AI-powered mental health screening, mood tracking, and wellness support for university students.",
+  alternates: { canonical: "/terms" },
+};
 
 const sections = [
   {

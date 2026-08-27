@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import Navbar from "../components/Navbar";
 import CounsellorSidebar from "../components/CounsellorSidebar";
+
+// Authenticated counsellor console — keep out of search indexes.
+export const metadata: Metadata = {
+  title: "Counsellor Portal",
+  robots: { index: false, follow: false },
+};
 
 export default function CounsellorLayout({ children }: { children: React.ReactNode }) {
   return (
