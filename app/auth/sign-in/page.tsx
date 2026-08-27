@@ -148,13 +148,104 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface px-4 sm:px-6 py-10 relative overflow-hidden">
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="bg-blob-1" />
-        <div className="bg-blob-2" />
+    <div className="min-h-screen flex bg-surface relative overflow-hidden">
+      {/* Left Panel — Branding (hidden on mobile) */}
+      <div className={`hidden lg:flex lg:w-1/2 relative items-center justify-center p-12 ${
+        role === "counsellor"
+          ? "bg-gradient-to-br from-secondary via-secondary-container to-primary"
+          : role === "admin"
+          ? "bg-gradient-to-br from-primary via-primary to-secondary"
+          : "bg-gradient-to-br from-primary via-primary-container to-secondary"
+      }`}>
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 left-20 w-72 h-72 bg-white/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-secondary/30 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-white/10 rounded-full blur-2xl" />
+        </div>
+
+        <div className="relative z-10 max-w-md text-center">
+          <img
+            src="/logo.jpeg"
+            alt="Selfcare Hub"
+            className="w-20 h-20 object-contain rounded-2xl mx-auto mb-4 shadow-lg border border-white/20 bg-white/90"
+          />
+          <p className="text-white/70 text-xs font-medium uppercase tracking-widest mb-6">
+            {role === "counsellor" ? "Counsellor Portal" : role === "admin" ? "Admin Portal" : "Student Portal"}
+          </p>
+          <h1 className="text-4xl font-black text-white mb-4 leading-tight">
+            {role === "counsellor"
+              ? "Support students, save lives."
+              : role === "admin"
+              ? "System administration & oversight."
+              : "Your mind matters."}
+          </h1>
+          <p className="text-white/80 text-lg leading-relaxed mb-8">
+            {role === "counsellor"
+              ? "Access your dashboard to monitor student wellbeing, review screenings, and provide timely interventions."
+              : role === "admin"
+              ? "Manage users, counsellors, analytics, and system-wide settings from one central hub."
+              : "AI-powered mental health support designed for university students. Safe, confidential, and always available."}
+          </p>
+
+          <div className="space-y-4 text-left">
+            {role === "counsellor" ? (
+              <>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                  <span className="material-symbols-outlined text-secondary-container text-[22px]">monitoring</span>
+                  <span className="text-white/90 text-sm">Real-time student risk analytics</span>
+                </div>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                  <span className="material-symbols-outlined text-secondary-container text-[22px]">forum</span>
+                  <span className="text-white/90 text-sm">Secure messaging with students</span>
+                </div>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                  <span className="material-symbols-outlined text-secondary-container text-[22px]">assignment</span>
+                  <span className="text-white/90 text-sm">PHQ-9 results and referral management</span>
+                </div>
+              </>
+            ) : role === "admin" ? (
+              <>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                  <span className="material-symbols-outlined text-secondary-container text-[22px]">admin_panel_settings</span>
+                  <span className="text-white/90 text-sm">Full system oversight and control</span>
+                </div>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                  <span className="material-symbols-outlined text-secondary-container text-[22px]">manage_accounts</span>
+                  <span className="text-white/90 text-sm">User management and role promotion</span>
+                </div>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                  <span className="material-symbols-outlined text-secondary-container text-[22px]">analytics</span>
+                  <span className="text-white/90 text-sm">Platform-wide analytics and reports</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                  <span className="material-symbols-outlined text-secondary-container text-[22px]">mood</span>
+                  <span className="text-white/90 text-sm">Daily mood tracking and insights</span>
+                </div>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                  <span className="material-symbols-outlined text-secondary-container text-[22px]">shield</span>
+                  <span className="text-white/90 text-sm">End-to-end encrypted and private</span>
+                </div>
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                  <span className="material-symbols-outlined text-secondary-container text-[22px]">psychology</span>
+                  <span className="text-white/90 text-sm">AI-powered PHQ-9 wellness screening</span>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
-      <div className="relative z-10 w-full max-w-sm">
+      {/* Right Panel — Form */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-10 relative">
+        <div className="fixed inset-0 pointer-events-none overflow-hidden lg:hidden">
+          <div className="bg-blob-1" />
+          <div className="bg-blob-2" />
+        </div>
+
+        <div className="relative z-10 w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-6">
           <Link href="/" className="inline-block">
@@ -314,6 +405,7 @@ export default function SignInPage() {
         <p className="text-center text-xs text-on-surface-variant/50 mt-4">
           {t("auth.signin.protected")}
         </p>
+        </div>
       </div>
     </div>
   );

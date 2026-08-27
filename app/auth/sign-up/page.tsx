@@ -146,13 +146,79 @@ export default function SignUpPage() {
   const strength = passwordStrength();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface px-4 sm:px-6 py-10 relative overflow-hidden">
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="bg-blob-1" />
-        <div className="bg-blob-2" />
+    <div className="min-h-screen flex bg-surface relative overflow-hidden">
+      {/* Left Panel — Branding (hidden on mobile) */}
+      <div className={`hidden lg:flex lg:w-1/2 relative items-center justify-center p-12 ${
+        role === "counsellor"
+          ? "bg-gradient-to-br from-secondary via-primary-container to-primary"
+          : "bg-gradient-to-br from-secondary via-primary-container to-primary"
+      }`}>
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 right-20 w-72 h-72 bg-white/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 left-20 w-96 h-96 bg-primary/30 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-white/10 rounded-full blur-2xl" />
+        </div>
+
+        <div className="relative z-10 max-w-md text-center">
+          <img
+            src="/logo.jpeg"
+            alt="Selfcare Hub"
+            className="w-20 h-20 object-contain rounded-2xl mx-auto mb-4 shadow-lg border border-white/20 bg-white/90"
+          />
+          <p className="text-white/70 text-xs font-medium uppercase tracking-widest mb-6">
+            {role === "counsellor" ? "Counsellor Portal" : "Student Portal"}
+          </p>
+          <h1 className="text-4xl font-black text-white mb-4 leading-tight">
+            {role === "counsellor" ? "Join the care team." : "Start your wellness journey."}
+          </h1>
+          <p className="text-white/80 text-lg leading-relaxed mb-8">
+            {role === "counsellor"
+              ? "Register to access your counsellor dashboard and start supporting students with AI-assisted insights."
+              : "Join thousands of students taking control of their mental health with AI-powered support."}
+          </p>
+
+          {role === "counsellor" ? (
+            <div className="space-y-4 text-left">
+              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                <span className="material-symbols-outlined text-secondary-container text-[22px]">groups</span>
+                <span className="text-white/90 text-sm">Monitor student caseload in one place</span>
+              </div>
+              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                <span className="material-symbols-outlined text-secondary-container text-[22px]">notifications_active</span>
+                <span className="text-white/90 text-sm">Instant alerts for high-risk students</span>
+              </div>
+              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                <span className="material-symbols-outlined text-secondary-container text-[22px]">analytics</span>
+                <span className="text-white/90 text-sm">AI-powered screening insights and trends</span>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-4 mt-8">
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10 text-center">
+                <div className="text-2xl font-black text-white">5K+</div>
+                <div className="text-xs text-white/70 mt-1">Students</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10 text-center">
+                <div className="text-2xl font-black text-white">24/7</div>
+                <div className="text-xs text-white/70 mt-1">Available</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10 text-center">
+                <div className="text-2xl font-black text-white">100%</div>
+                <div className="text-xs text-white/70 mt-1">Private</div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="relative z-10 w-full max-w-sm">
+      {/* Right Panel — Form */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-10 relative overflow-y-auto">
+        <div className="fixed inset-0 pointer-events-none overflow-hidden lg:hidden">
+          <div className="bg-blob-1" />
+          <div className="bg-blob-2" />
+        </div>
+
+        <div className="relative z-10 w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-6">
           <Link href="/" className="inline-block">
@@ -408,6 +474,7 @@ export default function SignUpPage() {
           <Link href="/terms" className="underline hover:text-on-surface-variant">Terms</Link> and{" "}
           <Link href="/privacy" className="underline hover:text-on-surface-variant">Privacy Policy</Link>.
         </p>
+        </div>
       </div>
     </div>
   );
