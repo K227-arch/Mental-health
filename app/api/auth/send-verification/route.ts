@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { insforgeAdmin } from "@/lib/insforge";
 
+const BASE_URL = process.env.NEXT_PUBLIC_INSFORGE_URL;
+
+// (Re)sends the email-verification code to the user's inbox.
 export async function POST(request: NextRequest) {
   try {
     const { email } = await request.json();
@@ -9,16 +11,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email is required." }, { status: 400 });
     }
 
-    // Resend verification OTP via InsForge
-    const { error } = await insforgeAdmin.auth.resendVerification({
-      email,
-      type: "email",
+    const res = await fetch(`${BASE_URL}/api/auth/email/send-verification`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
     });
 
-    if (error) {
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
       return NextResponse.json(
-        { error: error.message || "Failed to send verification code." },
-        { status: 400 }
+        { error: data?.message || data?.error || "Failed to send verification code." },
+        { status: res.status }
       );
     }
 

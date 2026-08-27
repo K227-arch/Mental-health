@@ -87,19 +87,10 @@ export default function VerifyEmailPage() {
         return;
       }
 
-      // Set tokens if returned
+      // The verify route sets the httpOnly cookie server-side. Also set the
+      // non-httpOnly fallback so /api/auth/me can decode the JWT client-side.
       if (data.accessToken) {
         document.cookie = `insforge_access_token=${data.accessToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
-
-        // Also set httpOnly cookie via server
-        await fetch("/api/auth/sign-in", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            accessToken: data.accessToken,
-            refreshToken: data.refreshToken,
-          }),
-        }).catch(() => {});
       }
 
       // Create profile if we have pending sign-up data
