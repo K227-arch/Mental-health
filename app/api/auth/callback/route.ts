@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforgeAdmin } from "@/lib/insforge";
-import { checkRoleConflict } from "@/lib/roles";
+import { checkRoleConflict, ADMIN_EMAIL } from "@/lib/roles";
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("insforge_code");
@@ -52,41 +52,57 @@ export async function GET(request: NextRequest) {
     }
 
     // Decide where to send the user after establishing the session.
-    // Counsellors/admins go to their portals. Students must have a COMPLETE
-    // profile (student id, faculty, year, consent) — otherwise they're routed
-    // to /auth/complete-profile before they can use the app.
+    // The admin email may access any portal — it goes to whichever portal it
+    // signed in through (the tab the user picked, carried in redirectTo).
+    // For everyone else, honor the portal they chose as long as it matches a
+    // role they actually hold; students additionally need a COMPLETE profile.
     let finalRedirect = redirectTo;
     if (userId) {
-      const { data: counsellorProfile } = await insforgeAdmin.database
-        .from("counsellor_profiles")
-        .select("id")
-        .eq("id", userId)
-        .limit(1);
+      const isSuperAdmin = userEmail?.trim().toLowerCase() === ADMIN_EMAIL;
 
-      const { data: adminProfile } = await insforgeAdmin.database
-        .from("admin_profiles")
-        .select("id")
-        .eq("id", userId)
-        .limit(1);
-
-      const isCounsellor = counsellorProfile && counsellorProfile.length > 0;
-      const isAdmin = adminProfile && adminProfile.length > 0;
-
-      if (isAdmin) {
-        finalRedirect = "/admin";
-      } else if (isCounsellor) {
-        finalRedirect = "/counsellor";
+      if (isSuperAdmin) {
+        // Respect the chosen portal. Default to /admin only if none was set.
+        finalRedirect =
+          redirectTo === "/counsellor" || redirectTo === "/dashboard" || redirectTo === "/admin"
+            ? redirectTo
+            : "/admin";
       } else {
-        // Treat as a student — check profile completeness.
-        const { data: studentProfile } = await insforgeAdmin.database
-          .from("student_profiles")
-          .select("student_id, faculty, year_of_study, consent")
+        const { data: counsellorProfile } = await insforgeAdmin.database
+          .from("counsellor_profiles")
+          .select("id")
           .eq("id", userId)
           .limit(1);
 
-        const p = studentProfile?.[0];
-        const complete = Boolean(p?.student_id && p?.faculty && p?.year_of_study && p?.consent === true);
-        finalRedirect = complete ? "/dashboard" : "/auth/complete-profile";
+        const { data: adminProfile } = await insforgeAdmin.database
+          .from("admin_profiles")
+          .select("id")
+          .eq("id", userId)
+          .limit(1);
+
+        const isCounsellor = counsellorProfile && counsellorProfile.length > 0;
+        const isAdmin = adminProfile && adminProfile.length > 0;
+
+        // Prefer the portal the user chose when they hold that role.
+        if (redirectTo === "/admin" && isAdmin) {
+          finalRedirect = "/admin";
+        } else if (redirectTo === "/counsellor" && isCounsellor) {
+          finalRedirect = "/counsellor";
+        } else if (isAdmin) {
+          finalRedirect = "/admin";
+        } else if (isCounsellor) {
+          finalRedirect = "/counsellor";
+        } else {
+          // Treat as a student — check profile completeness.
+          const { data: studentProfile } = await insforgeAdmin.database
+            .from("student_profiles")
+            .select("student_id, faculty, year_of_study, consent")
+            .eq("id", userId)
+            .limit(1);
+
+          const p = studentProfile?.[0];
+          const complete = Boolean(p?.student_id && p?.faculty && p?.year_of_study && p?.consent === true);
+          finalRedirect = complete ? "/dashboard" : "/auth/complete-profile";
+        }
       }
     }
 
