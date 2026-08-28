@@ -500,30 +500,15 @@ export default function ScreeningPage() {
   };
 
   const handleTextSubmit = () => {
+    // Free-text input is only active during the AI chat phase (after the
+    // assessment). The PHQ-9 phases are answered via the options only.
+    if (phase !== "chat") return;
     if (!input.trim()) return;
     addMessage("user", input);
     setFreeTextInputs((prev) => [...prev, input]);
     const userMsg = input;
     setInput("");
-
-    if (phase === "rapport") {
-      // Stage 1 complete — student has responded to rapport question
-      // Transition to PHQ-9 after a brief acknowledgment
-      setTimeout(() => {
-        transitionToPhq9();
-      }, 600);
-    } else if (phase === "chat") {
-      // In chat phase, get AI response
-      getAIResponse(userMsg);
-    } else if (phase === "phq9") {
-      // During PHQ-9, free text is treated as additional context.
-      // Acknowledge it and gently remind them to select an option.
-      setTimeout(() => {
-        if (!done && currentQuestion < selectedModel.questions.length) {
-          addMessage("ai", `Thank you for sharing that — I hear you. Please select one of the options below to indicate how often you've experienced this over the last two weeks.`);
-        }
-      }, 500);
-    }
+    getAIResponse(userMsg);
   };
 
   // Generate dynamic suggestion chips based on last AI message
@@ -562,6 +547,8 @@ export default function ScreeningPage() {
   };
 
   const startRecording = async () => {
+    // Voice input is only available in the AI chat phase.
+    if (phase !== "chat") return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
@@ -746,6 +733,8 @@ export default function ScreeningPage() {
   };
 
   const openVideoCapture = () => {
+    // Video input is only available in the AI chat phase.
+    if (phase !== "chat") return;
     setShowVideoModal(true);
   };
 
@@ -989,7 +978,14 @@ export default function ScreeningPage() {
               </div>
             )}
 
-            {/* Text input */}
+            {/* Text input — typing, voice and video only work in the AI chat
+                phase (after the assessment). During the PHQ-9 questions the
+                student must use the answer options above. */}
+            {phase !== "chat" && (
+              <p className="text-xs text-on-surface-variant/70 text-center -mb-1">
+                Please select one of the options above to answer. Typing, voice, and video open after the assessment.
+              </p>
+            )}
             <div className="flex items-end gap-2">
               <div className="flex-1">
                 <textarea
@@ -998,32 +994,34 @@ export default function ScreeningPage() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
-                      handleTextSubmit();
+                      if (phase === "chat") handleTextSubmit();
                     }
                   }}
-                  placeholder="Type your response or select an option above..."
+                  disabled={phase !== "chat"}
+                  placeholder={phase === "chat" ? "Type your response..." : "Select an option above to continue..."}
                   rows={1}
-                  className="w-full bg-surface-container-low border-none focus:outline-none focus:ring-2 focus:ring-primary rounded-xl py-3 px-4 text-on-surface text-sm resize-none min-h-[48px] max-h-[120px]"
+                  className="w-full bg-surface-container-low border-none focus:outline-none focus:ring-2 focus:ring-primary rounded-xl py-3 px-4 text-on-surface text-sm resize-none min-h-[48px] max-h-[120px] disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ fieldSizing: "content" } as React.CSSProperties}
                 />
               </div>
               <div className="flex gap-1 mb-0.5">
                 <button
                   onClick={recording ? stopRecording : startRecording}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                  disabled={phase !== "chat"}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                     recording
                       ? "bg-error text-on-error animate-pulse"
                       : "bg-surface-container-highest text-on-surface-variant hover:bg-primary-container hover:text-on-primary-container"
                   }`}
-                  title={recording ? "Stop recording" : "Record voice message"}
+                  title={phase !== "chat" ? "Available after the assessment" : recording ? "Stop recording" : "Record voice message"}
                 >
                   <span className="material-symbols-outlined text-[20px]">{recording ? "stop" : "mic"}</span>
                 </button>
                 <button
                   onClick={openVideoCapture}
-                  disabled={uploadingVideo}
-                  className="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant hover:bg-primary-container hover:text-on-primary-container flex items-center justify-center transition-colors disabled:opacity-50"
-                  title="Record or upload video"
+                  disabled={uploadingVideo || phase !== "chat"}
+                  className="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant hover:bg-primary-container hover:text-on-primary-container flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  title={phase !== "chat" ? "Available after the assessment" : "Record or upload video"}
                 >
                   <span className="material-symbols-outlined text-[20px]">{uploadingVideo ? "progress_activity" : "videocam"}</span>
                 </button>
@@ -1036,7 +1034,8 @@ export default function ScreeningPage() {
                 />
                 <button
                   onClick={handleTextSubmit}
-                  className="w-10 h-10 rounded-full bg-primary text-on-primary hover:bg-surface-tint flex items-center justify-center transition-colors shadow-md ml-1"
+                  disabled={phase !== "chat"}
+                  className="w-10 h-10 rounded-full bg-primary text-on-primary hover:bg-surface-tint flex items-center justify-center transition-colors shadow-md ml-1 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <span className="material-symbols-outlined text-[20px]" style={{ marginLeft: "2px" }}>send</span>
                 </button>
