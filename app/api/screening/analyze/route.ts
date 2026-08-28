@@ -10,7 +10,8 @@ function getAIClient(): { client: OpenAI; model: string } | null {
         baseURL: "https://api.groq.com/openai/v1",
         apiKey: process.env.GROQ_API_KEY,
       }),
-      model: "llama-3.1-8b-instant",
+      // Groq deprecated llama-3.1-8b-instant. Use a current production model.
+      model: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
     };
   }
   if (process.env.OPENROUTER_API_KEY) {

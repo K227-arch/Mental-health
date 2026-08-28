@@ -10,7 +10,8 @@ function getAIClient(): { client: OpenAI; model: string } | null {
         baseURL: "https://api.groq.com/openai/v1",
         apiKey: process.env.GROQ_API_KEY,
       }),
-      model: "llama-3.1-8b-instant",
+      // Groq deprecated llama-3.1-8b-instant. Use a current production model.
+      model: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
     };
   }
   if (process.env.OPENROUTER_API_KEY) {
@@ -298,15 +299,24 @@ export async function POST(request: NextRequest) {
       { role: "user", content: userMessage },
     ];
 
-    const completion = await ai.client.chat.completions.create({
-      model: ai.model,
-      messages: llmMessages,
-      max_tokens: 250,
-      temperature: 0.7,
-    });
-
-    const response = completion.choices[0]?.message?.content?.trim() ||
-      fallbackResponse(detectedStage, typedMessages.map((m) => m.content));
+    let response: string;
+    try {
+      const completion = await ai.client.chat.completions.create({
+        model: ai.model,
+        messages: llmMessages,
+        max_tokens: 250,
+        temperature: 0.7,
+      });
+      response =
+        completion.choices[0]?.message?.content?.trim() ||
+        fallbackResponse(detectedStage, typedMessages.map((m) => m.content));
+    } catch (aiErr) {
+      // If the model call fails (deprecated model, rate limit, network),
+      // degrade gracefully to the stage-aware conversational fallback rather
+      // than a single repeated generic line.
+      console.error("AI completion error:", aiErr);
+      response = fallbackResponse(detectedStage, typedMessages.map((m) => m.content));
+    }
 
     // Send analysis to counsellor on stage transitions or when risk indicators present
     const stageChanged = detectedStage !== clientStage;
