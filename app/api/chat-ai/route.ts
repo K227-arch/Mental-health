@@ -1,31 +1,80 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
-// ── AI client — Groq primary (free & fast), OpenRouter fallback ──────────────
+// ── AI providers with automatic failover ────────────────────────────────────
+// Try providers/models in order until one succeeds. Groq is primary (fast,
+// free). If Groq is down or its model is deprecated, fall back to a chain of
+// FREE OpenRouter models. This survives any single model being delisted.
 
-function getAIClient(): { client: OpenAI; model: string } | null {
+interface AIProvider {
+  client: OpenAI;
+  models: string[]; // tried in order
+  label: string;
+}
+
+function getAIProviders(): AIProvider[] {
+  const providers: AIProvider[] = [];
+
   if (process.env.GROQ_API_KEY) {
-    return {
+    providers.push({
+      label: "groq",
       client: new OpenAI({
         baseURL: "https://api.groq.com/openai/v1",
         apiKey: process.env.GROQ_API_KEY,
       }),
-      // Groq deprecated llama-3.1-8b-instant. Use a current production model.
-      model: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
-    };
+      models: [
+        process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
+        "openai/gpt-oss-20b",
+      ],
+    });
   }
+
   if (process.env.OPENROUTER_API_KEY) {
-    return {
+    providers.push({
+      label: "openrouter",
       client: new OpenAI({
         baseURL: "https://openrouter.ai/api/v1",
         apiKey: process.env.OPENROUTER_API_KEY,
         defaultHeaders: {
-          "HTTP-Referer": "https://mindcare-ai-mu.vercel.app",
-          "X-Title": "MindCare AI",
+          "HTTP-Referer": "https://www.selfcare.ug",
+          "X-Title": "Selfcare Hub",
         },
       }),
-      model: "openai/gpt-4o-mini",
-    };
+      // Current FREE OpenRouter models, best-for-conversation first. An env
+      // override lets you pin a specific one without a code change.
+      models: process.env.OPENROUTER_MODEL
+        ? [process.env.OPENROUTER_MODEL]
+        : [
+            "google/gemma-4-31b-it:free",
+            "minimax/minimax-m3:free",
+            "z-ai/glm-5.2:free",
+            "google/gemma-4-26b-a4b-it:free",
+          ],
+    });
+  }
+
+  return providers;
+}
+
+// Runs the chat completion across all providers/models until one returns text.
+async function generateReply(messages: ChatMessage[]): Promise<string | null> {
+  const providers = getAIProviders();
+  for (const provider of providers) {
+    for (const model of provider.models) {
+      try {
+        const completion = await provider.client.chat.completions.create({
+          model,
+          messages: messages as any,
+          max_tokens: 250,
+          temperature: 0.7,
+        });
+        const text = completion.choices[0]?.message?.content?.trim();
+        if (text) return text;
+      } catch (err) {
+        console.error(`AI provider ${provider.label} model ${model} failed:`, err);
+        // try the next model/provider
+      }
+    }
   }
   return null;
 }
@@ -271,23 +320,6 @@ export async function POST(request: NextRequest) {
 
     const detectedStage = detectStageFromHistory(typedMessages, clientStage as ConversationStage, nlpContext);
     const keywords = extractKeywords(typedMessages);
-    const ai = getAIClient();
-
-    if (!ai) {
-      const response = fallbackResponse(detectedStage, typedMessages.map((m) => m.content));
-
-      // Send analysis to counsellor
-      sendToCounsellor({
-        title: "📊 AI Chat Session Analysis",
-        body: buildCounsellorSummary(userMessage, detectedStage, keywords, nlpContext),
-        type: keywords.length >= 3 ? "alert" : "info",
-        module: "Prompt Engineering Engine",
-        stage: detectedStage,
-        keywords,
-      });
-
-      return NextResponse.json({ response, stage: detectedStage, crisis: false, usingFallback: true });
-    }
 
     const systemPrompt = buildSystemPrompt(detectedStage, nlpContext);
     const contextNote = keywords.length ? `[Detected emotions in conversation: ${keywords.join(", ")}]` : "";
@@ -299,24 +331,11 @@ export async function POST(request: NextRequest) {
       { role: "user", content: userMessage },
     ];
 
-    let response: string;
-    try {
-      const completion = await ai.client.chat.completions.create({
-        model: ai.model,
-        messages: llmMessages,
-        max_tokens: 250,
-        temperature: 0.7,
-      });
-      response =
-        completion.choices[0]?.message?.content?.trim() ||
-        fallbackResponse(detectedStage, typedMessages.map((m) => m.content));
-    } catch (aiErr) {
-      // If the model call fails (deprecated model, rate limit, network),
-      // degrade gracefully to the stage-aware conversational fallback rather
-      // than a single repeated generic line.
-      console.error("AI completion error:", aiErr);
-      response = fallbackResponse(detectedStage, typedMessages.map((m) => m.content));
-    }
+    // Try Groq, then the free OpenRouter models, in order. Only if every
+    // provider fails do we fall back to the stage-aware scripted reply — so
+    // the user still gets a varied, conversational message, never a repeated line.
+    const aiReply = await generateReply(llmMessages);
+    const response = aiReply || fallbackResponse(detectedStage, typedMessages.map((m) => m.content));
 
     // Send analysis to counsellor on stage transitions or when risk indicators present
     const stageChanged = detectedStage !== clientStage;

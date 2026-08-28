@@ -20,11 +20,12 @@ function getAIClient(): { client: OpenAI; model: string } | null {
         baseURL: "https://openrouter.ai/api/v1",
         apiKey: process.env.OPENROUTER_API_KEY,
         defaultHeaders: {
-          "HTTP-Referer": "https://mindcare-ai-mu.vercel.app",
-          "X-Title": "MindCare AI",
+          "HTTP-Referer": "https://www.selfcare.ug",
+          "X-Title": "Selfcare Hub",
         },
       }),
-      model: "openai/gpt-4o-mini",
+      // Use a FREE OpenRouter model (overridable via env).
+      model: process.env.OPENROUTER_MODEL || "google/gemma-4-31b-it:free",
     };
   }
   return null;
