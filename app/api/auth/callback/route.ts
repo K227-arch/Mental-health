@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforgeAdmin } from "@/lib/insforge";
-import { checkRoleConflict, ADMIN_EMAIL } from "@/lib/roles";
+import { checkRoleConflict, hasRegisteredAccount, ADMIN_EMAIL } from "@/lib/roles";
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("insforge_code");
@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
 
   const verifier = request.cookies.get("insforge_code_verifier")?.value;
   const redirectTo = request.cookies.get("insforge_redirect")?.value || "/dashboard";
+  const intent = request.cookies.get("insforge_intent")?.value || "signin";
 
   try {
     // Exchange OAuth code for session
@@ -48,7 +49,30 @@ export async function GET(request: NextRequest) {
       const conflictResponse = NextResponse.redirect(url);
       conflictResponse.cookies.set("insforge_code_verifier", "", { path: "/", maxAge: 0 });
       conflictResponse.cookies.set("insforge_redirect", "", { path: "/", maxAge: 0 });
+      conflictResponse.cookies.set("insforge_intent", "", { path: "/", maxAge: 0 });
       return conflictResponse;
+    }
+
+    // If the user clicked "Continue with Google" on the SIGN-IN page but has no
+    // registered account yet, do not auto-create one. Send them to sign up.
+    const isSuperAdmin = userEmail?.trim().toLowerCase() === ADMIN_EMAIL;
+    if (intent === "signin" && !isSuperAdmin) {
+      const registered = await hasRegisteredAccount(userEmail);
+      if (!registered) {
+        const role = redirectTo === "/counsellor" ? "counsellor" : "student";
+        const url = new URL("/auth/sign-up", request.url);
+        url.searchParams.set("role", role);
+        url.searchParams.set(
+          "error",
+          "No account found for this Google email. Please sign up first — you can use Continue with Google on the sign-up page."
+        );
+        const noAccount = NextResponse.redirect(url);
+        // Do NOT set session cookies — the user is not signed in.
+        noAccount.cookies.set("insforge_code_verifier", "", { path: "/", maxAge: 0 });
+        noAccount.cookies.set("insforge_redirect", "", { path: "/", maxAge: 0 });
+        noAccount.cookies.set("insforge_intent", "", { path: "/", maxAge: 0 });
+        return noAccount;
+      }
     }
 
     // Decide where to send the user after establishing the session.
@@ -58,8 +82,6 @@ export async function GET(request: NextRequest) {
     // role they actually hold; students additionally need a COMPLETE profile.
     let finalRedirect = redirectTo;
     if (userId) {
-      const isSuperAdmin = userEmail?.trim().toLowerCase() === ADMIN_EMAIL;
-
       if (isSuperAdmin) {
         // Respect the chosen portal. Default to /admin only if none was set.
         finalRedirect =
@@ -130,6 +152,7 @@ export async function GET(request: NextRequest) {
 
     response.cookies.set("insforge_code_verifier", "", { path: "/", maxAge: 0 });
     response.cookies.set("insforge_redirect", "", { path: "/", maxAge: 0 });
+    response.cookies.set("insforge_intent", "", { path: "/", maxAge: 0 });
     return response;
   } catch {
     const url = new URL("/auth/sign-in", request.url);

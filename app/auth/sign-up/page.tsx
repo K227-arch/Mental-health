@@ -120,6 +120,8 @@ export default function SignUpPage() {
     setOauthLoading(provider);
     const redirect = role === "counsellor" ? "/counsellor" : "/dashboard";
     document.cookie = `insforge_redirect=${redirect}; path=/; max-age=600; SameSite=Lax`;
+    // Mark this as a SIGN-UP so the callback allows creating a new account.
+    document.cookie = `insforge_intent=signup; path=/; max-age=600; SameSite=Lax`;
     const { data, error } = await insforge.auth.signInWithOAuth(provider as any, {
       redirectTo: `${window.location.origin}/api/auth/callback`,
       skipBrowserRedirect: true,

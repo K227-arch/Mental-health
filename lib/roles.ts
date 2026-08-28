@@ -27,6 +27,39 @@ async function existingRolesForEmail(email: string): Promise<Set<string>> {
 }
 
 /**
+ * Returns true if the email already has a real, registered account —
+ * a counsellor/admin profile, or a student profile that has actually been
+ * set up (has student_id / faculty / consent, i.e. went through sign-up).
+ *
+ * A bare student_profiles row auto-created by /api/auth/me (id only, no
+ * student details) does NOT count as a registered account, so a first-time
+ * Google user is correctly detected as new.
+ */
+export async function hasRegisteredAccount(email: string | null | undefined): Promise<boolean> {
+  if (!email) return false;
+  try {
+    const [students, counsellors, admins] = await Promise.all([
+      insforgeAdmin.database.from("student_profiles").select("id, role").eq("email", email).limit(1),
+      insforgeAdmin.database.from("counsellor_profiles").select("id").eq("email", email).limit(1),
+      insforgeAdmin.database.from("admin_profiles").select("id").eq("email", email).limit(1),
+    ]);
+
+    if (counsellors.data && counsellors.data.length > 0) return true;
+    if (admins.data && admins.data.length > 0) return true;
+
+    // Any non-banned student row means this email has an account already.
+    // A brand-new Google user has NO row by email when the OAuth callback runs
+    // (the /api/auth/me auto-create only happens later, once they load a page).
+    const s: any = students.data?.[0];
+    if (s && s.role !== "banned") return true;
+  } catch {
+    // On lookup failure, treat as registered to avoid locking out real users.
+    return true;
+  }
+  return false;
+}
+
+/**
  * Determines whether using `email` for the `requestedRole` portal conflicts with
  * an existing account of a different role.
  *
