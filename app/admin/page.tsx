@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-const ADMIN_EMAIL = "keithtwesigye74@gmail.com";
+const ADMIN_EMAILS = new Set(["keithtwesigye74@gmail.com", "ftukamushaba90@gmail.com"]);
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -17,8 +17,8 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetch("/api/auth/me").then((r) => r.ok ? r.json() : null).then((d) => {
       if (!d?.user) { router.push("/auth/sign-in"); return; }
-      // Allow admin role OR the designated admin email
-      if (d.user.role !== "administrator" && d.user.email !== ADMIN_EMAIL) {
+      // Allow admin role OR any designated admin email
+      if (d.user.role !== "administrator" && !ADMIN_EMAILS.has(d.user.email)) {
         router.push("/dashboard");
         return;
       }

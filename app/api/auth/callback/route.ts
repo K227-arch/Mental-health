@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforgeAdmin } from "@/lib/insforge";
-import { checkRoleConflict, hasRegisteredAccount, ADMIN_EMAIL } from "@/lib/roles";
+import { checkRoleConflict, hasRegisteredAccount, isAdminEmail } from "@/lib/roles";
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("insforge_code");
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
 
     // If the user clicked "Continue with Google" on the SIGN-IN page but has no
     // registered account yet, do not auto-create one. Send them to sign up.
-    const isSuperAdmin = userEmail?.trim().toLowerCase() === ADMIN_EMAIL;
+    const isSuperAdmin = isAdminEmail(userEmail);
     if (intent === "signin" && !isSuperAdmin) {
       const registered = await hasRegisteredAccount(userEmail);
       if (!registered) {

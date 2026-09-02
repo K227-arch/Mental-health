@@ -1,7 +1,19 @@
 import { insforgeAdmin } from "@/lib/insforge";
 
-// The single super-admin email that is exempt from all role-separation rules.
+// Super-admin emails — exempt from all role-separation rules and can access
+// any portal. Add new admins here (code) AND in the admin_profiles table (DB).
+export const ADMIN_EMAILS = new Set([
+  "keithtwesigye74@gmail.com",
+  "ftukamushaba90@gmail.com",
+]);
+
+// Keep a single export for callers that compare one email (used throughout).
 export const ADMIN_EMAIL = "keithtwesigye74@gmail.com";
+
+export function isAdminEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return ADMIN_EMAILS.has(email.trim().toLowerCase());
+}
 
 export type PortalRole = "student" | "counsellor";
 
@@ -37,6 +49,8 @@ async function existingRolesForEmail(email: string): Promise<Set<string>> {
  */
 export async function hasRegisteredAccount(email: string | null | undefined): Promise<boolean> {
   if (!email) return false;
+  // Admin emails are always treated as registered.
+  if (isAdminEmail(email)) return true;
   try {
     const [students, counsellors, admins] = await Promise.all([
       insforgeAdmin.database.from("student_profiles").select("id, role").eq("email", email).limit(1),
@@ -74,8 +88,7 @@ export async function checkRoleConflict(
   requestedRole: PortalRole
 ): Promise<string | null> {
   if (!email) return null;
-  const normalized = email.trim().toLowerCase();
-  if (normalized === ADMIN_EMAIL) return null; // admin bypasses everything
+  if (isAdminEmail(email)) return null; // admin bypasses everything
 
   const roles = await existingRolesForEmail(email);
 
