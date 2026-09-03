@@ -37,30 +37,290 @@ export default function CounsellorAnalytics() {
   const modelComparison = data?.modelComparison || [];
   const modelScoreRanges = data?.modelScoreRanges || [];
 
-  const exportReport = (type: "general" | "individual") => {
-    const reportData = {
-      generatedAt: new Date().toISOString(),
-      type,
-      summary: {
-        totalScreenings: data?.totalScreenings || 0,
-        totalSessions: data?.totalSessions || 0,
-        totalMessages: data?.messageActivity?.total || 0,
-        highRiskAlerts: riskDistribution.find((r: any) => r.name === "Critical")?.value || 0,
-      },
-      riskDistribution,
-      modelComparison,
-      modelScoreRanges,
+  const exportReport = async (type: "general" | "individual") => {
+    // Dynamically import jsPDF so it only loads when the button is clicked.
+    const { jsPDF } = await import("jspdf");
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+    const date = new Date();
+    const dateStr = date.toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" });
+    const timeStr = date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+    const pageW = doc.internal.pageSize.getWidth();
+    const marginL = 18;
+    const marginR = 18;
+    const contentW = pageW - marginL - marginR;
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    const addPage = () => {
+      doc.addPage();
+      return 20; // reset y
     };
 
-    const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `selfcare-hub-${type}-report-${new Date().toISOString().split("T")[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const checkPage = (y: number, needed = 20): number => {
+      if (y + needed > 275) return addPage();
+      return y;
+    };
+
+    const drawLine = (y: number, color = "#e2e8f0") => {
+      doc.setDrawColor(color);
+      doc.setLineWidth(0.3);
+      doc.line(marginL, y, pageW - marginR, y);
+    };
+
+    const text = (str: string, x: number, y: number, opts?: any) => {
+      doc.text(str, x, y, opts);
+      return y;
+    };
+
+    // ── Cover Page ────────────────────────────────────────────────────────────
+    // Header band
+    doc.setFillColor("#c2185b");
+    doc.rect(0, 0, pageW, 52, "F");
+
+    doc.setTextColor("#ffffff");
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    text("Selfcare Hub", marginL, 22);
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    text("Student Mental Health Platform", marginL, 31);
+
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    const title = type === "general"
+      ? "General Analytics Report"
+      : "Individual Student Report";
+    text(title, marginL, 44);
+
+    // Meta block
+    doc.setTextColor("#1e293b");
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    let y = 68;
+    text(`Generated:  ${dateStr} at ${timeStr}`, marginL, y); y += 6;
+    text(`Report Type:  ${type === "general" ? "Platform-wide analytics summary" : "Individual student data"}`, marginL, y); y += 6;
+    text(`Institution:  University Wellness Programme`, marginL, y); y += 6;
+    text(`Prepared for:  Counsellor / Mental Health Team`, marginL, y); y += 10;
+    drawLine(y); y += 8;
+
+    // ── Introduction ─────────────────────────────────────────────────────────
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor("#c2185b");
+    text("Introduction", marginL, y); y += 7;
+
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor("#334155");
+    const intro = [
+      "This report presents an evidence-based summary of student mental health activity on the Selfcare Hub platform.",
+      "It is intended for use by mental health counsellors and institutional administrators to guide data-informed",
+      "interventions, resource allocation, and student support strategies.",
+      "",
+      "All data is aggregated and anonymised in accordance with confidentiality protocols. Individual student",
+      "identifiers are not disclosed in general reports.",
+    ];
+    intro.forEach((line) => { text(line, marginL, y); y += 5; });
+    y += 4;
+
+    // ── Summary Metrics ───────────────────────────────────────────────────────
+    y = checkPage(y, 40);
+    drawLine(y); y += 8;
+
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor("#c2185b");
+    text("1. Summary Metrics", marginL, y); y += 7;
+
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor("#334155");
+    text("The following key performance indicators were recorded during the reporting period:", marginL, y); y += 8;
+
+    const metrics = [
+      ["Total Screenings Completed", String(data?.totalScreenings || 0), "Total number of PHQ-9 / GAD-7 assessments submitted by students."],
+      ["Active Counselling Sessions", String(data?.totalSessions || 0), "Number of open or in-progress student-counsellor sessions."],
+      ["Total Messages Exchanged", String(data?.messageActivity?.total || 0), "Cumulative secure messages sent across all sessions."],
+      ["High-Risk (Critical) Alerts", String(riskDistribution.find((r: any) => r.name === "Critical")?.value || 0), "Students flagged as critical risk requiring immediate intervention."],
+      ["High-Risk (High) Cases", String(riskDistribution.find((r: any) => r.name === "High")?.value || 0), "Students scoring in the high-risk band — close monitoring recommended."],
+    ];
+
+    metrics.forEach(([label, value, desc]) => {
+      y = checkPage(y, 14);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor("#1e293b");
+      text(`• ${label}: `, marginL + 2, y);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor("#c2185b");
+      text(value, marginL + 72, y);
+      y += 4.5;
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor("#64748b");
+      doc.setFontSize(8);
+      text(desc, marginL + 6, y);
+      doc.setFontSize(9);
+      doc.setTextColor("#334155");
+      y += 6;
+    });
+
+    // ── Risk Distribution ─────────────────────────────────────────────────────
+    y = checkPage(y, 50);
+    drawLine(y); y += 8;
+
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor("#c2185b");
+    text("2. Risk Level Distribution", marginL, y); y += 7;
+
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor("#334155");
+    text("Breakdown of students by assessed risk level across all screenings completed:", marginL, y); y += 8;
+
+    if (riskDistribution.length > 0) {
+      const colW = contentW / 3;
+      // Header row
+      doc.setFillColor("#f1f5f9");
+      doc.rect(marginL, y - 4, contentW, 8, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor("#1e293b");
+      doc.setFontSize(8.5);
+      text("Risk Level", marginL + 2, y); text("Count", marginL + colW, y); text("% of Total", marginL + colW * 2, y);
+      y += 5;
+      drawLine(y, "#cbd5e1"); y += 3;
+
+      const total = riskDistribution.reduce((s: number, r: any) => s + (r.value || 0), 0);
+      const riskColors: Record<string, string> = { Critical: "#dc2626", High: "#ea580c", Moderate: "#d97706", Minimal: "#16a34a" };
+
+      riskDistribution.forEach((r: any) => {
+        y = checkPage(y, 8);
+        const pct = total > 0 ? ((r.value / total) * 100).toFixed(1) : "0.0";
+        const col = riskColors[r.name] || "#334155";
+        doc.setFont("helvetica", "normal"); doc.setTextColor(col); doc.setFontSize(9);
+        text(r.name || "—", marginL + 2, y);
+        doc.setTextColor("#334155");
+        text(String(r.value || 0), marginL + colW, y);
+        text(`${pct}%`, marginL + colW * 2, y);
+        y += 6.5;
+      });
+
+      y += 4;
+      doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor("#64748b");
+      text("Note: Percentages are based on total screenings. Critical cases require immediate counsellor follow-up.", marginL, y);
+      y += 8;
+    } else {
+      doc.setTextColor("#94a3b8"); text("No risk distribution data available for this period.", marginL, y); y += 10;
+    }
+
+    // ── Model Performance ─────────────────────────────────────────────────────
+    y = checkPage(y, 50);
+    drawLine(y); y += 8;
+
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor("#c2185b");
+    text("3. Assessment Model Performance", marginL, y); y += 7;
+
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor("#334155");
+    text("Summary of AI screening models used, their assessment volumes and average severity scores:", marginL, y); y += 8;
+
+    if (modelComparison.length > 0) {
+      const cols = [0, 40, 70, 100, 135];
+      doc.setFillColor("#f1f5f9");
+      doc.rect(marginL, y - 4, contentW, 8, "F");
+      doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor("#1e293b");
+      ["Model", "Assessments", "Avg Score", "High Risk", "Avg Severity %"].forEach((h, i) => {
+        text(h, marginL + cols[i], y);
+      });
+      y += 5; drawLine(y, "#cbd5e1"); y += 3;
+
+      modelComparison.forEach((m: any) => {
+        y = checkPage(y, 8);
+        doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor("#334155");
+        text(String(m.model || "—").slice(0, 14), marginL + cols[0], y);
+        text(String(m.assessments || 0), marginL + cols[1], y);
+        text(String(m.avgScore ?? "—"), marginL + cols[2], y);
+        text(String(m.highRisk || 0), marginL + cols[3], y);
+        text(`${m.avgSeverityPct ?? "—"}%`, marginL + cols[4], y);
+        y += 6.5;
+      });
+      y += 4;
+    } else {
+      doc.setTextColor("#94a3b8"); text("No model performance data available.", marginL, y); y += 10;
+    }
+
+    // ── Engagement ────────────────────────────────────────────────────────────
+    if (data?.messageActivity) {
+      y = checkPage(y, 40);
+      drawLine(y); y += 8;
+      doc.setFontSize(13); doc.setFont("helvetica", "bold"); doc.setTextColor("#c2185b");
+      text("4. Platform Engagement", marginL, y); y += 7;
+      doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor("#334155");
+
+      const engage = [
+        ["Total Messages", String(data.messageActivity.total || 0)],
+        ["Student Messages", String(data.messageActivity.student || 0)],
+        ["Counsellor Messages", String(data.messageActivity.counsellor || 0)],
+        ["Avg Messages / Session", String(data.messageActivity.avgPerSession || 0)],
+      ];
+      engage.forEach(([label, val]) => {
+        y = checkPage(y, 7);
+        doc.setFont("helvetica", "bold"); doc.setTextColor("#1e293b");
+        text(`${label}: `, marginL + 2, y);
+        doc.setFont("helvetica", "normal"); doc.setTextColor("#c2185b");
+        text(val, marginL + 70, y);
+        doc.setTextColor("#334155");
+        y += 6;
+      });
+      y += 4;
+    }
+
+    // ── Recommendations ───────────────────────────────────────────────────────
+    y = checkPage(y, 60);
+    drawLine(y); y += 8;
+    doc.setFontSize(13); doc.setFont("helvetica", "bold"); doc.setTextColor("#c2185b");
+    text("5. Recommendations", marginL, y); y += 7;
+    doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor("#334155");
+
+    const criticalCount = riskDistribution.find((r: any) => r.name === "Critical")?.value || 0;
+    const highCount = riskDistribution.find((r: any) => r.name === "High")?.value || 0;
+    const recs: string[] = [];
+
+    if (criticalCount > 0)
+      recs.push(`${criticalCount} student(s) are in the Critical risk band. Immediate outreach and crisis assessment is strongly recommended.`);
+    if (highCount > 0)
+      recs.push(`${highCount} student(s) are in the High risk band. Schedule follow-up sessions within 48 hours.`);
+    if ((data?.totalSessions || 0) === 0)
+      recs.push("No active counselling sessions detected. Consider proactively reaching out to at-risk students.");
+    recs.push("Review PHQ-9 scores alongside NLP sentiment data for a more holistic risk picture.");
+    recs.push("Ensure all Critical and High-risk students have an assigned counsellor and a safety plan in place.");
+    recs.push("Monitor engagement trends monthly and adjust resource allocation accordingly.");
+
+    recs.forEach((rec, i) => {
+      y = checkPage(y, 14);
+      const lines = doc.splitTextToSize(`${i + 1}. ${rec}`, contentW - 4);
+      doc.text(lines, marginL + 2, y);
+      y += lines.length * 5 + 2;
+    });
+
+    // ── Footer ────────────────────────────────────────────────────────────────
+    const totalPages = (doc.internal as any).getNumberOfPages();
+    for (let p = 1; p <= totalPages; p++) {
+      doc.setPage(p);
+      doc.setFontSize(7.5);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor("#94a3b8");
+      drawLine(284);
+      text("Selfcare Hub  •  Confidential — For authorised counselling staff only  •  Do not distribute", marginL, 289);
+      text(`Page ${p} of ${totalPages}`, pageW - marginR - 18, 289);
+    }
+
+    // ── Save ──────────────────────────────────────────────────────────────────
+    const filename = `selfcare-hub-${type}-report-${date.toISOString().split("T")[0]}.pdf`;
+    doc.save(filename);
   };
 
   return (
