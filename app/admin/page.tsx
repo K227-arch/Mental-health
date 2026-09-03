@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-const ADMIN_EMAILS = new Set(["keithtwesigye74@gmail.com", "ftukamushaba90@gmail.com"]);
+const ADMIN_EMAILS = new Set(["keithtwesigye74@gmail.com", "ftukamushaba90@gmail.com", "forkietuka@gmail.com"]);
 
 export default function AdminDashboard() {
   const router = useRouter();

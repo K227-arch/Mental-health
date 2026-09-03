@@ -5,6 +5,7 @@ import { insforgeAdmin } from "@/lib/insforge";
 export const ADMIN_EMAILS = new Set([
   "keithtwesigye74@gmail.com",
   "ftukamushaba90@gmail.com",
+  "forkietuka@gmail.com",
 ]);
 
 // Keep a single export for callers that compare one email (used throughout).
