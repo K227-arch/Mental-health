@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import type { Metadata } from "next";
 import Navbar from "../components/Navbar";
 import CounsellorSidebar from "../components/CounsellorSidebar";
+import Footer from "../components/Footer";
 
 // Authenticated counsellor console — keep out of search indexes.
 export const metadata: Metadata = {
@@ -24,6 +26,7 @@ export default function CounsellorLayout({ children }: { children: React.ReactNo
         <CounsellorSidebar />
         <main className="flex-1 overflow-y-auto bg-surface/95 pb-16 md:pb-0">
           {children}
+          <Footer />
         </main>
       </div>
     </div>

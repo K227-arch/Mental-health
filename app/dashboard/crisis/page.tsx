@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 import Navbar from "../../components/Navbar";
 import StudentSidebar from "../../components/StudentSidebar";
+import Footer from "../../components/Footer";
 import { useTranslation } from "../../lib/i18n";
 
 const groundingSteps = [
@@ -480,6 +481,7 @@ export default function CrisisPage() {
         </div>
 
           </div>
+          <Footer />
         </main>
       </div>
     </div>

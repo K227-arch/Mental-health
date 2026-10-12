@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import StudentSidebar from "../components/StudentSidebar";
+import Footer from "../components/Footer";
 import { wellnessMilestones, hopeMessages } from "../lib/data";
 import { useTranslation } from "../lib/i18n";
 
@@ -610,6 +611,7 @@ export default function WellnessPage() {
             </div>
           )}
         </div>
+          <Footer />
         </main>
       </div>
 

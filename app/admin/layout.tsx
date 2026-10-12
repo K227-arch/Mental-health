@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import type { Metadata } from "next";
 import Navbar from "../components/Navbar";
 import AdminSidebar from "../components/AdminSidebar";
+import Footer from "../components/Footer";
 
 // Authenticated admin console — keep out of search indexes.
 export const metadata: Metadata = {
@@ -23,6 +25,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <AdminSidebar />
         <main className="flex-1 overflow-y-auto bg-surface/95 pb-16 md:pb-0">
           {children}
+          <Footer />
         </main>
       </div>
     </div>
