@@ -486,6 +486,8 @@ const staticTranslations: Record<SupportedLang, Record<string, string>> = {
     "footer.copyright": "© 2024 University Mental Health Support",
     "footer.privacy": "Privacy Policy",
     "footer.terms": "Terms of Service",
+  },
+  sw: {
     "nav.signin": "Ingia",
     "nav.signup": "Anza",
     "nav.crisis": "Dharura",
