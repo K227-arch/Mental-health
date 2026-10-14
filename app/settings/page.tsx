@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import StudentSidebar from "../components/StudentSidebar";
-import Footer from "../components/Footer";
 import { useTranslation, languages } from "../lib/i18n";
 
 export default function SettingsPage() {
@@ -170,7 +169,6 @@ export default function SettingsPage() {
             )}
           </div>
         </div>
-          <Footer />
         </main>
       </div>
     </div>

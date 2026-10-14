@@ -4,7 +4,6 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import Footer from "./components/Footer";
 import LanguageSwitcher from "./components/LanguageSwitcher";
 import LandingChatbot from "./components/LandingChatbot";
 import { useTranslation } from "./lib/i18n";
@@ -556,7 +555,6 @@ export default function LandingPage() {
         </div>
       </motion.section>
 
-      <Footer />
       <LandingChatbot />
     </div>
   );

@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import Footer from "../components/Footer";
 import { hopeMessages } from "../lib/data";
 import { useTranslation } from "../lib/i18n";
 
@@ -412,7 +411,6 @@ export default function PublicCrisisPage() {
         </section>
       </main>
 
-      <Footer />
     </div>
   );
 }

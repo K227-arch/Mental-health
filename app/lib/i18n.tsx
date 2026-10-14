@@ -483,11 +483,9 @@ const staticTranslations: Record<SupportedLang, Record<string, string>> = {
     "navbar.chat": "Chat",
     "navbar.library": "Library",
     // Footer
-    "footer.copyright": "© 2026 Kathay Technologies",
+    "footer.copyright": "© 2024 University Mental Health Support",
     "footer.privacy": "Privacy Policy",
     "footer.terms": "Terms of Service",
-  },
-  sw: {
     "nav.signin": "Ingia",
     "nav.signup": "Anza",
     "nav.crisis": "Dharura",
@@ -936,7 +934,7 @@ const staticTranslations: Record<SupportedLang, Record<string, string>> = {
     "navbar.analytics": "Uchambuzi",
     "navbar.chat": "Mazungumzo",
     "navbar.library": "Maktaba",
-    "footer.copyright": "© 2026 Kathay Technologies",
+    "footer.copyright": "© 2024 Msaada wa Afya ya Akili ya Chuo Kikuu",
     "footer.privacy": "Sera ya Faragha",
     "footer.terms": "Masharti ya Huduma",
   },

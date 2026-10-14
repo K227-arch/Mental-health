@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import StudentSidebar from "../components/StudentSidebar";
-import Footer from "../components/Footer";
 import { phq9Questions, getPHQ9Severity, assessmentModels } from "../lib/data";
 import { useTranslation } from "../lib/i18n";
 import type { AssessmentModel } from "../lib/data";
@@ -1047,7 +1046,6 @@ export default function ScreeningPage() {
               </>
             )}
           </div>
-          <Footer />
         </main>
       </div>
 
